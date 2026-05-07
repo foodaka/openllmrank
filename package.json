@@ -1,6 +1,6 @@
 {
   "name": "openllmrank",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Open source CLI to track how your brand appears in answers from ChatGPT and Claude (Gemini and Perplexity planned). Generates gap analysis vs competitors and content recommendations from competitor pages. The Plausible of AI search visibility.",
   "type": "module",
   "license": "MIT",
