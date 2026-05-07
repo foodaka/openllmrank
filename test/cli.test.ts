@@ -61,6 +61,16 @@ describe("CLI: report with no data", () => {
     const md = readFileSync(join(tmp, "gap-report.md"), "utf8");
     expect(md).toContain("No data yet");
   });
+
+  test("--html writes a self-contained HTML report", async () => {
+    await runCli(["init"], tmp);
+    const r = await runCli(["report", "--html"], tmp);
+    expect(r.code).toBe(0);
+    const html = readFileSync(join(tmp, "gap-report.html"), "utf8");
+    expect(html).toContain("<!doctype html>");
+    expect(html).toContain('data-testid="hero-score"');
+    expect(html).not.toContain("https://cdn");
+  });
 });
 
 describe("CLI: run with missing API key", () => {

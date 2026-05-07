@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { defineCommand } from "citty";
 import cliProgress from "cli-progress";
@@ -14,47 +13,11 @@ import {
   upsertPrompt,
   type PlannedTuple,
 } from "../core/db";
-import { ConfigSchema, type Config, type Provider, type ProviderId } from "../core/types";
+import { type Config, type Provider, type ProviderId } from "../core/types";
 import { executeRun, type PlanItem } from "../core/runner";
 import { OpenAIProvider } from "../providers/openai";
 import { AnthropicProvider } from "../providers/anthropic";
-
-function loadConfig(path: string): Config {
-  if (!existsSync(path)) {
-    console.error(`! ${path} not found. Run 'openllmrank init' first.`);
-    process.exit(1);
-  }
-  let raw: unknown;
-  try {
-    raw = JSON.parse(readFileSync(path, "utf8"));
-  } catch (e) {
-    console.error(`! ${path} is not valid JSON: ${(e as Error).message}`);
-    process.exit(1);
-  }
-  const parsed = ConfigSchema.safeParse(raw);
-  if (!parsed.success) {
-    console.error(`! ${path} failed validation:`);
-    for (const issue of parsed.error.issues) {
-      console.error(`    ${issue.path.join(".")}: ${issue.message}`);
-    }
-    process.exit(1);
-  }
-  return parsed.data;
-}
-
-function loadEnvFile(): void {
-  if (!existsSync(".env")) return;
-  const content = readFileSync(".env", "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq < 0) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim();
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
+import { loadConfig, loadEnvFile } from "./config-loader";
 
 function buildProviders(cfg: Config): Map<ProviderId, Provider> {
   const map = new Map<ProviderId, Provider>();
@@ -135,10 +98,18 @@ export const runCmd = defineCommand({
   async run({ args }) {
     loadEnvFile();
     const cfg = loadConfig(args.config);
-    const concurrency = args.concurrency
-      ? Number.parseInt(args.concurrency, 10)
-      : cfg.concurrency_per_provider;
-    const samples = args.samples ? Number.parseInt(args.samples, 10) : undefined;
+    const parsePositiveInt = (raw: string | undefined, flag: string): number | undefined => {
+      if (raw === undefined) return undefined;
+      const n = Number.parseInt(raw, 10);
+      if (!Number.isFinite(n) || n <= 0 || String(n) !== raw.trim()) {
+        console.error(`! --${flag} must be a positive integer, got '${raw}'.`);
+        process.exit(1);
+      }
+      return n;
+    };
+    const concurrency =
+      parsePositiveInt(args.concurrency, "concurrency") ?? cfg.concurrency_per_provider;
+    const samples = parsePositiveInt(args.samples, "samples");
 
     const db = openDb(args.db);
     const providers = buildProviders(cfg);
@@ -169,8 +140,17 @@ export const runCmd = defineCommand({
         run_id = new Date().toISOString().replace(/[:.]/g, "-");
         startRun(db, run_id, cfg_hash);
         toExecute = plan;
+      } else if (existing.config_hash !== cfg_hash) {
+        console.error(
+          `! The unfinished run ${existing.run_id} was started with a different config (hash mismatch).`,
+        );
+        console.error(
+          `  Resuming would mix old + new config. Either revert your config edits and re-run --resume,`,
+        );
+        console.error(`  or run without --resume to start a fresh run with the current config.`);
+        process.exit(1);
       } else {
-        run_id = existing;
+        run_id = existing.run_id;
         const planned: PlannedTuple[] = plan.map((p) => ({
           prompt_id: p.prompt_id,
           sample_index: p.sample_index,

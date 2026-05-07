@@ -79,6 +79,26 @@ describe("computeRates", () => {
     const rates = computeRates(calls, [], prompts, ["Acme"]);
     expect(rates[0]?.rate).toBe(0);
   });
+
+  test("citations from different runs at same sample_index are NOT collapsed", () => {
+    const prompts = [mkPrompt("p1", "x", "openai")];
+    // 4 successful calls: 2 per run, sample_index 0 and 1 in each
+    const callRun1Sample0 = { ...mkCall("p1", 0), run_id: "r1" };
+    const callRun1Sample1 = { ...mkCall("p1", 1), run_id: "r1" };
+    const callRun2Sample0 = { ...mkCall("p1", 0), run_id: "r2" };
+    const callRun2Sample1 = { ...mkCall("p1", 1), run_id: "r2" };
+    const calls = [callRun1Sample0, callRun1Sample1, callRun2Sample0, callRun2Sample1];
+    // Acme cited in both runs at sample 0
+    const cits = [
+      { ...mkCitation("p1", 0, "Acme"), run_id: "r1" },
+      { ...mkCitation("p1", 0, "Acme"), run_id: "r2" },
+    ];
+    const rates = computeRates(calls, cits, prompts, ["Acme"]);
+    // 2 cited samples (one per run) out of 4 total samples = 0.5
+    expect(rates[0]?.samples_total).toBe(4);
+    expect(rates[0]?.samples_with_citation).toBe(2);
+    expect(rates[0]?.rate).toBeCloseTo(0.5);
+  });
 });
 
 describe("computeGap", () => {

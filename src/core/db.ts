@@ -31,6 +31,9 @@ export function openDb(path: string): Database {
   const db = new Database(path);
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA foreign_keys = ON");
+  // 5s wait on contention before reporting "database is locked". Two simultaneous
+  // 'openllmrank run' invocations are rare but cheap to handle gracefully.
+  db.exec("PRAGMA busy_timeout = 5000");
   migrate(db);
   return db;
 }
@@ -114,13 +117,13 @@ export function finishRun(db: Database, run_id: string): void {
   db.run(`UPDATE runs SET finished_at = ? WHERE run_id = ?`, [new Date().toISOString(), run_id]);
 }
 
-export function findUnfinishedRun(db: Database): string | null {
+export function findUnfinishedRun(db: Database): { run_id: string; config_hash: string } | null {
   const row = db
-    .query<{ run_id: string }, []>(
-      `SELECT run_id FROM runs WHERE finished_at IS NULL ORDER BY started_at DESC LIMIT 1`,
+    .query<{ run_id: string; config_hash: string }, []>(
+      `SELECT run_id, config_hash FROM runs WHERE finished_at IS NULL ORDER BY started_at DESC LIMIT 1`,
     )
     .get();
-  return row?.run_id ?? null;
+  return row ?? null;
 }
 
 export function findLatestFinishedRun(db: Database): string | null {
@@ -248,6 +251,13 @@ export type PromptRow = {
   created_at: string;
 };
 
+export type RunRow = {
+  run_id: string;
+  started_at: string;
+  finished_at: string | null;
+  config_hash: string;
+};
+
 export function getCallsSince(db: Database, since_iso: string): CallRow[] {
   return db
     .query<CallRow, [string]>(
@@ -272,4 +282,12 @@ export function getPrompts(db: Database, prompt_ids: string[]): PromptRow[] {
   return db
     .query<PromptRow, string[]>(`SELECT * FROM prompts WHERE prompt_id IN (${placeholders})`)
     .all(...prompt_ids);
+}
+
+export function getRunsForCalls(db: Database, run_ids: string[]): RunRow[] {
+  if (run_ids.length === 0) return [];
+  const placeholders = run_ids.map(() => "?").join(",");
+  return db
+    .query<RunRow, string[]>(`SELECT * FROM runs WHERE run_id IN (${placeholders}) ORDER BY started_at`)
+    .all(...run_ids);
 }

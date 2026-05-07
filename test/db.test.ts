@@ -132,12 +132,14 @@ describe("findMissingTuples", () => {
 });
 
 describe("run lifecycle", () => {
-  test("findUnfinishedRun returns latest unfinished run", () => {
+  test("findUnfinishedRun returns latest unfinished run with config_hash", () => {
     const db = memDb();
-    startRun(db, "r1", "h");
+    startRun(db, "r1", "h1");
     finishRun(db, "r1");
-    startRun(db, "r2", "h");
-    expect(findUnfinishedRun(db)).toBe("r2");
+    startRun(db, "r2", "h2");
+    const found = findUnfinishedRun(db);
+    expect(found?.run_id).toBe("r2");
+    expect(found?.config_hash).toBe("h2");
   });
 
   test("findUnfinishedRun returns null when all are finished", () => {

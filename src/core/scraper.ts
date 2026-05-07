@@ -27,7 +27,7 @@ async function isAllowedByRobots(url: string, signal?: AbortSignal): Promise<boo
   if (!robots) {
     try {
       const res = await fetch(robotsUrl, {
-        headers: { "user-agent": USER_AGENT_TOKEN },
+        headers: { "user-agent": userAgent() },
         signal,
       });
       const text = res.ok ? await res.text() : "";
@@ -48,12 +48,22 @@ export function clearRobotsCache(): void {
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 const MAX_CONTENT_CHARS = 8_000;
-// Many sites 403 unbranded crawlers. Use a realistic Chrome UA so public marketing
-// pages return content. We also send Accept and Accept-Language headers that real
-// browsers include; missing these is a common bot-detection signal.
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
-  "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+// Identifies us honestly so robots.txt rules and server-side logs reflect what we are.
+// The matching token in our robots check below is "openllmrank".
+const HONEST_USER_AGENT =
+  "openllmrank/0.2.1 (+https://github.com/foodaka/openllmrank) ContentGap/1.0";
+
+// Some sites 403 unbranded crawlers regardless of robots.txt. Users can opt into a
+// browser-like UA via the OPENLLMRANK_BROWSER_UA env var. The default is the honest UA.
+function userAgent(): string {
+  if (process.env.OPENLLMRANK_BROWSER_UA === "1") {
+    return (
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
+      "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    );
+  }
+  return HONEST_USER_AGENT;
+}
 
 const STRIP_SELECTORS = [
   "script",
@@ -111,7 +121,7 @@ export async function scrape(
     }
     const res = await fetch(url, {
       headers: {
-        "user-agent": USER_AGENT,
+        "user-agent": userAgent(),
         accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "accept-language": "en-US,en;q=0.9",
         "accept-encoding": "gzip, deflate, br",

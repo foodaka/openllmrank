@@ -1,0 +1,25 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`renderHtmlReport pins the high-level HTML structure 1`] = `
+"<!doctype html>
+<html lang="en">
+<head>
+<body>
+<main class="wrap">
+<header>
+<h1 class="brand">Acme</h1>
+<section class="hero">
+<h2>Signal</h2>
+<section class="section">
+<h2>Gap analysis</h2>
+<table><thead><tr><th>Provider</th><th>Prompt</th><th>Your rate</th><th>Top competitor</th><th>Gap</th></tr></thead><tbody><tr><td class="provider">openai</td><td class="prompt">best privacy-friendly analytics tools<details><summary class="muted">Most recent response</summary><div class="response"><span class="mark-competitor">Globex</span> is often cited for analytics. <span class="mark-brand">Acme</span> is a newer option.</div></details></td><td class="rate">0%</td><td>Globex <span class="rate">100%</span></td><td><div class="gapcell"><span class="rate">100%</span><div class="bar"><span style="width:100%;background:#9f3a21"></span></div></div></td></tr></tbody></table>
+<section class="section">
+<h2>Where you're winning</h2>
+<table><thead><tr><th>Provider</th><th>Prompt</th><th>Your rate</th><th>Top competitor</th><th>Gap</th></tr></thead><tbody><tr><td class="provider">anthropic</td><td class="prompt">best product analytics for startups<details><summary class="muted">Most recent response</summary><div class="response"><span class="mark-competitor">Globex</span> is often cited for analytics. <span class="mark-brand">Acme</span> is a newer option.</div></details></td><td class="rate">100%</td><td>Globex <span class="rate">0%</span></td><td><div class="gapcell"><span class="rate">0%</span><div class="bar"><span style="width:0%;background:#476f53"></span></div></div></td></tr></tbody></table>
+<section class="section two">
+<h2>Provider breakdown</h2>
+<select class="select" data-competitor-select><option value="Globex">Globex</option><option value="Initech">Initech</option></select><p class="muted">Top bar is Acme; lower bar is selected competitor.</p><div data-competitor="Globex" style=""><div class="chart-row"><strong>anthropic</strong><div><div class="chart-track"><span style="width:100%"></span></div><div class="chart-track" style="margin-top:5px"><span style="width:0%;background:var(--accent-2)"></span></div></div><span class="rate">100%</span></div><div class="chart-row"><strong>openai</strong><div><div class="chart-track"><span style="width:0%"></span></div><div class="chart-track" style="margin-top:5px"><span style="width:100%;background:var(--accent-2)"></span></div></div><span class="rate">0%</span></div></div><div data-competitor="Initech" style="display:none"><div class="chart-row"><strong>anthropic</strong><div><div class="chart-track"><span style="width:100%"></span></div><div class="chart-track" style="margin-top:5px"><span style="width:0%;background:var(--accent-2)"></span></div></div><span class="rate">100%</span></div><div class="chart-row"><strong>openai</strong><div><div class="chart-track"><span style="width:0%"></span></div><div class="chart-track" style="margin-top:5px"><span style="width:0%;background:var(--accent-2)"></span></div></div><span class="rate">0%</span></div></div>
+<h2>Run history</h2>
+<footer>
+<script>"
+`;

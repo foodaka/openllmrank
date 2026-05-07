@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="780" viewBox="0 0 1200 780" role="img" aria-label="Screenshot of an openllmrank HTML report">
+  <rect width="1200" height="780" fill="#fbf8f0"/>
+  <rect x="54" y="46" width="1092" height="688" rx="18" fill="#fbf8f0" stroke="#e3d8c6"/>
+  <text x="90" y="106" fill="#376b5b" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="18" font-weight="700" letter-spacing="3">GROUNDED LLM VISIBILITY</text>
+  <text x="90" y="178" fill="#241f19" font-family="Georgia,Times New Roman,serif" font-size="72">Plausible</text>
+  <text x="90" y="220" fill="#756c60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="24">May 3, 2026 to May 6, 2026 · 7d rolling window</text>
+  <rect x="805" y="84" width="124" height="72" rx="8" fill="#fffaf1" stroke="#e3d8c6"/>
+  <rect x="946" y="84" width="124" height="72" rx="8" fill="#fffaf1" stroke="#e3d8c6"/>
+  <rect x="805" y="171" width="124" height="72" rx="8" fill="#fffaf1" stroke="#e3d8c6"/>
+  <rect x="946" y="171" width="124" height="72" rx="8" fill="#fffaf1" stroke="#e3d8c6"/>
+  <text x="825" y="117" fill="#756c60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="17">Runs</text>
+  <text x="825" y="143" fill="#241f19" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="25" font-weight="700">3</text>
+  <text x="966" y="117" fill="#756c60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="17">Samples</text>
+  <text x="966" y="143" fill="#241f19" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="25" font-weight="700">24</text>
+  <line x1="90" y1="274" x2="1110" y2="274" stroke="#e3d8c6"/>
+  <rect x="90" y="328" width="8" height="134" fill="#376b5b"/>
+  <text x="120" y="350" fill="#756c60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="20">AI visibility score</text>
+  <text x="120" y="440" fill="#241f19" font-family="Georgia,Times New Roman,serif" font-size="112">75%</text>
+  <rect x="540" y="322" width="520" height="158" rx="9" fill="#fffaf1" stroke="#e3d8c6"/>
+  <text x="570" y="370" fill="#241f19" font-family="Georgia,Times New Roman,serif" font-size="38">Signal</text>
+  <text x="570" y="415" fill="#756c60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="22">Plausible appears in 75% of tracked</text>
+  <text x="570" y="447" fill="#756c60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="22">prompt-provider pairs at least once.</text>
+  <line x1="90" y1="524" x2="1110" y2="524" stroke="#e3d8c6"/>
+  <text x="90" y="580" fill="#241f19" font-family="Georgia,Times New Roman,serif" font-size="42">Gap analysis</text>
+  <text x="90" y="628" fill="#756c60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="17" font-weight="700" letter-spacing="1.4">PROVIDER</text>
+  <text x="260" y="628" fill="#756c60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="17" font-weight="700" letter-spacing="1.4">PROMPT</text>
+  <text x="790" y="628" fill="#756c60" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="17" font-weight="700" letter-spacing="1.4">GAP</text>
+  <line x1="90" y1="646" x2="1110" y2="646" stroke="#e3d8c6"/>
+  <text x="90" y="688" fill="#241f19" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="22" font-weight="700">Anthropic</text>
+  <text x="260" y="688" fill="#241f19" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="22">best product analytics for privacy conscious startups</text>
+  <text x="790" y="688" fill="#241f19" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,system-ui,sans-serif" font-size="22">67%</text>
+  <rect x="854" y="672" width="210" height="14" rx="7" fill="#f2eadc"/>
+  <rect x="854" y="672" width="140" height="14" rx="7" fill="#9f3a21"/>
+</svg>

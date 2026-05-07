@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/openllmrank.svg)](https://www.npmjs.com/package/openllmrank)
 [![license](https://img.shields.io/npm/l/openllmrank.svg)](./LICENSE)
-[![tests](https://img.shields.io/badge/tests-115%20passing-brightgreen)](./test)
+[![tests](https://img.shields.io/badge/tests-passing-brightgreen)](./test)
 
 > **AI-search-visibility tracking that costs $5/month instead of $500/month.**
 > Self-hosted CLI. Bring your own API keys. The Plausible of AI search.
@@ -27,7 +27,7 @@ Run it weekly. Watch the numbers move as you ship content.
 
 ## Cost expectation
 
-A typical run with default config (5 prompts × 1 provider × N=3 samples = 15 grounded calls) costs **about $0.30 with OpenAI's `gpt-4o-mini` + web_search**. Two providers doubles it. Running once a week means **~$1-3/month per tracked brand**. Compare to $200-1000/month for hosted alternatives.
+A typical run with default config (5 prompts × 1 provider × N=3 samples = 15 grounded calls) costs **about $0.40-$0.50 with OpenAI's `gpt-4o-mini` + web_search**. The web-search tool fee dominates over token cost; the per-call fee is roughly $0.025. Two providers doubles it. Running once a week means **~$2-5/month per tracked brand**. Compare to $200-1000/month for hosted alternatives.
 
 ## Install
 
@@ -58,8 +58,9 @@ openllmrank init
 echo 'OPENAI_API_KEY=sk-...' > .env
 openllmrank run                   # query providers, persist results
 openllmrank report                # markdown gap analysis
+openllmrank report --html         # self-contained HTML report
 openllmrank suggest               # NEW: actionable content recommendations
-open gap-report.md suggestions.md
+open gap-report.html suggestions.md
 ```
 
 ## Commands
@@ -71,8 +72,22 @@ open gap-report.md suggestions.md
 | `openllmrank run --resume` | Resume the previous unfinished run from where it crashed |
 | `openllmrank run --retry-failed` | Re-query just the failed rows from the latest run |
 | `openllmrank report` | Generate `gap-report.md` from the rolling 7-day window |
+| `openllmrank report --html` | Generate a self-contained `gap-report.html` with no CDN, font, CSS, or JS dependencies |
 | `openllmrank suggest` | **NEW.** For each losing prompt, fetch the winning competitor's cited URL and your brand URL, and produce specific content recommendations |
 | `openllmrank export --since 7d` | Emit raw calls + citations as NDJSON for piping to `jq`/spreadsheets |
+
+## HTML reports
+
+The HTML report is designed for sharing in Slack, email, or a browser without any network access:
+
+```bash
+openllmrank report --html
+openllmrank report --html --output weekly-ai-visibility.html
+```
+
+It includes the AI visibility score, trend versus the previous run, the losing gap table with expandable raw responses, winning prompts, provider breakdowns, run-history sparklines, and total run cost. See [examples/sample-report.html](./examples/sample-report.html).
+
+![Sample openllmrank HTML report](./examples/sample-report-screenshot.svg)
 
 ## suggest in detail
 
@@ -87,11 +102,12 @@ openllmrank suggest --output ideas.md
 
 Under the hood, for each losing prompt it:
 
-1. Reads the winning competitor's cited URLs from the run's stored search results
-2. Fetches that page and your brand's main URL via plain HTTP (no headless browser)
-3. Extracts main content with cheerio (skips nav/footer/script)
-4. Sends both pages to GPT for structured comparison
-5. Writes a markdown file with: why the competitor wins, concrete content gaps, and 3-5 specific recommendations per losing prompt
+1. Picks the winning competitor's most-cited URL from the citations table (or falls back to the competitor's primary domain alias from your config when no URL citation exists)
+2. Fetches that page and your brand's main URL via plain HTTP (no headless browser, no dependency on Chromium)
+3. Checks `robots.txt` per origin and skips disallowed paths
+4. Extracts main content with cheerio (skips nav/footer/script/style)
+5. Sends both pages to GPT for structured comparison, with the scraped HTML clearly delimited and marked as untrusted to defend against prompt-injection attempts on competitor pages
+6. Writes a markdown file with: why the competitor wins, concrete content gaps, and 3-5 specific recommendations per losing prompt
 
 Cost: ~$0.005 per losing prompt analyzed (uses plain chat completions, not grounded calls).
 

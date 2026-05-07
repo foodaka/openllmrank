@@ -41,7 +41,9 @@ export function computeRates(
     const p = promptById.get(cit.prompt_id);
     if (!p) continue;
     const key = `${cit.prompt_id}|${p.provider}|${cit.brand}`;
-    const sampleKey = `${cit.sample_index}`;
+    // Include run_id so sample_index=0 from two different runs are NOT collapsed.
+    // Without this, citation rates undercount when the window covers >1 run.
+    const sampleKey = `${cit.run_id}|${cit.sample_index}`;
     if (!cited.has(key)) cited.set(key, new Set());
     cited.get(key)!.add(sampleKey);
   }
