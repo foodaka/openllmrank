@@ -1,19 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "types": ["bun-types"],
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "lib": ["ESNext"]
-  },
-  "include": ["src/**/*"]
+  "extends": "./tsconfig.base.json",
+  "include": ["packages/*/src/**/*", "packages/*/test/**/*"]
 }

@@ -1,8 +1,21 @@
-import { z } from "zod";
+// CLI-internal types. Shared schemas (ConfigSchema, BrandSchema, etc.) live in
+// @openllmrank/shared so the hosted webapp uses the exact same validation as
+// the CLI subprocess it spawns. The re-exports below keep existing CLI imports
+// intact; new code that needs the wizard cap-enforced variant should reach for
+// @openllmrank/shared directly.
 
-export type ProviderId = "openai" | "anthropic" | "google" | "perplexity";
-
-export const PROVIDER_IDS: ProviderId[] = ["openai", "anthropic", "google", "perplexity"];
+export {
+  PROVIDER_IDS,
+  BrandSchema,
+  ProviderConfigSchema,
+  ConfigSchema,
+} from "@openllmrank/shared/config";
+export type {
+  ProviderId,
+  Brand,
+  ProviderConfig,
+  Config,
+} from "@openllmrank/shared/config";
 
 export type ProviderErrorKind =
   | "transient"
@@ -40,32 +53,12 @@ export type ProviderQueryArgs = {
   signal?: AbortSignal;
 };
 
+import type { ProviderId } from "@openllmrank/shared/config";
+
 export interface Provider {
   id: ProviderId;
   query(args: ProviderQueryArgs): Promise<ProviderResult>;
 }
-
-export const BrandSchema = z.object({
-  name: z.string().min(1),
-  aliases: z.array(z.string()).default([]),
-});
-export type Brand = z.infer<typeof BrandSchema>;
-
-export const ProviderConfigSchema = z.object({
-  id: z.enum(["openai", "anthropic", "google", "perplexity"]),
-  model: z.string().min(1),
-});
-export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
-
-export const ConfigSchema = z.object({
-  brand: BrandSchema,
-  competitors: z.array(BrandSchema).default([]),
-  prompts: z.array(z.string().min(1)).min(1),
-  providers: z.array(ProviderConfigSchema).min(1),
-  samples_per_prompt: z.number().int().positive().default(3),
-  concurrency_per_provider: z.number().int().positive().default(4),
-});
-export type Config = z.infer<typeof ConfigSchema>;
 
 export type CitationKind = "name" | "url" | "grounded_source";
 

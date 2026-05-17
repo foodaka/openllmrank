@@ -2,6 +2,18 @@
 
 All notable changes to openllmrank are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `openllmrank run --output-json` flag. When set, stdout emits a single structured JSON object on success (`{"status":"ok","run_id":...,"succeeded":N,"failed":N,"cost_usd_total":N,"aborted":false}`) and a structured error object on failure (`{"status":"error","code":"CONFIG_NOT_FOUND"|"CONFIG_INVALID_JSON"|"CONFIG_SCHEMA_FAIL"|"PROVIDER_AUTH"|"PROVIDER_UNSUPPORTED"|"BAD_ARG"|...,"message":"...","detail":...}`). All human output goes to stderr; the progress bar is silenced. Useful for scripting and integration with hosted environments.
+- `openllmrank run --config-from-stdin` flag. Reads the JSON config from stdin instead of `openllmrank.config.json`. Combine with `--output-json` for a programmatic interface.
+- Both flags are non-breaking. Default behavior (human progress bar, file-based config) is unchanged.
+
+### Changed
+
+- Repository is now a Bun-workspace monorepo. The npm package `openllmrank` lives in `packages/cli`. Shared schemas live in `packages/shared` (private). No user-facing change for npm consumers.
+
 ## [0.2.0] - 2026-05-06
 
 ### Added

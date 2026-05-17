@@ -1,0 +1,16 @@
+{
+  "name": "@openllmrank/shared",
+  "version": "0.1.0",
+  "description": "Shared Zod schemas, types, and design tokens used across the openllmrank CLI and hosted web app.",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts"
+  },
+  "dependencies": {
+    "zod": "^3.25.0"
+  }
+}
