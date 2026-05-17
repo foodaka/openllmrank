@@ -11,7 +11,12 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "start": "bun run --cwd packages/cli start",
-    "build": "bun run --cwd packages/cli build"
+    "build": "bun run --cwd packages/cli build",
+    "dev:web": "bun run --cwd packages/web dev",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:psql": "docker exec -it supabase_db_openllmrank psql -U postgres -d postgres"
   },
   "devDependencies": {
     "@types/bun": "latest",

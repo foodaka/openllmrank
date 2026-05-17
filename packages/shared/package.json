@@ -8,7 +8,9 @@
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./config": "./src/config.ts"
+    "./config": "./src/config.ts",
+    "./design-tokens": "./src/design-tokens.ts",
+    "./design-tokens.css": "./src/design-tokens.css"
   },
   "dependencies": {
     "zod": "^3.25.0"

@@ -1,0 +1,31 @@
+/*
+ * Editorial design tokens, mirrored from packages/shared/src/design-tokens.ts
+ * and packages/cli/src/core/render-html.ts. Import this once from a Next.js
+ * global stylesheet (web app) or include in an inline <style> (emails).
+ */
+
+:root {
+  --paper: #fbf8f0;
+  --ink: #241f19;
+  --muted: #756c60;
+  --line: #e3d8c6;
+  --soft: #f2eadc;
+  --accent: #376b5b;
+  --accent-2: #b86b2b;
+  --win: #476f53;
+  --loss: #9f3a21;
+
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+  --radius-sm: 3px;
+  --radius-md: 7px;
+  --radius-pill: 999px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 28px;
+  --space-xl: 48px;
+  --space-xxl: 96px;
+}
