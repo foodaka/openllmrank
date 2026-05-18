@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { clearWizardState } from "@/lib/wizard-state";
@@ -10,8 +10,22 @@ import { clearWizardState } from "@/lib/wizard-state";
 //   2. In local_stub mode (?stub=1), post a synthetic webhook event to
 //      /api/webhook/stripe so the job actually flips to 'paid' locally.
 //      This lets the full end-to-end flow be exercised without Stripe.
+//
+// useSearchParams forces client-side rendering. Next.js 15 requires a
+// Suspense boundary around the component that uses it so the rest of the
+// route can prerender. Otherwise `next build` fails with
+// "useSearchParams() should be wrapped in a suspense boundary". (Fix
+// caught during Vercel-style production build smoke test on 2026-05-18.)
 
 export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutSuccessInner />
+    </Suspense>
+  );
+}
+
+function CheckoutSuccessInner() {
   const params = useSearchParams();
   const sessionId = params.get("session_id");
   const isStub = params.get("stub") === "1";
