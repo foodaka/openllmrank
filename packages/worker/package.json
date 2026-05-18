@@ -1,0 +1,18 @@
+{
+  "name": "@openllmrank/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun run --watch src/index.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@openllmrank/shared": "workspace:*",
+    "openllmrank": "workspace:*",
+    "stripe": "^17.4.0",
+    "postmark": "^4.0.7"
+  }
+}
