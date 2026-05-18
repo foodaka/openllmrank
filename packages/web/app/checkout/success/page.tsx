@@ -15,6 +15,7 @@ export default function CheckoutSuccessPage() {
   const params = useSearchParams();
   const sessionId = params.get("session_id");
   const isStub = params.get("stub") === "1";
+  const leadId = params.get("lead_id");
   const [stubStatus, setStubStatus] = useState<
     "idle" | "firing" | "ok" | "err"
   >("idle");
@@ -26,7 +27,7 @@ export default function CheckoutSuccessPage() {
   }, []);
 
   useEffect(() => {
-    if (!isStub || !sessionId) return;
+    if (!isStub || !sessionId || !leadId) return;
     setStubStatus("firing");
     fetch("/api/webhook/stripe", {
       method: "POST",
@@ -41,6 +42,7 @@ export default function CheckoutSuccessPage() {
           object: {
             id: sessionId,
             payment_intent: `pi_stub_${sessionId}`,
+            metadata: { lead_id: leadId },
           },
         },
       }),
@@ -57,7 +59,7 @@ export default function CheckoutSuccessPage() {
         setStubStatus("err");
         setStubErr((e as Error).message);
       });
-  }, [isStub, sessionId]);
+  }, [isStub, sessionId, leadId]);
 
   return (
     <main>

@@ -9,8 +9,7 @@ export type CheckoutSessionInput = {
   amountCents: number;
   currency: string;
   productName: string;
-  jobId: string;            // our jobs.id (becomes Stripe metadata.job_id)
-  userId: string;            // for the webhook to map back to user_id
+  leadId: string;            // our leads.id (becomes Stripe metadata.lead_id)
   email: string;
   successUrl: string;
   cancelUrl: string;
@@ -48,10 +47,12 @@ export async function createCheckoutSession(
   if (isStubMode()) {
     // Local stub: synthesize a session id, and the URL points right at our
     // own /checkout/success page with the synthetic event id encoded so
-    // the success page can trigger our webhook locally.
-    const sessionId = `cs_stub_${input.jobId}`;
+    // the success page can trigger our webhook locally. We also encode
+    // the lead_id so the stub webhook can pass it through in metadata
+    // (mirrors what real Stripe does with our session metadata).
+    const sessionId = `cs_stub_${input.leadId}`;
     const stubUrl =
-      `${input.successUrl}?session_id=${encodeURIComponent(sessionId)}&stub=1`;
+      `${input.successUrl}?session_id=${encodeURIComponent(sessionId)}&stub=1&lead_id=${encodeURIComponent(input.leadId)}`;
     return { id: sessionId, url: stubUrl, mode: "local_stub" };
   }
 
@@ -70,8 +71,9 @@ export async function createCheckoutSession(
       },
     ],
     metadata: {
-      job_id: input.jobId,
-      user_id: input.userId,
+      // Webhook reads lead_id to look up the full wizard config and
+      // provision the user / brand / job post-payment.
+      lead_id: input.leadId,
     },
     success_url: input.successUrl + "?session_id={CHECKOUT_SESSION_ID}",
     cancel_url: input.cancelUrl,
