@@ -107,18 +107,32 @@ export async function writeRunToPostgres(
   sqlite.close();
 
   return await sql.begin(async (tx) => {
-    // 1. Insert run. Use ON CONFLICT (job_id, cli_run_id) DO UPDATE so
-    //    retries return the same row. We rely on the cli_run_id column +
-    //    job_id pair being effectively unique because the CLI run_id is
-    //    a UTC timestamp derived from the worker's clock.
+    // 1. Insert run. Idempotent on (job_id, cli_run_id) thanks to the
+    //    UNIQUE constraint added in migration 0003. On retry (e.g.,
+    //    stale-lease reclaim after a worker crash), we hit the conflict
+    //    and DO UPDATE to refresh finished_at; .returning id gives us the
+    //    existing row's id, NOT a new uuid, so calls/citations FK against
+    //    the same parent. Without this, retries produced duplicate
+    //    runs/calls/citations triples — a P0 from /review on 2026-05-18.
     const runInsert = (await tx`
       insert into public.runs (job_id, user_id, brand_id, cli_run_id, started_at, finished_at, config_hash)
       values (${args.job_id}, ${args.user_id}, ${args.brand_id},
               ${runRow.run_id}, ${runRow.started_at}::timestamptz,
               ${runRow.finished_at}::timestamptz, ${runRow.config_hash})
+      on conflict (job_id, cli_run_id) do update
+        set finished_at = excluded.finished_at,
+            config_hash = excluded.config_hash
       returning id
     `) as unknown as Array<{ id: string }>;
     const run_id_pg = runInsert[0]!.id;
+
+    // On retry the calls + citations inserts below would conflict on
+    // their own UNIQUE constraints. Clear them under the existing run_id
+    // so the bulk inserts repopulate cleanly. This is safer than
+    // ON CONFLICT DO NOTHING because partial-write recovery is the whole
+    // point of the retry path.
+    await tx`delete from public.citations where run_id = ${run_id_pg}`;
+    await tx`delete from public.calls where run_id = ${run_id_pg}`;
 
     // 2. Insert prompts. Composite PK (prompt_id, user_id) means we use
     //    ON CONFLICT to ignore dupes (prompts can recur across runs for

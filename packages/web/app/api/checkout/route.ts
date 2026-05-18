@@ -3,6 +3,7 @@ import { z } from "zod";
 import { HostedConfigSchema } from "@openllmrank/shared/config";
 import { serviceClient } from "@/lib/supabase-server";
 import { createCheckoutSession, isLocalStub } from "@/lib/stripe";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 // POST /api/checkout
 //
@@ -20,7 +21,30 @@ const BodySchema = z.object({
   email: z.string().email(),
 });
 
+// Per-IP rate limit: 5 checkout attempts per minute. Without this, anyone
+// with curl can flood the leads table and burn Stripe API quota (real
+// money in live mode). (Fix from /review on 2026-05-18.)
+const RATE_LIMIT_REQUESTS = 5;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  const limit = checkRateLimit(ip, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_MS);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      {
+        error: "Too many requests",
+        detail: `Slow down. Try again at ${new Date(limit.resetAt).toISOString()}.`,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": Math.ceil((limit.resetAt - Date.now()) / 1000).toString(),
+        },
+      },
+    );
+  }
+
   let raw: unknown;
   try {
     raw = await req.json();

@@ -10,7 +10,7 @@
 
 import type { SQL } from "bun";
 import { db } from "./db";
-import { refundPaymentIntent } from "./stripe-refund";
+import { refundPaymentIntent, resolvePaymentIntent } from "./stripe-refund";
 import { sendRefundNotice } from "./emailer";
 import { alert } from "./alerts";
 
@@ -26,6 +26,7 @@ type PendingRefundRow = {
   currency: string;
   error_message: string | null;
   stripe_payment_intent_id: string | null;
+  stripe_checkout_session_id: string | null;
   refund_attempts: number;
   brand_name: string;
 };
@@ -33,7 +34,8 @@ type PendingRefundRow = {
 async function fetchPendingRefunds(sql: SQL): Promise<PendingRefundRow[]> {
   return (await sql`
     select j.id, j.user_id, j.brand_id, j.email_to, j.amount_cents, j.currency,
-           j.error_message, j.stripe_payment_intent_id, j.refund_attempts,
+           j.error_message, j.stripe_payment_intent_id,
+           j.stripe_checkout_session_id, j.refund_attempts,
            b.name as brand_name
     from public.jobs j
     join public.brands b on b.id = j.brand_id
@@ -53,18 +55,52 @@ async function processOneRefund(sql: SQL, row: PendingRefundRow): Promise<void> 
     where id = ${row.id}
   `;
 
-  if (!row.stripe_payment_intent_id) {
-    // No payment_intent on file (e.g., the local_stub path didn't set one
-    // via webhook). Skip the refund call; mark completed.
+  // Resolve the payment_intent. If the job has it cached (common path),
+  // use it. If not, fetch the session from Stripe — covers async payment
+  // methods (delayed bank transfers etc.) where Stripe doesn't populate
+  // payment_intent on the original checkout.session.completed event.
+  // (Fix from /review 2026-05-18: without this we were silently marking
+  // refund_status='completed' WITHOUT actually refunding for any job
+  // missing payment_intent, even ones with real customer money on the line.)
+  let paymentIntentId = row.stripe_payment_intent_id;
+  if (!paymentIntentId) {
+    if (!row.stripe_checkout_session_id) {
+      // No session id either — local_stub path lands here. Mark completed
+      // (nothing real to refund against).
+      await sql`
+        update public.jobs
+        set refund_status = 'completed', refund_last_error = null
+        where id = ${row.id}
+      `;
+      return;
+    }
+    const resolved = await resolvePaymentIntent(row.stripe_checkout_session_id);
+    if (!resolved.ok) {
+      await sql`
+        update public.jobs
+        set refund_last_error = ${"resolve: " + resolved.reason}
+        where id = ${row.id}
+      `;
+      if (row.refund_attempts + 1 >= REFUND_MAX_ATTEMPTS) {
+        await sql`update public.jobs set refund_status = 'failed' where id = ${row.id}`;
+        await alert("error", "refund: could not resolve payment_intent", {
+          job_id: row.id,
+          session_id: row.stripe_checkout_session_id,
+          reason: resolved.reason,
+        });
+      }
+      return;
+    }
+    paymentIntentId = resolved.paymentIntentId;
+    // Cache so we don't re-fetch on retry.
     await sql`
       update public.jobs
-      set refund_status = 'completed', refund_last_error = null
+      set stripe_payment_intent_id = ${paymentIntentId}
       where id = ${row.id}
     `;
-    return;
   }
 
-  const result = await refundPaymentIntent(row.stripe_payment_intent_id);
+  const result = await refundPaymentIntent(paymentIntentId);
 
   if (result.ok) {
     await sql`
@@ -108,7 +144,7 @@ async function processOneRefund(sql: SQL, row: PendingRefundRow): Promise<void> 
     await alert("error", "refund attempts exhausted — manual intervention required", {
       job_id: row.id,
       user_id: row.user_id,
-      payment_intent: row.stripe_payment_intent_id,
+      payment_intent: paymentIntentId,
       last_error: result.message,
     });
   }

@@ -58,6 +58,26 @@ export type CliRunError = {
 
 export type CliRunResult = CliRunSuccess | CliRunError;
 
+// Module-level handle to the running CLI subprocess (if any). Exposed so
+// the worker's signal handler can kill the child during graceful shutdown.
+// Single-concurrency worker → one active proc at most. (Fix from /review
+// 2026-05-18: without this, SIGTERM during Railway deploy left the child
+// running until Bun's process tree was SIGKILLed, with a stuck job in
+// 'running' state until the 30-min lease reclaim.)
+let _activeProc: Bun.Subprocess | null = null;
+let _shutdownRequested = false;
+
+export function killActiveSubprocess(): void {
+  _shutdownRequested = true;
+  if (_activeProc) {
+    try {
+      _activeProc.kill("SIGTERM");
+    } catch {
+      // Best effort; the proc may have just exited
+    }
+  }
+}
+
 /**
  * Run the CLI for one job. Caller passes the customer's HostedConfig + the
  * shared API keys to inject as env vars. Returns either a success record
@@ -81,6 +101,23 @@ export async function runCliJob(args: {
     }
   };
 
+  // Explicit env allowlist instead of spreading process.env. Keeps
+  // DATABASE_URL / SUPABASE_SERVICE_ROLE_KEY / STRIPE_SECRET_KEY /
+  // POSTMARK_SERVER_TOKEN out of the CLI subprocess in case a future
+  // CLI dependency (or compromised npm transitive) reads process.env to
+  // exfiltrate. (P0 finding from /review on 2026-05-18.)
+  const childEnv: Record<string, string> = {
+    PATH: process.env.PATH ?? "",
+    HOME: process.env.HOME ?? "",
+    OPENAI_API_KEY: args.openaiKey,
+    ANTHROPIC_API_KEY: args.anthropicKey,
+  };
+  // Preserve a handful of runtime envs that affect Bun/Node bootstrap
+  // (NOT secrets).
+  for (const k of ["BUN_INSTALL", "NODE_ENV", "TZ", "LANG", "LC_ALL"]) {
+    if (process.env[k]) childEnv[k] = process.env[k]!;
+  }
+
   const proc = Bun.spawn(
     [
       "bun",
@@ -93,16 +130,14 @@ export async function runCliJob(args: {
       sqlitePath,
     ],
     {
-      env: {
-        ...process.env,
-        OPENAI_API_KEY: args.openaiKey,
-        ANTHROPIC_API_KEY: args.anthropicKey,
-      },
+      env: childEnv,
       stdin: new TextEncoder().encode(JSON.stringify(args.config)),
       stdout: "pipe",
       stderr: "pipe",
     },
   );
+
+  _activeProc = proc;
 
   // Race the subprocess against the configured timeout. Track whether WE
   // killed it — distinguishes a real timeout from a shutdown-induced kill
@@ -113,8 +148,13 @@ export async function runCliJob(args: {
     proc.kill("SIGKILL");
   }, env.cliRunTimeoutMs);
 
-  const exitCode = await proc.exited;
-  clearTimeout(timeoutHandle);
+  let exitCode: number | null;
+  try {
+    exitCode = await proc.exited;
+  } finally {
+    clearTimeout(timeoutHandle);
+    _activeProc = null;
+  }
 
   const stdoutText = await new Response(proc.stdout).text();
   const stderrText = await new Response(proc.stderr).text();
@@ -157,14 +197,15 @@ export async function runCliJob(args: {
     };
   }
 
-  // Killed by something else (e.g., the worker received SIGTERM and signaled
-  // its children). Don't classify as a real failure; the job should be left
-  // in 'running' state so the stale-lease reclaim picks it up.
-  if (exitCode === null) {
+  // Killed by the worker's shutdown handler? Treat as INTERRUPTED so the
+  // job stays in 'running' for the stale-lease reclaim to pick up. Same
+  // applies to signal-coded exits (137 = SIGKILL, 143 = SIGTERM) — those
+  // mean SOMETHING killed us, not that the CLI itself failed.
+  if (_shutdownRequested || exitCode === null || exitCode === 137 || exitCode === 143) {
     return {
       ok: false,
       code: "INTERRUPTED",
-      message: "CLI subprocess was interrupted (likely worker shutdown)",
+      message: `CLI subprocess interrupted (exitCode=${exitCode}, shutdown=${_shutdownRequested})`,
       cleanup,
     };
   }

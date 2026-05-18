@@ -18,6 +18,47 @@ export type RefundResult =
   | { ok: false; code: string; message: string };
 
 /**
+ * Look up the payment_intent for a Stripe Checkout session. Used by the
+ * refunder when the job's stripe_payment_intent_id is null — this can
+ * happen for async payment methods (delayed bank transfers, ACH, BACS)
+ * where Stripe doesn't populate payment_intent on the original
+ * checkout.session.completed event. We retrieve the session with the
+ * payment_intent expanded.
+ *
+ * (Fix from /review on 2026-05-18 — without this, the refunder silently
+ * marked refund_status='completed' WITHOUT actually refunding.)
+ */
+export async function resolvePaymentIntent(
+  sessionId: string,
+): Promise<{ ok: true; paymentIntentId: string } | { ok: false; reason: string }> {
+  if (isStripeStub()) {
+    return { ok: true, paymentIntentId: `pi_stub_${sessionId}` };
+  }
+  try {
+    const session = await client().checkout.sessions.retrieve(sessionId, {
+      expand: ["payment_intent"],
+    });
+    const pi =
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : session.payment_intent?.id;
+    if (!pi) {
+      return {
+        ok: false,
+        reason:
+          "session has no payment_intent (async payment method still pending or already refunded)",
+      };
+    }
+    return { ok: true, paymentIntentId: pi };
+  } catch (e) {
+    return {
+      ok: false,
+      reason: (e as Error).message ?? "stripe.checkout.sessions.retrieve failed",
+    };
+  }
+}
+
+/**
  * Issue a refund for a paid checkout that failed downstream. In stub mode
  * we log and pretend success. In test/live we call the real Stripe API.
  */

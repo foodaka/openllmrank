@@ -10,7 +10,7 @@
 import { env } from "./env";
 import { db, closeDb } from "./db";
 import { claimJob, markCompleted, markFailed, type Job } from "./queue";
-import { runCliJob } from "./cli-runner";
+import { runCliJob, killActiveSubprocess } from "./cli-runner";
 import { writeRunToPostgres } from "./result-writer";
 import { startRefunderLoop } from "./refunder";
 import { startEmailRetryLoop } from "./email-retry";
@@ -132,10 +132,24 @@ async function shutdown(signal: string): Promise<void> {
   shuttingDown = true;
   console.log(`[worker] ${signal} received, shutting down...`);
 
+  // Kill the active CLI subprocess so the platform's SIGKILL grace timer
+  // doesn't reap us mid-job with no cleanup. The killed subprocess
+  // resolves runCliJob with code='INTERRUPTED' and the job stays in
+  // 'running' state — the stale-lease reclaim in claimJob picks it up
+  // on the next worker boot. (Fix from /review 2026-05-18.)
   if (activeJobId) {
-    console.log(`[worker] waiting for active job ${activeJobId} to complete...`);
-    while (activeJobId) {
-      await sleep(500);
+    console.log(`[worker] killing active job ${activeJobId} subprocess...`);
+    killActiveSubprocess();
+    // Bound the wait — most platforms give us ~25-30s before SIGKILL.
+    const SHUTDOWN_WAIT_MS = 20_000;
+    const start = Date.now();
+    while (activeJobId && Date.now() - start < SHUTDOWN_WAIT_MS) {
+      await sleep(250);
+    }
+    if (activeJobId) {
+      console.log(
+        `[worker] WARN: active job ${activeJobId} did not exit cleanly within ${SHUTDOWN_WAIT_MS}ms; lease will reclaim it`,
+      );
     }
   }
 

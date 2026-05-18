@@ -21,8 +21,23 @@ export type CheckoutSessionResult = {
   mode: "local_stub" | "test" | "live";
 };
 
+// Stub mode is OPT-IN only — production must explicitly set STRIPE_MODE.
+// A missing STRIPE_MODE env var in production would otherwise default this to
+// "local_stub", which the webhook accepts with header `x-stub-event: 1` and
+// no signature verification — letting anyone create unlimited paid jobs.
+// (P0 finding from /review on 2026-05-18.)
 function isStubMode(): boolean {
-  return (process.env.STRIPE_MODE ?? "local_stub") === "local_stub";
+  const mode = process.env.STRIPE_MODE;
+  if (!mode) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "STRIPE_MODE is required in production (set to 'test' or 'live'). " +
+          "local_stub is dev-only.",
+      );
+    }
+    return true; // dev default
+  }
+  return mode === "local_stub";
 }
 
 let stripeClient: Stripe | null = null;
@@ -91,12 +106,19 @@ export async function createCheckoutSession(
 
 // Verify a Stripe webhook signature. In stub mode we accept a magic header
 // `x-stub-event: 1` and trust the payload (only meaningful on localhost).
+// Belt-and-suspenders: the stub branch ALSO requires NODE_ENV !== production
+// even if STRIPE_MODE is somehow misconfigured. (P0 from /review 2026-05-18.)
 export function verifyWebhook(
   rawBody: string,
   signature: string | null,
   stubHeader: string | null,
 ): Stripe.Event {
   if (isStubMode()) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "Refusing stub webhook in production — STRIPE_MODE must be 'test' or 'live'",
+      );
+    }
     if (stubHeader === "1") {
       return JSON.parse(rawBody) as Stripe.Event;
     }
