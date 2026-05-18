@@ -1,4 +1,7 @@
-.env.local
 node_modules/
 outbox/
 *.tsbuildinfo
+
+# Env files — everything except .env.example is gitignored.
+.env*
+!.env.example

@@ -1,5 +1,10 @@
 .next/
-.env.local
-.env*.local
 node_modules/
 *.tsbuildinfo
+
+# Env files — everything except .env.example is gitignored.
+# .env.local      — local dev secrets
+# .env.prod       — production values for reference (NEVER source locally)
+# .env.staging    — etc.
+.env*
+!.env.example
