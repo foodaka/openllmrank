@@ -17,8 +17,8 @@ export const colors = {
 } as const;
 
 export const fonts = {
-  display: 'Georgia, "Times New Roman", serif',
-  body: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+  display: '"Fraunces", Georgia, "Times New Roman", serif',
+  body: '"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
 } as const;
 
 export const radii = {

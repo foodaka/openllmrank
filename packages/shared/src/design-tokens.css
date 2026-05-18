@@ -2,6 +2,11 @@
  * Editorial design tokens, mirrored from packages/shared/src/design-tokens.ts
  * and packages/cli/src/core/render-html.ts. Import this once from a Next.js
  * global stylesheet (web app) or include in an inline <style> (emails).
+ *
+ * Web fonts (Fraunces + DM Sans) are loaded by the host app via a Google
+ * Fonts <link> in its document head. The font-family values below fall
+ * back to Georgia / system sans if the web fonts haven't loaded yet —
+ * preserves the editorial aesthetic during cold loads.
  */
 
 :root {
@@ -15,8 +20,8 @@
   --win: #476f53;
   --loss: #9f3a21;
 
-  --font-display: Georgia, "Times New Roman", serif;
-  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 
   --radius-sm: 3px;
   --radius-md: 7px;

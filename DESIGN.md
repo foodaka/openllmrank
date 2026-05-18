@@ -30,8 +30,8 @@ Every design decision serves this. When you have to choose between two options, 
 
 | Role | Font | Notes |
 |------|------|-------|
-| Display / hero | Georgia (or other transitional serif: "Times New Roman", serif as fallback) | Weight 500. Line-height 0.98. Letter-spacing -1% to -2% (`letter-spacing: -0.01em`). Serif is the differentiator. Do NOT swap to a sans-serif "for consistency." |
-| Body | `-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif` | Line-height 1.48. System sans is intentional for v1 — Georgia carries the brand. v1.1 may swap to a hosted body font (DM Sans, Geist) as a polish task. |
+| Display / hero | **Fraunces**, Georgia, "Times New Roman", serif | Fraunces is a variable serif with an `opsz` axis (9..144) — gets dramatic at hero sizes. Loaded from Google Fonts. Falls back to Georgia if Google Fonts is unreachable. Weight 500. Line-height 0.98. Letter-spacing -1% to -2%. Serif is the differentiator. Do NOT swap to a sans-serif "for consistency." |
+| Body | **DM Sans**, `-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif` | DM Sans is geometric, characterful, NOT Inter. Loaded from Google Fonts. Falls back to system sans. Line-height 1.48. |
 | Kicker labels | Body font, 12px UPPERCASE, `letter-spacing: 0.11em`, color `--accent` | Used to introduce every section / step. The editorial signature. |
 | Numbers, rates, prices | Body font, `font-variant-numeric: tabular-nums` | Always tabular. Don't let "9" and "1" have different widths in data. |
 | Code | Not currently used in product surfaces. If needed, use `Berkeley Mono, "JetBrains Mono", monospace`. |
@@ -215,6 +215,8 @@ These patterns are explicitly forbidden in any new code. If a contributor or AI 
 | 2026-05-17 | Approved wizard step 1 mockup (variant A) | See `~/.gstack/projects/foodaka-openllmrank/designs/wizard-step1-20260517/variant-A.png`. The reference visual for every wizard step. |
 | 2026-05-17 | Stripe Checkout branding (logo + brand color `#376b5b`) required before going live | Default Stripe purple clashes with moss; configure in the Stripe Dashboard before flipping to live mode. Captured in TODOS.md. |
 | 2026-05-17 | DESIGN.md codified | This file. Future contributors and AI agents read this before touching anything visual. Created by `/design-consultation`. |
+| 2026-05-17 | Web fonts adopted: Fraunces (display) + DM Sans (body) via Google Fonts | Replaces the v1-shipped Georgia-display-+-system-sans-body combo. Closes the "biggest visible weakness" identified in the self-rating (7→targeted-8.5). Falls back to Georgia / system if Google Fonts unreachable, so CLI reports work offline. Same `<link>` tag in both the Next.js layout and the CLI report HTML for consistency. |
+| 2026-05-17 | `/sample-report.html` wired (Plausible report from `packages/cli/examples`) | Was a dead link; now serves a real anonymized example using Plausible as the brand. Public-safe (Plausible is the comparable, not a customer). Lives at `packages/web/public/sample-report.html`. |
 
 ## File Map
 
