@@ -57,14 +57,15 @@ export function loadConfigFromFile(path: string): Config {
 /**
  * Load config from stdin. Used by the hosted worker which pipes a JSON config
  * to `openllmrank run --config-from-stdin --output-json` for each job.
+ *
+ * Uses Bun.stdin.text() instead of the async-iterator-over-process.stdin
+ * pattern because Linux Bun 1.3.13 doesn't reliably surface EOF when stdin
+ * comes from `Bun.spawn`'s `stdin: Uint8Array` form, causing the async
+ * iterator to hang. Bun.stdin.text() reads to EOF synchronously and works
+ * on both macOS and Linux. (Fix from /review CI failure on 2026-05-18.)
  */
 export async function loadConfigFromStdin(): Promise<Config> {
-  const chunks: Uint8Array[] = [];
-  // Bun's process.stdin is an async iterable of chunks; Node-compatible.
-  for await (const chunk of process.stdin as AsyncIterable<Uint8Array>) {
-    chunks.push(chunk);
-  }
-  const text = Buffer.concat(chunks).toString("utf8").trim();
+  const text = (await Bun.stdin.text()).trim();
   if (text.length === 0) {
     throw new ConfigLoadError({
       code: "CONFIG_INVALID_JSON",
