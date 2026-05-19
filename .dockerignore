@@ -1,0 +1,34 @@
+# Files excluded from `docker build` context. Smaller context = faster
+# builds AND avoids accidentally baking secrets into the image.
+
+# Node / Bun
+node_modules
+.next
+*.tsbuildinfo
+
+# Git
+.git
+.gitignore
+
+# Env files — production env vars come from Railway's Variables tab,
+# never from baked-in .env files. Only .env.example ships (it's safe).
+.env
+.env.*
+!.env.example
+
+# Local artifacts
+data/
+dist/
+packages/worker/outbox/
+supabase/.temp/
+
+# Unrelated sibling work
+aave/
+
+# CI / docs (not needed at runtime)
+.github/
+DESIGN.md
+DEPLOY.md
+TODOS.md
+CHANGELOG.md
+CONTRIBUTING.md

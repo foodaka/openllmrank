@@ -4,37 +4,25 @@
 # is the ONLY service we deploy to Railway — the Next.js webapp goes to
 # Vercel separately.
 #
-# Build: Nixpacks auto-detects bun.lock at repo root and runs `bun install`
-# for the whole workspace (CLI + shared + worker). The worker then runs
-# `bun run packages/worker/src/index.ts` and subprocesses the CLI from
-# packages/cli when it claims a job.
+# Build: Docker. The Dockerfile uses `oven/bun:1.3.13-slim` directly so
+# the runtime matches local dev exactly. We switched from Nixpacks
+# because Nixpacks auto-detects Next.js in the workspace and tries to
+# install Node.js 18.x alongside Bun, which is EOL and rejected by the
+# Nix package set as of 2026-05. The Dockerfile is reproducible and
+# avoids that surface entirely.
 #
 # This is NOT a web service — no HTTP listener, no port, no healthcheck
 # URL. Railway treats it as a long-running process and restarts on crash.
 
 [build]
-builder = "NIXPACKS"
-
-[build.nixpacksConfig]
-# Pin Bun version to match what we run locally and what packages/cli's
-# engines field requires (>=1.3.0).
-providers = ["bun"]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-# Run the worker entrypoint. Resolves @openllmrank/cli + @openllmrank/shared
-# via the Bun workspace.
-startCommand = "bun run packages/worker/src/index.ts"
-
 # Worker should restart on crash but give up after repeated failures so we
 # get paged via Railway's alerting instead of crashlooping silently.
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
-# Region: pick whatever's closest to your Supabase project to minimize
-# query latency. us-east-1 is a safe default; change if your Supabase is
-# elsewhere.
-# region = "us-east-1"
-
-# Resource limits — start small. v1 traffic should fit in 512MB. Bump if
-# the queue depth grows.
-# (Railway sets sensible defaults; only override if needed.)
+# startCommand is provided by the Dockerfile's CMD line; no need to set
+# it here unless we want to override.
