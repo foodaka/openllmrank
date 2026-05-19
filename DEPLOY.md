@@ -131,9 +131,21 @@ Then in https://railway.app dashboard:
 ### 2.2 Env vars (Variables tab)
 
 ```
-DATABASE_URL=postgresql://postgres:<password>@aws-...pooler.supabase.com:5432/postgres
-# ^ Use Supabase's "Direct connection" string, NOT the pooler URL.
-# Supabase Settings → Database → "Direct connection"
+DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+# ^ Use Supabase's "Session pooler" connection string. NOT Direct connection.
+# NOT Transaction pooler (port 6543).
+#
+# Supabase Settings → Database → Connection string → "Session pooler" tab.
+#
+# Why session pooler:
+#   - Bun.SQL uses prepared statements by default
+#   - Transaction pooler (port 6543) drops connections after each transaction
+#     and doesn't support prepared statements → every query fails with
+#     "Connection closed"
+#   - Direct connection works on IPv6-only on the free tier; Railway
+#     containers often can't reach it depending on region
+#   - Session pooler supports prepared statements + holds connections
+#     open for long-lived workers like ours — the right primitive
 
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
@@ -275,7 +287,9 @@ Railway auto-redeploys.
 
 ## Troubleshooting
 
-**"connection refused" on first Railway deploy** — DATABASE_URL is the pooler URL. Use Direct connection (port 5432, not 6543).
+**"Connection closed" repeated on every query (job_loop/refunder/email-retry tick failures)** — DATABASE_URL is the Transaction pooler URL (port 6543). Transaction pooler closes connections after each transaction and doesn't support prepared statements; Bun.SQL uses prepared statements by default, so every query fails. Fix: switch to **Session pooler** URL (Supabase Settings → Database → Connection string → "Session pooler" tab). Port 5432, supports prepared statements and persistent connections.
+
+**"connection refused" on first Railway deploy** — DATABASE_URL is missing or malformed. Verify the env var is set in Railway → Variables. Common issues: extra whitespace, surrounding quotes that shouldn't be there, missing `:5432/postgres` suffix.
 
 **Webhook signature verification fails** — `STRIPE_WEBHOOK_SECRET` in Vercel doesn't match what Stripe Dashboard shows. Re-copy from Stripe Dashboard → Developers → Webhooks → click endpoint → Signing secret.
 
