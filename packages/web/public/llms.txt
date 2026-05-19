@@ -1,0 +1,29 @@
+# openllmrank
+
+> Privacy-friendly, open-source analytics for AI search visibility. We measure how often ChatGPT and Claude cite your brand versus your competitors when answering buying questions your customers actually type, and deliver a one-time $29.99 emailed report with the findings.
+
+openllmrank is a hosted SaaS plus an MIT-licensed CLI. The hosted product is for marketing leads who want answers without running a CLI; the open-source CLI is for engineers who want to self-host and bring their own OpenAI and Anthropic API keys.
+
+## Core pages
+
+- [Home](https://openllmrank.xyz/): What the report measures, how it works, sample, FAQ, pricing.
+- [Sample report](https://openllmrank.xyz/sample-report.html): A real (anonymized) report so you can see exactly what gets delivered.
+- [Wizard — start a report](https://openllmrank.xyz/wizard/brand): Three-minute signup. Enter brand, competitors, and buying questions.
+- [Terms of Service](https://openllmrank.xyz/terms): Service terms, refund policy, AI-output disclaimer, governing law.
+- [Privacy Policy](https://openllmrank.xyz/privacy): What we collect, who we share it with, retention, user rights.
+
+## How the report is generated
+
+- We run each of your buying-question prompts multiple times through the latest GPT and Claude models with web search enabled.
+- We capture every response, extract every brand citation, and compute citation rates per prompt per brand.
+- We compare your brand against the competitors you provided and surface the content gaps that explain the difference.
+- Reports are emailed within roughly fifteen minutes of payment. If we cannot generate a report, the charge is refunded automatically.
+
+## Open source
+
+- [openllmrank on GitHub](https://github.com/foodaka/openllmrank): MIT-licensed monorepo. The CLI is published as `openllmrank` on npm.
+- [openllmrank on npm](https://www.npmjs.com/package/openllmrank): Install with `npm i -g openllmrank`, bring your own OpenAI and Anthropic keys, run the same analysis locally.
+
+## Contact
+
+- Reach us via the contact form on any page of openllmrank.xyz.
