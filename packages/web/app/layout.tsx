@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "../styles/globals.css";
 
 // Editorial display: Fraunces (variable, opsz axis 9..144 — dramatic at hero sizes).
@@ -36,7 +37,10 @@ export default function RootLayout({
         />
         <link rel="stylesheet" href={GOOGLE_FONTS_HREF} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
