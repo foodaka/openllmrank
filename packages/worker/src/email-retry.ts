@@ -117,10 +117,13 @@ async function renderReportFromPg(
     ts: c.ts,
     response_text: c.response_text,
     search_results_json: c.search_results_json,
-    latency_ms: c.latency_ms,
-    tokens_in: c.tokens_in,
-    tokens_out: c.tokens_out,
-    cost_usd: c.cost_usd,
+    latency_ms: Number(c.latency_ms),
+    tokens_in: Number(c.tokens_in),
+    tokens_out: Number(c.tokens_out),
+    // Postgres numeric(10,6) comes back as a string from Bun.SQL; the CLI
+    // renderer was written against SQLite where these are numbers, so
+    // formatMoney() calls .toFixed() and crashes on a string.
+    cost_usd: Number(c.cost_usd),
     error_code: null,
     error_message: null,
   }));
