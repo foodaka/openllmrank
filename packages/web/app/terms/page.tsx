@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ContactLink } from "../_components/contact-link";
 
 export const metadata = {
   title: "Terms of Service — openllmrank",
@@ -63,10 +64,8 @@ export default function TermsPage() {
             <li>
               <strong>Quality refund</strong> &mdash; If you receive
               your report but believe it is materially incomplete or
-              inaccurate, email{" "}
-              <a href="mailto:hello@openllmrank.xyz">
-                hello@openllmrank.xyz
-              </a>{" "}
+              inaccurate, send us a note via the{" "}
+              <ContactLink defaultSubject="Quality refund request">contact form</ContactLink>{" "}
               within seven days with the specifics. We will review and,
               at our discretion, issue a partial or full refund.
             </li>
@@ -201,10 +200,8 @@ export default function TermsPage() {
 
           <h2>14. Contact</h2>
           <p>
-            Questions? Email{" "}
-            <a href="mailto:hello@openllmrank.xyz">
-              hello@openllmrank.xyz
-            </a>
+            Questions? Reach us via the{" "}
+            <ContactLink defaultSubject="Terms question">contact form</ContactLink>
             .
           </p>
         </article>
@@ -214,6 +211,7 @@ export default function TermsPage() {
             openllmrank &middot; Privacy-friendly, open-source analytics for AI search visibility &middot;{" "}
             <Link href="/privacy">Privacy</Link> &middot;{" "}
             <Link href="/terms">Terms</Link> &middot;{" "}
+            <ContactLink>Contact</ContactLink> &middot;{" "}
             <a href="https://github.com/foodaka/openllmrank">Open source CLI</a>
           </span>
         </footer>

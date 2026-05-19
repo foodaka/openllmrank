@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ContactLink } from "./_components/contact-link";
 
 // Marketing landing page. Editorial long-scroll, mirrors the approved
 // hero mockup at:
@@ -199,6 +200,7 @@ export default function HomePage() {
             openllmrank &middot; Privacy-friendly, open-source analytics for AI search visibility &middot;{" "}
             <Link href="/privacy">Privacy</Link> &middot;{" "}
             <Link href="/terms">Terms</Link> &middot;{" "}
+            <ContactLink>Contact</ContactLink> &middot;{" "}
             <a href="https://github.com/foodaka/openllmrank">Open source CLI</a>
           </span>
         </footer>

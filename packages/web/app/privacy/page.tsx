@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ContactLink } from "../_components/contact-link";
 
 export const metadata = {
   title: "Privacy Policy — openllmrank",
@@ -108,10 +109,8 @@ export default function PrivacyPage() {
             We keep your job record and generated report indefinitely so
             you can request a re-send. Payment records are retained for
             seven years to satisfy tax and accounting requirements. You
-            can request deletion at any time by emailing us at{" "}
-            <a href="mailto:hello@openllmrank.xyz">
-              hello@openllmrank.xyz
-            </a>
+            can request deletion at any time via our{" "}
+            <ContactLink defaultSubject="Data deletion request">contact form</ContactLink>
             ; we will delete your job record, report, and email address
             within thirty days, except where retention is legally
             required.
@@ -131,10 +130,8 @@ export default function PrivacyPage() {
             <li>Object to certain processing.</li>
           </ul>
           <p>
-            To exercise any of these rights, email{" "}
-            <a href="mailto:hello@openllmrank.xyz">
-              hello@openllmrank.xyz
-            </a>
+            To exercise any of these rights, use our{" "}
+            <ContactLink defaultSubject="Privacy rights request">contact form</ContactLink>
             . We respond within thirty days.
           </p>
 
@@ -182,10 +179,8 @@ export default function PrivacyPage() {
 
           <h2>11. Contact</h2>
           <p>
-            Questions about this policy? Email{" "}
-            <a href="mailto:hello@openllmrank.xyz">
-              hello@openllmrank.xyz
-            </a>
+            Questions about this policy? Reach us via the{" "}
+            <ContactLink defaultSubject="Privacy policy question">contact form</ContactLink>
             .
           </p>
         </article>
@@ -195,6 +190,7 @@ export default function PrivacyPage() {
             openllmrank &middot; Privacy-friendly, open-source analytics for AI search visibility &middot;{" "}
             <Link href="/privacy">Privacy</Link> &middot;{" "}
             <Link href="/terms">Terms</Link> &middot;{" "}
+            <ContactLink>Contact</ContactLink> &middot;{" "}
             <a href="https://github.com/foodaka/openllmrank">Open source CLI</a>
           </span>
         </footer>
