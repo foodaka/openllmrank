@@ -12,10 +12,39 @@ const GOOGLE_FONTS_HREF =
   "&family=DM+Sans:wght@400;500;600;700" +
   "&display=swap";
 
+const SITE_URL = "https://openllmrank.xyz";
+const SITE_NAME = "openllmrank";
+const SITE_DESCRIPTION =
+  "Privacy-friendly, open-source analytics for AI search visibility. See how ChatGPT and Claude rank your brand against your competitors. One emailed report, $29.99.";
+
 export const metadata: Metadata = {
-  title: "openllmrank — AI-search visibility report",
-  description:
-    "Find out exactly how ChatGPT and Claude rank your brand against your competitors. One-time $29.99.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "openllmrank — AI-search visibility analytics",
+    template: "%s — openllmrank",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: "openllmrank — AI-search visibility analytics",
+    description: SITE_DESCRIPTION,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "openllmrank — AI-search visibility analytics",
+    description: SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
