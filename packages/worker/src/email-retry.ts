@@ -66,10 +66,20 @@ async function renderReportFromPg(
   const brand_name = cfg.brand.name;
   const competitor_names = cfg.competitors.map((c) => c.name);
 
-  // Pull rows for this job's run only.
+  // Scope every query to the SPECIFIC cli_run_id from the completed
+  // attempt. Without this, a job that was retried by stale-lease reclaim
+  // (worker crashed mid-write before markCompleted) leaves stale rows
+  // from the first attempt that aggregate into the email — double-counted
+  // samples, wrong citation rates. (P2 from /codex review on 2026-05-19.)
+  const cli_run_id = row.cli_run_id;
+  if (!cli_run_id) {
+    throw new Error("renderReportFromPg called for job with no cli_run_id");
+  }
+
+  // Pull rows for THIS specific cli_run_id only.
   const runRows = (await sql`
     select cli_run_id as run_id, started_at::text, finished_at::text, config_hash
-    from public.runs where job_id = ${row.id}
+    from public.runs where job_id = ${row.id} and cli_run_id = ${cli_run_id}
   `) as unknown as Array<RunRow>;
 
   const callRows = (await sql`
@@ -82,7 +92,9 @@ async function renderReportFromPg(
              c.latency_ms, c.tokens_in, c.tokens_out, c.cost_usd
       from public.calls c
       join public.runs r on r.id = c.run_id
-      where c.user_id = ${row.user_id} and r.job_id = ${row.id}
+      where c.user_id = ${row.user_id}
+        and r.job_id = ${row.id}
+        and r.cli_run_id = ${cli_run_id}
     ) sub
   `) as unknown as Array<{
     cli_run_id_dummy: string;
@@ -118,7 +130,9 @@ async function renderReportFromPg(
            c.brand, c.matched_text, c.kind
     from public.citations c
     join public.runs r on r.id = c.run_id
-    where c.user_id = ${row.user_id} and r.job_id = ${row.id}
+    where c.user_id = ${row.user_id}
+      and r.job_id = ${row.id}
+      and r.cli_run_id = ${cli_run_id}
   `) as unknown as Array<CitationRow>;
 
   // Prompts row shape the CLI's computeRates expects

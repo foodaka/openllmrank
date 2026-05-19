@@ -86,7 +86,32 @@ async function processOneJob(job: Job): Promise<void> {
     return;
   }
 
-  // 3. Cleanup tmpdir and mark complete. email_status='pending' tells the
+  // 3. Zero-success guard. If the CLI exited 0 but every provider call
+  //    failed individually (e.g., the CLI's retry loop exhausted on rate
+  //    limits, or all providers returned auth errors), result.ok is true
+  //    but result.succeeded is 0. Don't ship a no-data report — refund
+  //    instead. (P1 from /codex review on 2026-05-19.)
+  if (result.succeeded === 0) {
+    result.cleanup();
+    const detail =
+      result.failed > 0
+        ? `CLI completed with 0 successful calls and ${result.failed} provider failures`
+        : "CLI completed with no successful calls (empty run)";
+    console.error(`[worker] job=${job.id} ${detail} — refunding`);
+    await markFailed(sql, job.id, {
+      error_code: "ZERO_SUCCESS",
+      error_message: detail,
+    });
+    await alert("warn", "job had zero successful calls (refund queued)", {
+      job_id: job.id,
+      failed: result.failed,
+      cost_usd_total: result.cost_usd_total,
+    });
+    activeJobId = null;
+    return;
+  }
+
+  // 4. Cleanup tmpdir and mark complete. email_status='pending' tells the
   //    email-retry loop to send the report.
   result.cleanup();
   await markCompleted(sql, job.id, {
