@@ -1,0 +1,24 @@
+{
+  "brand": { "name": "Aave", "aliases": ["aave.com", "app.aave.com"] },
+  "competitors": [
+    { "name": "Compound", "aliases": ["compound.finance"] },
+    { "name": "Morpho", "aliases": ["morpho.org"] },
+    { "name": "Spark", "aliases": ["spark.fi"] },
+    { "name": "MakerDAO", "aliases": ["makerdao.com", "sky.money", "Sky"] },
+    { "name": "Maple Finance", "aliases": ["maple.finance"] },
+    { "name": "Euler", "aliases": ["euler.finance"] },
+    { "name": "Venus", "aliases": ["venus.io"] }
+  ],
+  "prompts": [
+    "best onchain yield for a $50k stablecoin treasury that prioritizes audits over APY",
+    "DeFi protocols with the best risk-isolated lending markets",
+    "best institutional onchain credit platforms for undercollateralized loans",
+    "best DeFi lending protocols native to Base L2",
+    "DeFi lending protocols that support liquid restaking tokens as collateral"
+  ],
+  "providers": [
+    { "id": "openai", "model": "gpt-4o-mini" }
+  ],
+  "samples_per_prompt": 3,
+  "concurrency_per_provider": 4
+}

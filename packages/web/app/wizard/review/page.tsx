@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { WizardShell } from "../wizard-shell";
 import {
@@ -15,6 +16,8 @@ export default function WizardReviewPage() {
   const [state, setState] = useState<WizardState | null>(null);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
+  const [agreeError, setAgreeError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -53,6 +56,13 @@ export default function WizardReviewPage() {
   async function handlePay() {
     if (!state || !state.brand) return;
     if (!validateEmail()) return;
+    if (!agreed) {
+      setAgreeError(
+        "Please confirm you agree to the Terms and Privacy Policy.",
+      );
+      return;
+    }
+    setAgreeError(null);
 
     setSubmitting(true);
     setSubmitError(null);
@@ -122,7 +132,7 @@ export default function WizardReviewPage() {
       backHref="/wizard/prompts"
       onNext={handlePay}
       nextLabel={submitting ? "Creating checkout..." : "Pay & generate report — $29.99"}
-      nextDisabled={submitting}
+      nextDisabled={submitting || !agreed}
     >
       <dl className="review-summary">
         <div>
@@ -173,6 +183,37 @@ export default function WizardReviewPage() {
         )}
       </div>
 
+      <div className="agree-row">
+        <label className="agree-label">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => {
+              setAgreed(e.target.checked);
+              if (e.target.checked) setAgreeError(null);
+            }}
+            aria-invalid={agreeError ? "true" : "false"}
+            aria-describedby={agreeError ? "agree-error" : undefined}
+          />
+          <span>
+            I agree to the{" "}
+            <Link href="/terms" target="_blank" rel="noopener noreferrer">
+              Terms of Service
+            </Link>{" "}
+            and acknowledge the{" "}
+            <Link href="/privacy" target="_blank" rel="noopener noreferrer">
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
+        {agreeError && (
+          <span className="field-error" id="agree-error" role="alert">
+            {agreeError}
+          </span>
+        )}
+      </div>
+
       <div className="trust-note">
         <p>
           <strong>Refund-on-failure promise:</strong> if we can&rsquo;t
@@ -214,6 +255,29 @@ export default function WizardReviewPage() {
           color: var(--ink);
         }
         .muted { color: var(--muted); }
+        .agree-row {
+          margin: 20px 0 0;
+        }
+        .agree-label {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          font-size: 15px;
+          color: var(--ink);
+          line-height: 1.5;
+          cursor: pointer;
+        }
+        .agree-label input[type="checkbox"] {
+          margin-top: 3px;
+          width: 18px;
+          height: 18px;
+          flex-shrink: 0;
+          accent-color: var(--accent);
+          cursor: pointer;
+        }
+        .agree-label a {
+          color: var(--accent);
+        }
         .trust-note {
           background: var(--soft);
           border: 1px solid var(--line);

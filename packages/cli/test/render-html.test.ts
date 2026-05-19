@@ -122,4 +122,10 @@ describe("renderHtmlReport", () => {
     await rewriter.transform(new Response(fixtureHtml())).text();
     expect(heroScore).toBe("50%");
   });
+
+  test("does not expose internal run costs in the customer HTML report", () => {
+    const html = fixtureHtml();
+    expect(html).not.toContain("Total run cost");
+    expect(html).not.toContain("Total API + web-search fees");
+  });
 });

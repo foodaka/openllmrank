@@ -196,8 +196,10 @@ export default function HomePage() {
 
         <footer className="wrap site-footer">
           <span className="muted">
-            openllmrank &middot; The Plausible of AI search visibility &middot;
-            <a href="https://github.com/foodaka/openllmrank"> Open source CLI</a>
+            openllmrank &middot; Privacy-friendly, open-source analytics for AI search visibility &middot;{" "}
+            <Link href="/privacy">Privacy</Link> &middot;{" "}
+            <Link href="/terms">Terms</Link> &middot;{" "}
+            <a href="https://github.com/foodaka/openllmrank">Open source CLI</a>
           </span>
         </footer>
       </main>

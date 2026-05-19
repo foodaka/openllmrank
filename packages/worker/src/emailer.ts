@@ -6,9 +6,10 @@
 //   1. order-received — sent right after the webhook flips status='paid',
 //                       so the customer has confirmation while the worker
 //                       generates the report. Short, plain note.
-//   2. report          — sent after the run completes, containing the full
-//                       HTML report rendered by packages/cli's
-//                       render-html.ts as the email body.
+//   2. report          — sent after the run completes, with a link to the
+//                       hosted report page. The full report is
+//                       rendered on the web app so email clients don't mangle
+//                       the table layout.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -68,6 +69,7 @@ async function sendOrStub(args: {
     const response = await client().sendEmail({
       From: `${env.postmarkFromName} <${env.postmarkFrom}>`,
       To: args.to,
+      ReplyTo: env.postmarkReplyTo || undefined,
       Subject: args.subject,
       HtmlBody: args.htmlBody,
       TextBody: args.textBody ?? "",
@@ -88,6 +90,15 @@ async function sendOrStub(args: {
       message: err.message ?? String(e),
     };
   }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 // --- order-received template -------------------------------------------------
@@ -179,16 +190,67 @@ export async function sendOrderReceived(args: {
 
 // --- report template ---------------------------------------------------------
 
+export function renderReportReadyHtml(args: {
+  brand_name: string;
+  report_url: string;
+}): string {
+  const brand = escapeHtml(args.brand_name);
+  const url = escapeHtml(args.report_url);
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your openllmrank report is ready</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#fbf8f0;color:#241f19;font-family:"DM Sans",-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.55}
+.wrap{max-width:600px;margin:0 auto;padding:48px 28px}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#376b5b}
+h1{font-family:"Fraunces",Georgia,serif;font-size:36px;font-weight:500;line-height:1.05;margin:12px 0 20px;letter-spacing:-0.01em}
+p{font-size:16px;color:#241f19;margin:0 0 16px}
+.muted{color:#756c60}
+.button{display:inline-block;background:#376b5b;color:#fbf8f0;text-decoration:none;border-radius:7px;padding:14px 22px;font-weight:700;margin:10px 0 18px}
+.url{word-break:break-all;font-size:13px;color:#756c60}
+hr{border:0;border-top:1px solid #e3d8c6;margin:32px 0}
+.sig{font-family:"Fraunces",Georgia,serif;font-style:italic;color:#756c60}
+</style></head>
+<body><div class="wrap">
+<span class="kicker">Report ready</span>
+<h1>Your ${brand} visibility report is ready.</h1>
+<p>Open the report in your browser for the clean table layout, highlighted model responses, and provider breakdown.</p>
+<p><a class="button" href="${url}">View report</a></p>
+<p class="url">${url}</p>
+<hr>
+<p class="sig">— openllmrank</p>
+</div></body></html>`;
+}
+
+export function renderReportReadyText(args: {
+  brand_name: string;
+  report_url: string;
+}): string {
+  return `Your openllmrank visibility report for ${args.brand_name} is ready.
+
+View it here:
+${args.report_url}
+
+— openllmrank`;
+}
+
 export async function sendReport(args: {
   jobId: string;
   to: string;
   brand_name: string;
-  htmlBody: string; // pre-rendered by packages/cli's render-html.ts
+  reportUrl: string;
 }): Promise<EmailResult> {
   return await sendOrStub({
     to: args.to,
     subject: `Your openllmrank visibility report for ${args.brand_name}`,
-    htmlBody: args.htmlBody,
+    htmlBody: renderReportReadyHtml({
+      brand_name: args.brand_name,
+      report_url: args.reportUrl,
+    }),
+    textBody: renderReportReadyText({
+      brand_name: args.brand_name,
+      report_url: args.reportUrl,
+    }),
     tag: "report",
     jobId: args.jobId,
   });

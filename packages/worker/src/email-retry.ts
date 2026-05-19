@@ -11,6 +11,7 @@ import type { SQL } from "bun";
 import { db } from "./db";
 import { sendReport } from "./emailer";
 import { alert } from "./alerts";
+import { env } from "./env";
 import { renderHtmlReport } from "openllmrank/src/core/render-html";
 import type {
   CallRow,
@@ -169,6 +170,10 @@ async function renderReportFromPg(
   });
 }
 
+function reportUrlForJob(jobId: string): string {
+  return `${env.reportBaseUrl.replace(/\/+$/, "")}/reports/${jobId}`;
+}
+
 async function processOneEmail(
   sql: SQL,
   row: PendingEmailRow,
@@ -179,9 +184,8 @@ async function processOneEmail(
     where id = ${row.id}
   `;
 
-  let htmlBody: string;
   try {
-    htmlBody = await renderReportFromPg(sql, row);
+    await renderReportFromPg(sql, row);
   } catch (e) {
     const msg = (e as Error).message;
     await sql`
@@ -203,7 +207,7 @@ async function processOneEmail(
     jobId: row.id,
     to: row.email_to,
     brand_name: row.brand_name,
-    htmlBody,
+    reportUrl: reportUrlForJob(row.id),
   });
 
   if (result.ok) {

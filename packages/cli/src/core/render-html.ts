@@ -76,7 +76,6 @@ export function renderHtmlReport(args: HtmlReportArgs): string {
   const winning = args.gaps.filter((g) => g.gap_score <= 0);
   const topCompetitors = topCompetitorNames(args.rates, args.competitor_names);
   const totalSamples = args.calls.length;
-  const cost = args.calls.reduce((sum, call) => sum + call.cost_usd, 0);
   const dateRange = formatDateRange(args.calls, args.since_iso);
   const providerChart = renderProviderChart(args.rates, args.brand_name, topCompetitors);
   const historyChart = renderHistory(history, [args.brand_name, ...topCompetitors]);
@@ -94,6 +93,13 @@ export function renderHtmlReport(args: HtmlReportArgs): string {
 <style>
 :root{--paper:#fbf8f0;--ink:#241f19;--muted:#756c60;--line:#e3d8c6;--soft:#f2eadc;--accent:#376b5b;--accent-2:#b86b2b;--win:#476f53;--loss:#9f3a21}
 *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;line-height:1.48}.wrap{max-width:1120px;margin:0 auto;padding:48px 28px 36px}header{display:grid;grid-template-columns:1.3fr .7fr;gap:28px;border-bottom:1px solid var(--line);padding-bottom:30px}.kicker{font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--accent);font-weight:700}.brand{font-family:"Fraunces",Georgia,"Times New Roman",serif;font-size:54px;line-height:.98;margin:10px 0 16px;font-weight:500}.sub{color:var(--muted);max-width:670px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px}.meta div,.panel{background:rgba(255,255,255,.38);border:1px solid var(--line);border-radius:7px}.meta div{padding:13px}.label{font-size:12px;color:var(--muted);display:block}.value{font-weight:700}.info-wrap{position:relative;display:inline-block;margin-left:5px;vertical-align:middle;line-height:0}.info{display:inline-flex;width:15px;height:15px;background:transparent;color:var(--muted);align-items:center;justify-content:center;cursor:help;padding:0;border:0;border-radius:50%;transition:color .12s}.info svg{width:15px;height:15px;display:block}.info:hover,.info:focus{color:var(--accent);outline:none}.info-tip{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 8px);background:var(--ink);color:#fbf8f0;font:400 12px/1.42 "DM Sans",sans-serif;padding:9px 11px;border-radius:5px;width:240px;text-align:left;letter-spacing:0;text-transform:none;opacity:0;pointer-events:none;transition:opacity .12s;z-index:10;white-space:normal}.info-tip::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink)}.info-wrap[data-align="right"] .info-tip{left:auto;right:-6px;transform:none}.info-wrap[data-align="right"] .info-tip::after{left:auto;right:10px;transform:none}.info-wrap:hover .info-tip,.info-wrap:focus-within .info-tip{opacity:1}.hero{display:grid;grid-template-columns:.9fr 1.1fr;gap:26px;padding:34px 0}.score{border-left:6px solid var(--accent);padding:4px 0 6px 24px}.score strong{font-family:"Fraunces",Georgia,"Times New Roman",serif;font-size:96px;line-height:.88;font-weight:500}.trend{display:inline-flex;gap:7px;align-items:center;margin-top:12px;color:var(--muted)}.trend b{color:var(--accent)}.panel{padding:22px}.panel h2,.section h2{font-family:"Fraunces",Georgia,"Times New Roman",serif;font-weight:500;font-size:28px;margin:0 0 16px}.section{padding:28px 0;border-top:1px solid var(--line)}table{width:100%;border-collapse:collapse;font-size:14px}th{text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--line);padding:11px 10px}td{padding:13px 10px;border-bottom:1px solid var(--line);vertical-align:top}.provider{font-weight:700;text-transform:capitalize}.prompt{max-width:430px}.rate{font-variant-numeric:tabular-nums}.bar{height:9px;background:var(--soft);border-radius:999px;overflow:hidden;min-width:92px}.bar span{display:block;height:100%;border-radius:999px}.gapcell{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center}.response{margin-top:10px;color:var(--muted);font-size:13px;background:#fffaf1;border:1px solid var(--line);border-radius:6px;padding:12px;max-width:720px}.mark-brand{background:#dbe7de;color:#183f33;border-radius:3px;padding:0 2px}.mark-competitor{background:#f0dcc6;color:#6f351c;border-radius:3px;padding:0 2px}.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}.chart-row{display:grid;grid-template-columns:110px 1fr 46px;gap:12px;align-items:center;margin:12px 0}.chart-track{height:12px;background:var(--soft);border-radius:999px;overflow:hidden}.chart-track span{display:block;height:100%;background:var(--accent);border-radius:999px}.select{border:1px solid var(--line);background:#fffaf1;border-radius:6px;padding:8px 10px;color:var(--ink);margin-bottom:10px}.spark{width:100%;height:42px}.spark path{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.muted{color:var(--muted)}footer{display:flex;justify-content:space-between;gap:20px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:22px}a{color:var(--accent);text-decoration:none}@media (max-width:820px){.wrap{padding:32px 18px}header,.hero,.two{grid-template-columns:1fr}.brand{font-size:42px}.score strong{font-size:76px}.meta{grid-template-columns:1fr}table{font-size:13px}.prompt{max-width:none}footer{display:block}}
+.response{line-height:1.58;padding:14px;max-height:360px;overflow:auto}
+.response p{margin:0 0 10px}
+.response p:last-child{margin-bottom:0}
+.response ol{margin:0 0 10px 20px;padding:0}
+.response li{margin:0 0 8px}
+.response strong,.response-heading{color:var(--ink)}
+.response-heading{font-weight:700}
 </style>
 </head>
 <body>
@@ -108,7 +114,6 @@ export function renderHtmlReport(args: HtmlReportArgs): string {
 <div><span class="label">Runs ${infoTip("One run is a full sweep across all prompts × providers × samples. Typically run weekly.")}</span><span class="value">${args.runs.length}</span></div>
 <div><span class="label">Samples ${infoTip("Total individual API calls in this window. One sample = one prompt asked to one provider, one time.", "right")}</span><span class="value">${totalSamples}</span></div>
 <div><span class="label">Providers ${infoTip("Distinct AI models queried (e.g. OpenAI, Anthropic).")}</span><span class="value">${new Set(brandRateRows.map((r) => r.provider)).size}</span></div>
-<div><span class="label">Cost ${infoTip("Total API + web-search fees spent across all samples in this window.", "right")}</span><span class="value">${formatMoney(cost)}</span></div>
 </div>
 </header>
 <section class="hero">
@@ -142,7 +147,6 @@ ${history.length > 1 ? historyChart : `<p class="muted">Run history appears afte
 </section>
 <footer>
 <span>Generated by <a href="${REPO_URL}">openllmrank v${escapeHtml(args.project_version)}</a></span>
-<span>Total run cost: ${formatMoney(cost)}</span>
 </footer>
 </main>
 <script>
@@ -159,7 +163,7 @@ function renderGapTable(rows: GapRow[], args: HtmlReportArgs, empty: string): st
       const best = g.competitors[0];
       const response = findRecentResponse(args.calls, args.rates, g);
       const width = Math.max(0, Math.min(100, g.gap_score * 100));
-      return `<tr><td class="provider">${escapeHtml(g.provider)}</td><td class="prompt">${escapeHtml(g.prompt_text)}${response ? `<details><summary class="muted">Most recent response</summary><div class="response">${highlightText(response, args.brand_name, best?.name)}</div></details>` : ""}</td><td class="rate">${formatPercent(g.brand_rate)}</td><td>${best ? `${escapeHtml(best.name)} <span class="rate">${formatPercent(best.rate)}</span>` : "&mdash;"}</td><td><div class="gapcell"><span class="rate">${formatPercent(Math.max(0, g.gap_score))}</span><div class="bar"><span style="width:${round(width)}%;background:${gapColor(g.gap_score)}"></span></div></div></td></tr>`;
+        return `<tr><td class="provider">${escapeHtml(g.provider)}</td><td class="prompt">${escapeHtml(g.prompt_text)}${response ? `<details><summary class="muted">Most recent response</summary><div class="response">${renderResponseHtml(response, args.brand_name, best?.name)}</div></details>` : ""}</td><td class="rate">${formatPercent(g.brand_rate)}</td><td>${best ? `${escapeHtml(best.name)} <span class="rate">${formatPercent(best.rate)}</span>` : "&mdash;"}</td><td><div class="gapcell"><span class="rate">${formatPercent(Math.max(0, g.gap_score))}</span><div class="bar"><span style="width:${round(width)}%;background:${gapColor(g.gap_score)}"></span></div></div></td></tr>`;
     })
     .join("")}</tbody></table>`;
 }
@@ -272,11 +276,60 @@ function findRecentResponse(calls: CallRow[], rates: CitationRate[], gap: GapRow
   return matches[0]?.response_text ?? null;
 }
 
-function highlightText(text: string, brand: string, competitor?: string): string {
+function renderResponseHtml(text: string, brand: string, competitor?: string): string {
+  const normalized = text
+    .replace(/\r\n/g, "\n")
+    .replace(/\s+###\s+/g, "\n\n### ")
+    .replace(/\s+(\d+)\.\s+\*\*/g, "\n$1. **")
+    .trim();
+  const lines = normalized.split("\n");
+  const out: string[] = [];
+  let listItems: string[] = [];
+
+  function flushList(): void {
+    if (listItems.length === 0) return;
+    out.push(`<ol>${listItems.map((item) => `<li>${formatResponseInline(item, brand, competitor)}</li>`).join("")}</ol>`);
+    listItems = [];
+  }
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushList();
+      continue;
+    }
+    const heading = /^#{2,3}\s+(.+)$/.exec(line);
+    if (heading) {
+      flushList();
+      out.push(`<p class="response-heading">${formatResponseInline(heading[1]!, brand, competitor)}</p>`);
+      continue;
+    }
+    const item = /^\d+\.\s+(.+)$/.exec(line);
+    if (item) {
+      listItems.push(item[1]!);
+      continue;
+    }
+    flushList();
+    out.push(`<p>${formatResponseInline(line, brand, competitor)}</p>`);
+  }
+  flushList();
+
+  return out.length > 0 ? out.join("") : formatResponseInline(normalized, brand, competitor);
+}
+
+function formatResponseInline(text: string, brand: string, competitor?: string): string {
+  return highlightText(
+    escapeHtml(text).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>"),
+    brand,
+    competitor,
+  );
+}
+
+function highlightText(escapedHtml: string, brand: string, competitor?: string): string {
   const names = [brand, competitor].filter((v): v is string => Boolean(v)).sort((a, b) => b.length - a.length);
-  if (names.length === 0) return escapeHtml(text);
+  if (names.length === 0) return escapedHtml;
   const pattern = new RegExp(`(${names.map(escapeRegExp).join("|")})`, "gi");
-  return escapeHtml(text).replace(pattern, (match) => {
+  return escapedHtml.replace(pattern, (match) => {
     const cls = match.toLowerCase() === brand.toLowerCase() ? "mark-brand" : "mark-competitor";
     return `<span class="${cls}">${match}</span>`;
   });
@@ -307,10 +360,6 @@ function formatDateTime(value: string): string {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
-}
-
-function formatMoney(value: number): string {
-  return `$${value.toFixed(value >= 1 ? 2 : 3)}`;
 }
 
 function escapeRegExp(value: string): string {

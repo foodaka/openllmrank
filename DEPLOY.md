@@ -145,6 +145,9 @@ POSTMARK_MODE=local_stub                # flip to "live" after step 3
 POSTMARK_SERVER_TOKEN=                  # leave empty until step 3
 POSTMARK_FROM=reports@openllmrank.com
 POSTMARK_FROM_NAME=openllmrank
+POSTMARK_REPLY_TO=help@openllmrank.com  # optional, monitored reply inbox
+
+REPORT_BASE_URL=https://app.openllmrank.com
 
 WORKER_ID=railway-prod-1
 WORKER_POLL_INTERVAL_MS=5000
@@ -195,6 +198,7 @@ In Railway dashboard:
    ```
    POSTMARK_MODE=live
    POSTMARK_SERVER_TOKEN=<paste>
+   REPORT_BASE_URL=https://app.openllmrank.com
    ```
 2. Railway auto-redeploys on env change.
 

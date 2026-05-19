@@ -28,6 +28,8 @@ type EnvShape = {
   postmarkToken: string;
   postmarkFrom: string;
   postmarkFromName: string;
+  postmarkReplyTo: string;
+  reportBaseUrl: string;
   workerId: string;
   pollIntervalMs: number;
   leaseTimeoutMs: number;
@@ -75,8 +77,13 @@ function build(): EnvShape {
       | "local_stub"
       | "live",
     postmarkToken: optional("POSTMARK_SERVER_TOKEN"),
-    postmarkFrom: optional("POSTMARK_FROM", "reports@openllmrank.com"),
+    postmarkFrom: optional("POSTMARK_FROM", "report@openllmrank.xyz"),
     postmarkFromName: optional("POSTMARK_FROM_NAME", "openllmrank"),
+    postmarkReplyTo: optional("POSTMARK_REPLY_TO"),
+    reportBaseUrl: optional(
+      "REPORT_BASE_URL",
+      optional("NEXT_PUBLIC_SITE_ORIGIN", "http://localhost:3000"),
+    ),
     workerId: optional("WORKER_ID", `worker-${process.pid}`),
     pollIntervalMs: int("WORKER_POLL_INTERVAL_MS", 5000),
     leaseTimeoutMs: int("WORKER_LEASE_TIMEOUT_MS", 30 * 60 * 1000),
