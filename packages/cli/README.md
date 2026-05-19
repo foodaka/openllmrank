@@ -87,7 +87,7 @@ openllmrank report --html --output weekly-ai-visibility.html
 
 It includes the AI visibility score, trend versus the previous run, the losing gap table with expandable raw responses, winning prompts, provider breakdowns, run-history sparklines, and total run cost. See [examples/sample-report.html](./examples/sample-report.html).
 
-![Sample openllmrank HTML report](./examples/sample-report-screenshot.svg)
+![Sample openllmrank HTML report](./examples/sample-report-screenshot.png)
 
 ## suggest in detail
 

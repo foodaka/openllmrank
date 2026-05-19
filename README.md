@@ -2,6 +2,8 @@
 
 This is the Bun-workspace monorepo for the openllmrank project.
 
+![Sample openllmrank HTML report](./packages/cli/examples/sample-report-screenshot.png)
+
 ## Packages
 
 | Package | Path | Description | Visibility |
