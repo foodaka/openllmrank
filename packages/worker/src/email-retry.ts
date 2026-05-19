@@ -125,10 +125,14 @@ async function renderReportFromPg(
     error_message: null,
   }));
 
+  // citations only carries (call_id, run_id, brand, matched_text, kind).
+  // prompt_id/sample_index live on calls — JOIN through calls so the
+  // shape we hand to computeRates matches the CLI's SQLite query.
   const citationRows = (await sql`
-    select r.cli_run_id as run_id, c.prompt_id, c.sample_index,
+    select r.cli_run_id as run_id, calls.prompt_id, calls.sample_index,
            c.brand, c.matched_text, c.kind
     from public.citations c
+    join public.calls calls on calls.id = c.call_id
     join public.runs r on r.id = c.run_id
     where c.user_id = ${row.user_id}
       and r.job_id = ${row.id}
