@@ -15,8 +15,7 @@ import {
 } from "../core/db";
 import { type Config, type Provider, type ProviderId } from "../core/types";
 import { executeRun, type PlanItem } from "../core/runner";
-import { OpenAIProvider } from "../providers/openai";
-import { AnthropicProvider } from "../providers/anthropic";
+import { buildProviders, ProviderRegistryError } from "../providers/registry";
 import {
   ConfigLoadError,
   loadConfigFromFile,
@@ -83,33 +82,6 @@ function emitJsonError(err: CliRunError | ConfigLoadError): void {
     err instanceof ConfigLoadError ? err.info.detail : err.detail;
   if (detail !== undefined) payload.detail = detail;
   process.stdout.write(JSON.stringify(payload) + "\n");
-}
-
-function buildProviders(cfg: Config): Map<ProviderId, Provider> {
-  const map = new Map<ProviderId, Provider>();
-  const wantedIds = new Set(cfg.providers.map((p) => p.id));
-  const tryRegister = (id: ProviderId, factory: () => Provider) => {
-    try {
-      map.set(id, factory());
-    } catch (e) {
-      const err = e as { kind?: string; message?: string };
-      throw new CliRunError(
-        "PROVIDER_AUTH",
-        err.message ?? String(e),
-      );
-    }
-  };
-  if (wantedIds.has("openai")) tryRegister("openai", () => new OpenAIProvider());
-  if (wantedIds.has("anthropic")) tryRegister("anthropic", () => new AnthropicProvider());
-  for (const id of wantedIds) {
-    if (id !== "openai" && id !== "anthropic") {
-      throw new CliRunError(
-        "PROVIDER_UNSUPPORTED",
-        `Provider '${id}' is not implemented yet. v0.2 supports OpenAI + Anthropic. Gemini and Perplexity coming.`,
-      );
-    }
-  }
-  return map;
 }
 
 function configHash(cfg: Config): string {
@@ -228,7 +200,9 @@ export const runCmd = defineCommand({
       try {
         providers = buildProviders(cfg);
       } catch (e) {
-        if (e instanceof CliRunError) failFast(e);
+        if (e instanceof ProviderRegistryError) {
+          failFast(new CliRunError(e.code, e.message, e.detail));
+        }
         throw e;
       }
       const cfg_hash = configHash(cfg);
