@@ -20,9 +20,11 @@ function minimalConfig(providerIds: Array<"openai" | "anthropic" | "google" | "p
 describe("provider registry", () => {
   test("exposes implemented provider descriptors with env vars and defaults", () => {
     const descriptors = listImplementedProviderDescriptors();
-    expect(descriptors.map((d) => d.id)).toEqual(["openai", "anthropic"]);
+    expect(descriptors.map((d) => d.id)).toEqual(["openai", "anthropic", "google", "perplexity"]);
     expect(getProviderDescriptor("openai")?.envVar).toBe("OPENAI_API_KEY");
     expect(getProviderDescriptor("anthropic")?.envVar).toBe("ANTHROPIC_API_KEY");
+    expect(getProviderDescriptor("google")?.envVar).toBe("GOOGLE_API_KEY");
+    expect(getProviderDescriptor("perplexity")?.envVar).toBe("PERPLEXITY_API_KEY");
     expect(getProviderDescriptor("openai")?.capabilities.groundedSearch).toBe(true);
   });
 
@@ -34,11 +36,13 @@ describe("provider registry", () => {
     expect(providers.get("openai")?.id).toBe("openai");
   });
 
-  test("buildProviders reports unsupported configured providers from registry metadata", () => {
-    expect(() => buildProviders(minimalConfig(["perplexity"]))).toThrow(ProviderRegistryError);
-    expect(() => buildProviders(minimalConfig(["perplexity"]))).toThrow(
-      "Provider 'perplexity' is not implemented yet",
-    );
+  test("buildProviders instantiates Google and Perplexity when keys are present", () => {
+    const providers = buildProviders(minimalConfig(["google", "perplexity"]), {
+      env: { GOOGLE_API_KEY: "google-key", PERPLEXITY_API_KEY: "pplx-key" },
+    });
+    expect([...providers.keys()]).toEqual(["google", "perplexity"]);
+    expect(providers.get("google")?.id).toBe("google");
+    expect(providers.get("perplexity")?.id).toBe("perplexity");
   });
 
   test("buildProviders normalizes missing API keys as provider auth errors", () => {

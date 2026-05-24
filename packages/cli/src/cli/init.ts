@@ -18,6 +18,10 @@ const SAMPLE_CONFIG = {
     { id: "openai", model: "gpt-4o-mini" },
     // Uncomment after adding ANTHROPIC_API_KEY to .env:
     // { id: "anthropic", model: "claude-haiku-4-5" },
+    // Uncomment after adding GOOGLE_API_KEY to .env:
+    // { id: "google", model: "gemini-2.0-flash" },
+    // Uncomment after adding PERPLEXITY_API_KEY to .env:
+    // { id: "perplexity", model: "sonar" },
   ],
   samples_per_prompt: 3,
   concurrency_per_provider: 4,
@@ -32,9 +36,11 @@ OPENAI_API_KEY=
 # Anthropic: https://console.anthropic.com/settings/keys
 # ANTHROPIC_API_KEY=
 
-# Coming in future releases:
-# GOOGLE_API_KEY=     (Gemini)
-# PERPLEXITY_API_KEY= (Perplexity sonar)
+# Google Gemini: https://aistudio.google.com/app/apikey
+# GOOGLE_API_KEY=
+
+# Perplexity: https://www.perplexity.ai/settings/api
+# PERPLEXITY_API_KEY=
 `;
 
 export const initCmd = defineCommand({
@@ -65,7 +71,7 @@ export const initCmd = defineCommand({
     console.log(`
 Next:
   1. Edit ${configPath} with your brand, competitors, and prompts
-  2. Copy ${envPath} to .env and add your OPENAI_API_KEY
+  2. Copy ${envPath} to .env and add at least one provider key
   3. Run: openllmrank run
 `);
   },

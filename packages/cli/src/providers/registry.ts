@@ -1,5 +1,7 @@
 import { AnthropicProvider } from "./anthropic";
+import { GeminiProvider } from "./gemini";
 import { OpenAIProvider } from "./openai";
+import { PerplexityProvider } from "./perplexity";
 import type { Config, Provider, ProviderId } from "../core/types";
 
 export type ProviderCapability = {
@@ -65,7 +67,8 @@ const PROVIDER_DESCRIPTORS: ProviderDescriptor[] = [
     defaultModel: "gemini-2.0-flash",
     supportedModels: ["gemini-2.0-flash", "gemini-1.5-pro"],
     capabilities: { groundedSearch: true, suggestions: false },
-    status: "planned",
+    status: "implemented",
+    create: ({ apiKey }) => new GeminiProvider({ apiKey }),
   },
   {
     id: "perplexity",
@@ -74,7 +77,8 @@ const PROVIDER_DESCRIPTORS: ProviderDescriptor[] = [
     defaultModel: "sonar",
     supportedModels: ["sonar", "sonar-pro"],
     capabilities: { groundedSearch: true, suggestions: false },
-    status: "planned",
+    status: "implemented",
+    create: ({ apiKey }) => new PerplexityProvider({ apiKey }),
   },
 ];
 

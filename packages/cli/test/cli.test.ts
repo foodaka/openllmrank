@@ -34,6 +34,11 @@ describe("CLI: init", () => {
     expect(r.code).toBe(0);
     expect(existsSync(join(tmp, "openllmrank.config.json"))).toBe(true);
     expect(existsSync(join(tmp, ".env.example"))).toBe(true);
+    const env = readFileSync(join(tmp, ".env.example"), "utf8");
+    expect(env).toContain("OPENAI_API_KEY=");
+    expect(env).toContain("ANTHROPIC_API_KEY=");
+    expect(env).toContain("GOOGLE_API_KEY=");
+    expect(env).toContain("PERPLEXITY_API_KEY=");
   });
 
   test("warns when config already exists without --force", async () => {

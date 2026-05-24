@@ -18,12 +18,16 @@ Run it weekly. Watch the numbers move as you ship content.
 
 ## Status
 
-**v0.2** — OpenAI Responses API + Anthropic Messages API, both with web search. Gemini and Perplexity adapters coming. PRs welcome (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
+**v0.3-dev** — OpenAI Responses API, Anthropic Messages API, Google Gemini, and Perplexity Sonar, all with grounded/web-search mode where the provider supports it. PRs welcome (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
 
 ## Requirements
 
 - [Bun](https://bun.sh) 1.3 or later (the CLI is a TypeScript file executed by Bun; Node is not supported yet).
-- An OpenAI API key with billing/credit ([create one](https://platform.openai.com/api-keys)). Optional: an Anthropic API key ([create one](https://console.anthropic.com/settings/keys)) to also query Claude.
+- At least one provider API key:
+  - OpenAI: `OPENAI_API_KEY` ([create one](https://platform.openai.com/api-keys))
+  - Anthropic: `ANTHROPIC_API_KEY` ([create one](https://console.anthropic.com/settings/keys))
+  - Google Gemini: `GOOGLE_API_KEY` ([create one](https://aistudio.google.com/app/apikey))
+  - Perplexity: `PERPLEXITY_API_KEY` ([create one](https://www.perplexity.ai/settings/api))
 
 ## Cost expectation
 
@@ -56,12 +60,35 @@ mkdir my-brand && cd my-brand
 openllmrank init
 # edit openllmrank.config.json with your brand, competitors, prompts
 echo 'OPENAI_API_KEY=sk-...' > .env
+# Optional additional providers:
+# echo 'GOOGLE_API_KEY=...' >> .env
+# echo 'PERPLEXITY_API_KEY=...' >> .env
+# echo 'ANTHROPIC_API_KEY=...' >> .env
 openllmrank run                   # query providers, persist results
 openllmrank report                # markdown gap analysis
 openllmrank report --html         # self-contained HTML report
 openllmrank suggest               # NEW: actionable content recommendations
 open gap-report.html suggestions.md
 ```
+
+## Providers
+
+Configure providers in `openllmrank.config.json` and set matching API keys in `.env`:
+
+```json
+"providers": [
+  { "id": "openai", "model": "gpt-4o-mini" },
+  { "id": "anthropic", "model": "claude-haiku-4-5" },
+  { "id": "google", "model": "gemini-2.0-flash" },
+  { "id": "perplexity", "model": "sonar" }
+]
+```
+
+Supported defaults:
+- `openai`: `gpt-4o-mini`, `gpt-4o`, `gpt-4.1-mini`, `gpt-4.1`
+- `anthropic`: `claude-haiku-4-5`, `claude-haiku-4-5-20251001`, `claude-3-5-haiku-latest`, `claude-sonnet-4-6`, `claude-opus-4-7`
+- `google`: `gemini-2.0-flash`, `gemini-1.5-pro`
+- `perplexity`: `sonar`, `sonar-pro`
 
 ## Commands
 
