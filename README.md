@@ -2,6 +2,8 @@
 
 This is the Bun-workspace monorepo for the openllmrank project.
 
+**Hosted version:** [openllmrank.xyz](https://openllmrank.xyz) — one-shot reports without installing the CLI.
+
 ![Sample openllmrank HTML report](./packages/cli/examples/sample-report-screenshot.png)
 
 ## Packages
