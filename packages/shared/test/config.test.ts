@@ -20,6 +20,21 @@ describe("ConfigSchema", () => {
     expect(parsed.brand.name).toBe("Acme");
   });
 
+  test("accepts optional brand context and xAI", () => {
+    const parsed = ConfigSchema.parse({
+      ...validBase,
+      brand: {
+        name: "Acme",
+        aliases: [],
+        website: "https://acme.example",
+        category: "B2B analytics platforms",
+      },
+      providers: [{ id: "xai", model: "grok-4.5" }],
+    });
+    expect(parsed.brand.website).toBe("https://acme.example");
+    expect(parsed.providers[0]?.id).toBe("xai");
+  });
+
   test("rejects empty prompts array", () => {
     const r = ConfigSchema.safeParse({ ...validBase, prompts: [] });
     expect(r.success).toBe(false);

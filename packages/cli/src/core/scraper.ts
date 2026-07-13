@@ -1,5 +1,6 @@
 import { load } from "cheerio";
 import robotsParser from "robots-parser";
+import { PRODUCT_VERSION } from "../version";
 
 export type ScrapedPage = {
   url: string;
@@ -51,7 +52,7 @@ const MAX_CONTENT_CHARS = 8_000;
 // Identifies us honestly so robots.txt rules and server-side logs reflect what we are.
 // The matching token in our robots check below is "openllmrank".
 const HONEST_USER_AGENT =
-  "openllmrank/0.2.1 (+https://github.com/foodaka/openllmrank) ContentGap/1.0";
+  `openllmrank/${PRODUCT_VERSION} (+https://github.com/foodaka/openllmrank) ContentGap/1.0`;
 
 // Some sites 403 unbranded crawlers regardless of robots.txt. Users can opt into a
 // browser-like UA via the OPENLLMRANK_BROWSER_UA env var. The default is the honest UA.

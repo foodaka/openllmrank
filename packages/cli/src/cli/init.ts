@@ -2,7 +2,12 @@ import { existsSync, writeFileSync } from "node:fs";
 import { defineCommand } from "citty";
 
 const SAMPLE_CONFIG = {
-  brand: { name: "Acme", aliases: ["acme.com"] },
+  brand: {
+    name: "Acme",
+    aliases: ["Acme Corp"],
+    website: "https://acme.com",
+    category: "AI search visibility tools",
+  },
   competitors: [
     { name: "Globex", aliases: ["globex.com"] },
     { name: "Initech", aliases: ["initech.io"] },
@@ -15,7 +20,7 @@ const SAMPLE_CONFIG = {
     "best tools for tracking brand mentions in AI search",
   ],
   providers: [
-    { id: "openai", model: "gpt-4o-mini" },
+    { id: "openai", model: "gpt-5.4-mini" },
     // Uncomment after adding ANTHROPIC_API_KEY to .env:
     // { id: "anthropic", model: "claude-haiku-4-5" },
   ],
@@ -32,9 +37,14 @@ OPENAI_API_KEY=
 # Anthropic: https://console.anthropic.com/settings/keys
 # ANTHROPIC_API_KEY=
 
-# Coming in future releases:
-# GOOGLE_API_KEY=     (Gemini)
-# PERPLEXITY_API_KEY= (Perplexity sonar)
+# Google Gemini: https://aistudio.google.com/app/apikey
+# GOOGLE_API_KEY=
+
+# Perplexity: https://www.perplexity.ai/account/api/keys
+# PERPLEXITY_API_KEY=
+
+# xAI Grok: https://console.x.ai
+# XAI_API_KEY=
 `;
 
 export const initCmd = defineCommand({
@@ -65,7 +75,7 @@ export const initCmd = defineCommand({
     console.log(`
 Next:
   1. Edit ${configPath} with your brand, competitors, and prompts
-  2. Copy ${envPath} to .env and add your OPENAI_API_KEY
+  2. Copy ${envPath} to .env and add the key for every configured provider
   3. Run: openllmrank run
 `);
   },

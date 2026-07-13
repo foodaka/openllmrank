@@ -14,18 +14,28 @@ type PricingEntry = {
 };
 
 const PRICING: Record<string, PricingEntry> = {
+  "chat-latest": { input_per_1m: 5, output_per_1m: 30, search_call_cost: 0.025 },
+  "gpt-5.6-luna": { input_per_1m: 1, output_per_1m: 6, search_call_cost: 0.025 },
+  "gpt-5.5": { input_per_1m: 5, output_per_1m: 30, search_call_cost: 0.025 },
+  "gpt-5.4-mini": { input_per_1m: 0.75, output_per_1m: 4.5, search_call_cost: 0.025 },
+  "gpt-5-mini": { input_per_1m: 0.25, output_per_1m: 2, search_call_cost: 0.025 },
   "gpt-4o-mini": { input_per_1m: 0.15, output_per_1m: 0.6, search_call_cost: 0.025 },
   "gpt-4o": { input_per_1m: 2.5, output_per_1m: 10.0, search_call_cost: 0.025 },
   "gpt-4.1-mini": { input_per_1m: 0.4, output_per_1m: 1.6, search_call_cost: 0.025 },
   "gpt-4.1": { input_per_1m: 2.0, output_per_1m: 8.0, search_call_cost: 0.025 },
 };
 
-function estimateCost(model: string, tokens_in: number, tokens_out: number): number {
-  const p = PRICING[model] ?? PRICING["gpt-4o-mini"]!;
+function estimateCost(
+  model: string,
+  tokens_in: number,
+  tokens_out: number,
+  searchCalls: number,
+): number {
+  const p = PRICING[model] ?? PRICING["gpt-5.4-mini"]!;
   return (
     (tokens_in / 1_000_000) * p.input_per_1m +
     (tokens_out / 1_000_000) * p.output_per_1m +
-    p.search_call_cost
+    searchCalls * p.search_call_cost
   );
 }
 
@@ -169,6 +179,15 @@ function extractUsage(response: unknown): { input: number; output: number } {
   };
 }
 
+function countSearchCalls(response: unknown): number {
+  const output = (response as { output?: unknown[] }).output;
+  if (!Array.isArray(output)) return 0;
+  return output.filter((item) =>
+    typeof item === "object" && item !== null &&
+    (item as { type?: string }).type === "web_search_call"
+  ).length;
+}
+
 export class OpenAIProvider implements Provider {
   readonly id = "openai" as const;
   private client: OpenAI;
@@ -210,7 +229,12 @@ export class OpenAIProvider implements Provider {
         search_results,
         tokens_in: usage.input,
         tokens_out: usage.output,
-        cost_usd: estimateCost(args.model, usage.input, usage.output),
+        cost_usd: estimateCost(
+          args.model,
+          usage.input,
+          usage.output,
+          countSearchCalls(response),
+        ),
         latency_ms,
       };
     } catch (err) {

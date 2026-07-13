@@ -31,6 +31,9 @@ async function processOneJob(job: Job): Promise<void> {
     config: job.config_jsonb,
     openaiKey: env.openaiKey,
     anthropicKey: env.anthropicKey,
+    googleKey: env.googleKey,
+    perplexityKey: env.perplexityKey,
+    xaiKey: env.xaiKey,
   });
 
   if (!result.ok) {

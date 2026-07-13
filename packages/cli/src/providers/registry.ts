@@ -1,5 +1,8 @@
 import { AnthropicProvider } from "./anthropic";
+import { GeminiProvider } from "./gemini";
 import { OpenAIProvider } from "./openai";
+import { PerplexityProvider } from "./perplexity";
+import { XaiProvider } from "./xai";
 import type { Config, Provider, ProviderId } from "../core/types";
 
 export type ProviderCapability = {
@@ -36,8 +39,15 @@ const PROVIDER_DESCRIPTORS: ProviderDescriptor[] = [
     id: "openai",
     displayName: "OpenAI",
     envVar: "OPENAI_API_KEY",
-    defaultModel: "gpt-4o-mini",
-    supportedModels: ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"],
+    defaultModel: "gpt-5.4-mini",
+    supportedModels: [
+      "chat-latest",
+      "gpt-5.6-luna",
+      "gpt-5.5",
+      "gpt-5.4-mini",
+      "gpt-5-mini",
+      "gpt-4.1-mini",
+    ],
     capabilities: { groundedSearch: true, suggestions: true },
     status: "implemented",
     create: ({ apiKey }) => new OpenAIProvider({ apiKey }),
@@ -62,19 +72,36 @@ const PROVIDER_DESCRIPTORS: ProviderDescriptor[] = [
     id: "google",
     displayName: "Google Gemini",
     envVar: "GOOGLE_API_KEY",
-    defaultModel: "gemini-2.0-flash",
-    supportedModels: ["gemini-2.0-flash", "gemini-1.5-pro"],
+    defaultModel: "gemini-3.5-flash",
+    supportedModels: [
+      "gemini-3.5-flash",
+      "gemini-3.1-flash-lite",
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-lite",
+    ],
     capabilities: { groundedSearch: true, suggestions: false },
-    status: "planned",
+    status: "implemented",
+    create: ({ apiKey }) => new GeminiProvider({ apiKey }),
   },
   {
     id: "perplexity",
     displayName: "Perplexity",
     envVar: "PERPLEXITY_API_KEY",
     defaultModel: "sonar",
-    supportedModels: ["sonar", "sonar-pro"],
+    supportedModels: ["sonar", "sonar-pro", "sonar-reasoning-pro"],
     capabilities: { groundedSearch: true, suggestions: false },
-    status: "planned",
+    status: "implemented",
+    create: ({ apiKey }) => new PerplexityProvider({ apiKey }),
+  },
+  {
+    id: "xai",
+    displayName: "xAI Grok",
+    envVar: "XAI_API_KEY",
+    defaultModel: "grok-4.3",
+    supportedModels: ["grok-4.3", "grok-4.5", "grok-4.5-latest"],
+    capabilities: { groundedSearch: true, suggestions: false },
+    status: "implemented",
+    create: ({ apiKey }) => new XaiProvider({ apiKey }),
   },
 ];
 
@@ -106,7 +133,7 @@ export function buildProviders(
     if (!descriptor || descriptor.status !== "implemented" || !descriptor.create) {
       throw new ProviderRegistryError(
         "PROVIDER_UNSUPPORTED",
-        `Provider '${id}' is not implemented yet. v0.2 supports OpenAI + Anthropic. Gemini and Perplexity coming.`,
+        `Provider '${id}' is not implemented. Run 'openllmrank init --force' to see the current provider list.`,
       );
     }
 

@@ -100,6 +100,17 @@ describe("OpenAIProvider", () => {
     expect(r.search_results).toHaveLength(1);
   });
 
+  test("charges the search fee per actual web-search tool call", async () => {
+    const client = makeClient(async () => ({
+      output_text: "Acme",
+      output: [{ type: "web_search_call" }, { type: "web_search_call" }],
+      usage: { input_tokens: 1_000_000, output_tokens: 1_000_000 },
+    }));
+    const provider = new OpenAIProvider({ client });
+    const result = await provider.query({ prompt: "x", model: "chat-latest" });
+    expect(result.cost_usd).toBeCloseTo(35.05, 8);
+  });
+
   test("translates 401 -> auth ProviderError", async () => {
     const apiErr = new OpenAI.APIError(401, { error: { message: "Unauthorized" } }, "Unauthorized", undefined);
     const client = makeClient(async () => {

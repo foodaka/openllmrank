@@ -5,11 +5,12 @@ import { runCmd } from "./run";
 import { reportCmd } from "./report";
 import { exportCmd } from "./export";
 import { suggestCmd } from "./suggest";
+import { PRODUCT_VERSION } from "../version";
 
 const main = defineCommand({
   meta: {
     name: "openllmrank",
-    version: "0.2.1",
+    version: PRODUCT_VERSION,
     description: "Track how your brand appears in answers from AI search providers",
   },
   subCommands: {

@@ -90,6 +90,9 @@ export async function runCliJob(args: {
   config: HostedConfig;
   openaiKey: string;
   anthropicKey: string;
+  googleKey?: string;
+  perplexityKey?: string;
+  xaiKey?: string;
 }): Promise<CliRunResult> {
   const dir = mkdtempSync(join(tmpdir(), "openllmrank-job-"));
   const sqlitePath = join(dir, "openllmrank.db");
@@ -112,6 +115,13 @@ export async function runCliJob(args: {
     OPENAI_API_KEY: args.openaiKey,
     ANTHROPIC_API_KEY: args.anthropicKey,
   };
+  for (const [key, value] of [
+    ["GOOGLE_API_KEY", args.googleKey],
+    ["PERPLEXITY_API_KEY", args.perplexityKey],
+    ["XAI_API_KEY", args.xaiKey],
+  ] as const) {
+    if (value) childEnv[key] = value;
+  }
   // Preserve a handful of runtime envs that affect Bun/Node bootstrap
   // (NOT secrets).
   for (const k of ["BUN_INSTALL", "NODE_ENV", "TZ", "LANG", "LC_ALL"]) {

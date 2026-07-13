@@ -22,6 +22,9 @@ type EnvShape = {
   databaseUrl: string;
   openaiKey: string;
   anthropicKey: string;
+  googleKey: string;
+  perplexityKey: string;
+  xaiKey: string;
   stripeMode: "local_stub" | "test" | "live";
   stripeSecretKey: string;
   postmarkMode: "local_stub" | "live";
@@ -68,6 +71,9 @@ function build(): EnvShape {
     databaseUrl: required("DATABASE_URL"),
     openaiKey: optional("OPENAI_API_KEY"),
     anthropicKey: optional("ANTHROPIC_API_KEY"),
+    googleKey: optional("GOOGLE_API_KEY"),
+    perplexityKey: optional("PERPLEXITY_API_KEY"),
+    xaiKey: optional("XAI_API_KEY"),
     stripeMode: optional("STRIPE_MODE", "local_stub") as
       | "local_stub"
       | "test"

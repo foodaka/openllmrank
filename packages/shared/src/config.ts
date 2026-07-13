@@ -1,22 +1,30 @@
 import { z } from "zod";
 
-export type ProviderId = "openai" | "anthropic" | "google" | "perplexity";
+export type ProviderId =
+  | "openai"
+  | "anthropic"
+  | "google"
+  | "perplexity"
+  | "xai";
 
 export const PROVIDER_IDS: ProviderId[] = [
   "openai",
   "anthropic",
   "google",
   "perplexity",
+  "xai",
 ];
 
 export const BrandSchema = z.object({
   name: z.string().min(1),
   aliases: z.array(z.string()).default([]),
+  website: z.string().url().optional(),
+  category: z.string().min(2).max(120).optional(),
 });
 export type Brand = z.infer<typeof BrandSchema>;
 
 export const ProviderConfigSchema = z.object({
-  id: z.enum(["openai", "anthropic", "google", "perplexity"]),
+  id: z.enum(["openai", "anthropic", "google", "perplexity", "xai"]),
   model: z.string().min(1),
 });
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;

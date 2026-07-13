@@ -16,7 +16,7 @@ export const suggestCmd = defineCommand({
     top: { type: "string", default: "3" },
     prompt: { type: "string", description: "Filter to one prompt (substring match)" },
     output: { type: "string", default: "suggestions.md" },
-    model: { type: "string", default: "gpt-4o-mini" },
+    model: { type: "string", default: "gpt-5.4-mini" },
   },
   async run({ args }) {
     loadEnvFile();
