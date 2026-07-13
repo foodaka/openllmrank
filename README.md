@@ -12,6 +12,8 @@ This is the Bun-workspace monorepo for the openllmrank project.
 |---------|------|-------------|------------|
 | `openllmrank` | [`packages/cli`](./packages/cli) | The open-source CLI. Tracks brand visibility across grounded OpenAI, Anthropic, Gemini, Perplexity, and Grok APIs. Published to npm. | Public, MIT |
 | `@openllmrank/shared` | `packages/shared` | Shared Zod schemas and types used by the CLI and the hosted webapp. | Private |
+| `@openllmrank/web` | [`packages/web`](./packages/web) | The hosted Next.js app: marketing, report wizard, checkout, and hosted reports. | Private |
+| `@openllmrank/worker` | [`packages/worker`](./packages/worker) | The Bun worker that runs reports, persists results, and delivers report emails. | Private |
 
 ## Quick start (CLI users)
 
@@ -33,6 +35,15 @@ bun run typecheck   # typecheck across all packages
 ```
 
 Test framework is `bun:test` everywhere; tests live in `packages/*/test/`.
+
+## Project documentation
+
+- [Contributing](./CONTRIBUTING.md)
+- [Design system](./DESIGN.md)
+- [Production deployment](./DEPLOY.md)
+- [Worker deployment](./packages/worker/RAILWAY.md)
+- [Tracked follow-up work](./TODOS.md)
+- [Agent operating notes](./CLAUDE.md)
 
 ## License
 

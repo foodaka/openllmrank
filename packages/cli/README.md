@@ -1,7 +1,7 @@
 # openllmrank
 
 [![npm](https://img.shields.io/npm/v/openllmrank.svg)](https://www.npmjs.com/package/openllmrank)
-[![license](https://img.shields.io/npm/l/openllmrank.svg)](./LICENSE)
+[![license](https://img.shields.io/npm/l/openllmrank.svg)](../../LICENSE)
 [![tests](https://img.shields.io/badge/tests-passing-brightgreen)](./test)
 
 > **AI-search-visibility tracking that costs $5/month instead of $500/month.**
@@ -20,7 +20,7 @@ Run it weekly. Watch the numbers move as you ship content.
 
 ## Status
 
-**Next (v0.3)** — Five grounded providers: OpenAI, Anthropic, Google Gemini, Perplexity Sonar, and xAI Grok. PRs welcome (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
+**v0.3.0** — Five grounded providers: OpenAI, Anthropic, Google Gemini, Perplexity Sonar, and xAI Grok. PRs welcome (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
 
 ## Requirements
 
@@ -56,6 +56,7 @@ From source (for development):
 git clone https://github.com/foodaka/openllmrank.git
 cd openllmrank
 bun install
+cd packages/cli
 bun link
 ```
 

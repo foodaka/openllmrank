@@ -8,9 +8,10 @@ This is a Bun-workspace monorepo.
 
 | Package | Path | What it is | Visibility |
 |---------|------|------------|------------|
-| `openllmrank` | `packages/cli/` | The open-source CLI. AI-search-visibility tracking via the OpenAI Responses API and Anthropic Messages API. Published to npm. MIT. | Public |
+| `openllmrank` | `packages/cli/` | The open-source CLI. AI-search-visibility tracking across grounded OpenAI, Anthropic, Gemini, Perplexity, and xAI APIs. Published to npm. MIT. | Public |
 | `@openllmrank/shared` | `packages/shared/` | Shared Zod schemas (`ConfigSchema`, `HostedConfigSchema`), TS types, and design tokens used by both the CLI and the hosted webapp. | Private |
 | `@openllmrank/web` | `packages/web/` | The hosted Next.js webapp: marketing landing, signup wizard, Stripe checkout, webhook handler. Runs end-to-end locally with `STRIPE_MODE=local_stub`. | Private |
+| `@openllmrank/worker` | `packages/worker/` | The hosted Bun worker: claims paid jobs, runs the CLI, persists results, retries report email, and queues refunds for terminal failures. | Private |
 
 The infrastructure code (Supabase migrations, RLS policies) lives in `supabase/migrations/`.
 
@@ -27,7 +28,7 @@ The aesthetic is editorial / investigative magazine — warm paper, Georgia seri
 ## Testing
 
 ```bash
-bun test                # all packages, ~145 tests
+bun test                # all packages, ~150 tests
 bun run typecheck       # root + all packages
 bun run --cwd packages/web typecheck   # web package alone
 ```

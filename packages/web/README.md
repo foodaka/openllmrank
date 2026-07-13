@@ -129,7 +129,7 @@ packages/web/
 │   ├── page.tsx                # marketing landing
 │   ├── wizard/
 │   │   ├── wizard-shell.tsx    # shared chrome (kicker + headline + Back/Next)
-│   │   ├── brand/page.tsx      # step 1 of 4
+│   │   ├── brand/page.tsx      # step 1: brand, website, and category
 │   │   ├── competitors/page.tsx
 │   │   ├── prompts/page.tsx
 │   │   └── review/page.tsx

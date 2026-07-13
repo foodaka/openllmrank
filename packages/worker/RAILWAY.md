@@ -51,8 +51,11 @@ Open **Variables** in the service and add:
 | Variable | Value | Notes |
 |----------|-------|-------|
 | `DATABASE_URL` | Hosted Supabase DIRECT connection (NOT pooler) | Project Settings → Database → "Direct connection". The worker holds a long-lived connection; the pooler isn't right for that. |
-| `OPENAI_API_KEY` | `sk-...` | The only place this key lives in production (Issue 1.5 of /plan-eng-review). |
-| `ANTHROPIC_API_KEY` | `sk-ant-...` | Same — never goes to Vercel. |
+| `OPENAI_API_KEY` | `sk-...` | Provider keys live only on the worker and never go to Vercel. |
+| `ANTHROPIC_API_KEY` | `sk-ant-...` | Optional unless the hosted config selects Anthropic. |
+| `GOOGLE_API_KEY` | Google AI API key | Optional unless the hosted config selects Gemini. |
+| `PERPLEXITY_API_KEY` | `pplx-...` | Optional unless the hosted config selects Perplexity. |
+| `XAI_API_KEY` | xAI API key | Optional unless the hosted config selects xAI Grok. |
 | `STRIPE_MODE` | `test` (or `live` when you flip) | |
 | `STRIPE_SECRET_KEY` | `sk_test_...` | For refund API calls. |
 | `POSTMARK_MODE` | `live` (once you have a token) | Starts as `local_stub` if you haven't signed up for Postmark yet. |

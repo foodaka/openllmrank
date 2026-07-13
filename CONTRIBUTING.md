@@ -1,6 +1,6 @@
 # Contributing to openllmrank
 
-Thanks for considering a contribution. The most valuable contributions right now are **new provider adapters** (Gemini, Perplexity) and bug reports from real-world usage.
+Thanks for considering a contribution. The most valuable contributions right now are grounded-provider improvements, new grounded adapters, and bug reports from real-world usage.
 
 ## Setup
 
@@ -14,9 +14,9 @@ bun run typecheck
 
 ## Adding a new provider adapter
 
-This is the most-requested contribution. The architecture is designed so you only need to write one file.
+Provider adapters share a small registry and HTTP error-normalization layer, so a complete contribution usually touches the adapter, registry, and tests.
 
-**1. Implement the `Provider` interface** in `src/providers/<name>.ts`. The interface lives in `src/core/types.ts`:
+**1. Implement the `Provider` interface** in `packages/cli/src/providers/<name>.ts`. The interface lives in `packages/cli/src/core/types.ts`:
 
 ```typescript
 interface Provider {
@@ -34,11 +34,11 @@ Your adapter must:
 - Return structured `search_results` (URLs + titles + snippets) so the citation parser can detect grounded mentions.
 - Estimate `cost_usd` per call from token counts plus any per-search fee.
 
-Reference implementations: `src/providers/openai.ts` (Responses API + web_search tool) and `src/providers/anthropic.ts` (Messages API + web_search_20250305 tool).
+Reference implementations: `packages/cli/src/providers/openai.ts` (Responses API), `anthropic.ts` (Messages API), and the HTTP adapters for Gemini, Perplexity, and xAI. Reuse `packages/cli/src/providers/http.ts` for normalized HTTP errors.
 
-**2. Wire the adapter into `src/cli/run.ts`** by adding a `tryRegister(...)` call to `buildProviders()`.
+**2. Register the adapter** in `packages/cli/src/providers/registry.ts` with its environment variable, default model, supported models, capabilities, and factory.
 
-**3. Add fixture tests** in `test/<name>.test.ts`. Mirror the OpenAI/Anthropic test files. At minimum:
+**3. Add fixture tests** in `packages/cli/test/<name>.test.ts`. Mirror the existing provider test files. At minimum:
 
 - Happy-path text extraction
 - Search-results / citations extraction
@@ -78,7 +78,7 @@ For citation parser bugs (false positives or misses), please open an issue with 
 
 Maintainers cut releases by:
 
-1. Bumping `version` in `package.json`
-2. Updating `CHANGELOG.md`
+1. Bumping `version` in `packages/cli/package.json`
+2. Updating `packages/cli/CHANGELOG.md`
 3. `git tag vX.Y.Z && git push origin vX.Y.Z`
 4. `npm publish --access public` (requires 2FA)
