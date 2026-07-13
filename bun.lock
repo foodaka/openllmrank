@@ -11,7 +11,7 @@
     },
     "packages/cli": {
       "name": "openllmrank",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "bin": {
         "openllmrank": "src/cli/index.ts",
       },

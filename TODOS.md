@@ -120,14 +120,6 @@ Tracked work outside the current sprint. Items marked **v1 MUST** are required f
 
 **Trigger to start:** Recurring tier launched AND ≥5 active subscribers.
 
-### Gemini + Perplexity providers
-
-**What:** Provider adapters for Google Gemini and Perplexity. Already in CLI v0.2 readme as "coming."
-
-**Why deferred:** OSS roadmap item; not gating SaaS launch. CLI tests pass without them.
-
-**Pros of doing it now:** Marketing copy could claim "tracks 4 AI engines, not 2."
-
 ### Multi-brand per user
 
 **What:** Wizard step lets one user track multiple brands.
@@ -169,3 +161,13 @@ Tracked work outside the current sprint. Items marked **v1 MUST** are required f
 **What:** "Pay $499, we hand-craft your report."
 
 **Why deferred:** Concierge is week 0 validation, not a long-term offering. Time cost outweighs revenue past 5 customers.
+
+---
+
+## Completed
+
+### Gemini, Perplexity, and xAI providers
+
+Grounded provider adapters, registry metadata, pricing, error normalization, documentation, and tests shipped together.
+
+**Completed:** v0.3.0 (2026-07-13)

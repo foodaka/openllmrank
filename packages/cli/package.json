@@ -1,7 +1,7 @@
 {
   "name": "openllmrank",
-  "version": "0.2.1",
-  "description": "Open source CLI to track how your brand appears in answers from ChatGPT and Claude (Gemini and Perplexity planned). Generates gap analysis vs competitors and content recommendations from competitor pages. The Plausible of AI search visibility.",
+  "version": "0.3.0",
+  "description": "Open-source CLI for tracking brand visibility across grounded OpenAI, Anthropic, Gemini, Perplexity, and Grok APIs, with evidence-backed competitor gaps and content recommendations.",
   "type": "module",
   "license": "MIT",
   "author": "foodaka",
