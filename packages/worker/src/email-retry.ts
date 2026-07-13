@@ -20,6 +20,7 @@ import type {
   RunRow,
 } from "openllmrank/src/core/db";
 import { computeRates, computeGap } from "openllmrank/src/core/gap";
+import { PRODUCT_VERSION } from "openllmrank/src/version";
 
 const EMAIL_POLL_INTERVAL_MS = 60_000;
 const EMAIL_MAX_ATTEMPTS = 6;
@@ -30,19 +31,22 @@ type PendingEmailRow = {
   brand_id: string;
   email_to: string;
   config_jsonb: {
-    brand: { name: string; aliases: string[] };
+    brand: { name: string; aliases: string[]; website?: string; category?: string };
     competitors: Array<{ name: string; aliases: string[] }>;
+    providers: Array<{ id: string; model: string }>;
   };
   cli_run_id: string | null;
   email_attempts: number;
   brand_name: string;
   succeeded_at: string;
+  succeeded_count: number | null;
+  failed_count: number | null;
 };
 
 async function fetchPendingEmails(sql: SQL): Promise<PendingEmailRow[]> {
   return (await sql`
     select j.id, j.user_id, j.brand_id, j.email_to, j.config_jsonb,
-           j.cli_run_id, j.email_attempts,
+           j.cli_run_id, j.email_attempts, j.succeeded_count, j.failed_count,
            b.name as brand_name,
            j.succeeded_at::text as succeeded_at
     from public.jobs j
@@ -145,8 +149,15 @@ async function renderReportFromPg(
 
   // Prompts row shape the CLI's computeRates expects
   const promptRows = (await sql`
-    select prompt_id, prompt_text, model, provider, config_blob, created_at::text
-    from public.prompts where user_id = ${row.user_id}
+    select distinct p.prompt_id, p.prompt_text, p.model, p.provider,
+           p.config_blob, p.created_at::text
+    from public.prompts p
+    join public.calls c
+      on c.prompt_id = p.prompt_id and c.user_id = p.user_id
+    join public.runs r on r.id = c.run_id
+    where p.user_id = ${row.user_id}
+      and r.job_id = ${row.id}
+      and r.cli_run_id = ${cli_run_id}
   `) as unknown as Array<PromptRow>;
 
   // computeRates + computeGap mirror the CLI's `report` command logic
@@ -166,7 +177,15 @@ async function renderReportFromPg(
     runs: runRows,
     since_iso: row.succeeded_at,
     generated_at: new Date().toISOString(),
-    project_version: "0.3.0",
+    project_version: PRODUCT_VERSION,
+    brand_website: cfg.brand.website,
+    prompts: promptRows,
+    configured_models: cfg.providers.map((provider) => ({
+      provider: provider.id,
+      model: provider.model,
+    })),
+    expected_calls: (row.succeeded_count ?? calls.length) + (row.failed_count ?? 0),
+    failed_calls: row.failed_count ?? 0,
   });
 }
 

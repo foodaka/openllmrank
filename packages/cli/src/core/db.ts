@@ -266,6 +266,14 @@ export function getCallsSince(db: Database, since_iso: string): CallRow[] {
     .all(since_iso);
 }
 
+export function getAllCallsSince(db: Database, since_iso: string): CallRow[] {
+  return db
+    .query<CallRow, [string]>(
+      `SELECT * FROM calls WHERE ts >= ? ORDER BY ts`,
+    )
+    .all(since_iso);
+}
+
 export function getCitationsSince(db: Database, since_iso: string): CitationRow[] {
   return db
     .query<CitationRow, [string]>(

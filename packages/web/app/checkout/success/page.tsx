@@ -86,8 +86,8 @@ function CheckoutSuccessInner() {
         <span className="kicker">Order received</span>
         <h1>Your report is being generated.</h1>
         <p className="lede">
-          A confirmation just landed in your inbox. We&rsquo;re now asking
-          ChatGPT and Claude the questions you gave us. Expect the report by
+          A confirmation just landed in your inbox. We&rsquo;re now sending the
+          questions you gave us to grounded OpenAI and Anthropic APIs. Expect the report by
           email in about fifteen minutes.
         </p>
 

@@ -104,6 +104,7 @@ a:hover { border-bottom-color: var(--accent); }
   margin-bottom: var(--space-sm);
 }
 .field input[type="text"],
+.field input[type="url"],
 .field textarea {
   width: 100%;
   background: var(--soft);
@@ -117,6 +118,7 @@ a:hover { border-bottom-color: var(--accent); }
   min-height: 44px;
 }
 .field input[type="text"]:focus,
+.field input[type="url"]:focus,
 .field textarea:focus {
   outline: 2px solid var(--accent);
   outline-offset: 0;

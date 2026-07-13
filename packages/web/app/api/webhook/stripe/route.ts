@@ -31,6 +31,19 @@ import { HostedConfigSchema, type HostedConfig } from "@openllmrank/shared/confi
 
 export const dynamic = "force-dynamic";
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function singleLine(value: string): string {
+  return value.replace(/[\r\n]+/g, " ").trim();
+}
+
 async function findOrCreateAuthUser(
   supabase: ReturnType<typeof serviceClient>,
   rawEmail: string,
@@ -92,17 +105,18 @@ async function sendOrderReceivedEmail(args: {
     return;
   }
   try {
+    const brandName = escapeHtml(args.brandName);
     const client = new PostmarkClient(token);
     const fromAddr = process.env.POSTMARK_FROM ?? "reports@openllmrank.com";
     const fromName = process.env.POSTMARK_FROM_NAME ?? "openllmrank";
     await client.sendEmail({
       From: `${fromName} <${fromAddr}>`,
       To: args.to,
-      Subject: `Your openllmrank report for ${args.brandName} is being generated`,
+      Subject: `Your openllmrank report for ${singleLine(args.brandName)} is being generated`,
       HtmlBody: `<!doctype html><html><body style="font-family:system-ui,sans-serif;background:#fbf8f0;color:#241f19;padding:48px 24px;max-width:560px;margin:0 auto">
 <p style="font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:#376b5b;font-weight:700">Order received</p>
 <h1 style="font-family:Georgia,serif;font-size:32px;line-height:1.05;margin:12px 0 24px;font-weight:500">Your report is being generated.</h1>
-<p>Thanks for your order. We're now asking ChatGPT and Claude the questions you gave us about <strong>${args.brandName}</strong> (${args.competitorCount} competitors, ${args.promptCount} prompts).</p>
+<p>Thanks for your order. We're now querying grounded OpenAI and Anthropic APIs with the questions you gave us about <strong>${brandName}</strong> (${args.competitorCount} competitors, ${args.promptCount} prompts).</p>
 <p>Estimated time: 10-15 minutes. Your report will land in this inbox when it's ready.</p>
 <p style="font-family:Georgia,serif;font-style:italic;color:#756c60;margin-top:32px">— openllmrank</p>
 </body></html>`,

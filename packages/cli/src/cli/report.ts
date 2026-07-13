@@ -1,10 +1,10 @@
 import { writeFileSync } from "node:fs";
 import { defineCommand } from "citty";
-import { getCallsSince, getCitationsSince, getPrompts, getRunsForCalls, openDb } from "../core/db";
+import { getAllCallsSince, getCitationsSince, getPrompts, getRunsForCalls, openDb } from "../core/db";
 import { computeGap, computeRates, renderGapReport } from "../core/gap";
 import { renderHtmlReport } from "../core/render-html";
+import { PRODUCT_VERSION } from "../version";
 import { loadConfig } from "./config-loader";
-import pkg from "../../package.json";
 
 function parseSince(spec: string): string {
   const match = /^(\d+)([hd])$/.exec(spec);
@@ -38,7 +38,7 @@ export const reportCmd = defineCommand({
     const cfg = loadConfig(args.config);
     const db = openDb(args.db);
     const since_iso = parseSince(args.since);
-    const calls = getCallsSince(db, since_iso);
+    const calls = getAllCallsSince(db, since_iso);
     const citations = getCitationsSince(db, since_iso);
     const prompt_ids = Array.from(new Set(calls.map((c) => c.prompt_id)));
     const prompts = getPrompts(db, prompt_ids);
@@ -63,8 +63,14 @@ export const reportCmd = defineCommand({
           runs,
           since_iso,
           generated_at: new Date().toISOString(),
-          project_version: pkg.version,
+          project_version: PRODUCT_VERSION,
           rolling_window_label: args.since,
+          brand_website: cfg.brand.website,
+          prompts,
+          configured_models: cfg.providers.map((provider) => ({
+            provider: provider.id,
+            model: provider.model,
+          })),
         })
       : renderGapReport(gaps, cfg.brand.name, since_iso);
     writeFileSync(output, report);

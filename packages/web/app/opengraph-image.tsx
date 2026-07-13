@@ -77,7 +77,7 @@ export default async function OGImage() {
               maxWidth: 980,
             }}
           >
-            Is ChatGPT recommending your competitors over you?
+            Does your brand make the AI shortlist?
           </div>
           <div
             style={{

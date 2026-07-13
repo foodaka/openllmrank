@@ -9,18 +9,15 @@ import { HOSTED_CAPS } from "@openllmrank/shared/config";
 const MIN_PROMPTS = 1;
 const MAX_PROMPTS = HOSTED_CAPS.max_prompts;
 
-// Pre-filled starter prompts shown when the wizard is empty. v1 stub: we use
-// a small template seeded by the brand + first competitor. v1.1 will swap
-// this for a real LLM call.
 function buildStarterPrompts(
-  brandName: string,
+  category: string,
   competitor: string | undefined,
 ): string[] {
-  const c = competitor ?? "alternatives";
+  const c = competitor ?? "the category leader";
   return [
-    `What is the best tool for what ${brandName} does?`,
-    `How does ${brandName} compare to ${c}?`,
-    `Which ${brandName.toLowerCase().includes(" ") ? brandName : brandName + " category"} platform is most popular?`,
+    `What are the best ${category}?`,
+    `Which ${category} are best for a growing business?`,
+    `What are the best alternatives to ${c}?`,
   ];
 }
 
@@ -43,7 +40,10 @@ export default function WizardPromptsPage() {
     if (s.prompts.length > 0) {
       setPrompts(s.prompts);
     } else {
-      setPrompts(buildStarterPrompts(s.brand.name, s.competitors[0]?.name));
+      setPrompts(buildStarterPrompts(
+        s.brand.category ?? "tools in this category",
+        s.competitors[0]?.name,
+      ));
     }
     setHydrated(true);
   }, [router]);

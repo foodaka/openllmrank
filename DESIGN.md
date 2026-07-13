@@ -7,7 +7,7 @@
 
 ## Product Context
 
-- **What this is:** Hosted AI-search-visibility report. A one-time $29.99 product that runs ChatGPT and Claude against the buyer's category prompts and ships a personalized editorial report on where their brand appears (or doesn't) vs. competitors.
+- **What this is:** Hosted AI-search-visibility report. A one-time $29.99 product that repeatedly queries grounded provider APIs against the buyer's category prompts and ships a personalized editorial report on where their brand appears (or doesn't) vs. competitors, with evidence and prioritized actions.
 - **Who it's for:** Marketing / growth leads at 50-500 person SaaS companies. They have $50-500/mo discretionary budget, can't (and shouldn't need to) run a CLI, and care about being cited by AI tools the way they used to care about SEO.
 - **Space:** AI search visibility / "GEO" / brand citation tracking. Hosted peers: Profound, Athena HQ, Brand Radar ($200-1000/mo).
 - **Project type:** Hybrid. (1) Marketing landing page. (2) Four-step signup wizard. (3) Stripe checkout + success / cancel pages. (4) Two transactional emails (order-received + report). The full report HTML is itself a product surface.

@@ -37,7 +37,7 @@ Two services live in two different places:
    └────────────────────┬───────────────────┘
                         │
                         ├── reads/writes ──► Supabase Postgres (same project)
-                        ├── calls ──────────► OpenAI + Anthropic APIs
+                        ├── calls ──────────► configured grounded provider APIs
                         └── sends emails ───► Postmark
 ```
 

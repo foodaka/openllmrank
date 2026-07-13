@@ -52,6 +52,11 @@ const calls = [
 
 const citations = [
   citation({ run_id: "r1", prompt_id: "p1", sample_index: 0, brand: "Globex" }),
+  {
+    ...citation({ run_id: "r1", prompt_id: "p1", sample_index: 0, brand: "Globex" }),
+    matched_text: "https://example.com/why-globex-wins",
+    kind: "grounded_source",
+  },
   citation({ run_id: "r1", prompt_id: "p2", sample_index: 0, brand: "Acme" }),
   citation({ run_id: "r2", prompt_id: "p1", sample_index: 0, brand: "Globex" }),
   citation({ run_id: "r2", prompt_id: "p2", sample_index: 0, brand: "Acme" }),
@@ -87,6 +92,15 @@ function fixtureHtml(): string {
     generated_at: generatedAt,
     project_version: "0.2.0",
     rolling_window_label: "7d",
+    brand_website: "https://acme.example",
+    prompts,
+    configured_models: [
+      { provider: "openai", model: "gpt-5.4-mini" },
+      { provider: "anthropic", model: "claude-haiku-4-5" },
+      { provider: "xai", model: "grok-4.3" },
+    ],
+    expected_calls: 5,
+    failed_calls: 1,
   });
 }
 
@@ -127,5 +141,18 @@ describe("renderHtmlReport", () => {
     const html = fixtureHtml();
     expect(html).not.toContain("Total run cost");
     expect(html).not.toContain("Total API + web-search fees");
+  });
+
+  test("shows actionable evidence, coverage, methodology, and privacy metadata", () => {
+    const html = fixtureHtml();
+    expect(html).toContain("Priority actions");
+    expect(html).toContain("https://example.com/why-globex-wins");
+    expect(html).toContain("80% (4/5)");
+    expect(html).toContain("Partial data:");
+    expect(html).toContain("openai: gpt-5.4-mini");
+    expect(html).toContain("xai: grok-4.3");
+    expect(html).not.toContain("openai: gpt-4o-mini");
+    expect(html).toContain("consumer ChatGPT");
+    expect(html).toContain('name="robots" content="noindex,nofollow,noarchive"');
   });
 });

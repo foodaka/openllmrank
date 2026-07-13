@@ -5,6 +5,8 @@ import {
   finishRun,
   findMissingTuples,
   findUnfinishedRun,
+  getAllCallsSince,
+  getCallsSince,
   insertCall,
   insertCitations,
   migrate,
@@ -188,6 +190,35 @@ describe("insertCall conflict", () => {
       .get("r1");
     expect(row?.response_text).toBe("second");
     expect(row?.error_code).toBeNull();
+  });
+});
+
+describe("call reporting queries", () => {
+  test("reports retain failed calls without widening the successful-call export contract", () => {
+    const db = memDb();
+    startRun(db, "r1", "h");
+    upsertPrompt(db, "p1", "x", "chat-latest", "openai", "{}");
+    for (const [sample_index, error_code] of [[0, null], [1, "transient"]] as const) {
+      insertCall(db, {
+        run_id: "r1",
+        prompt_id: "p1",
+        sample_index,
+        response_text: error_code ? "" : "Acme",
+        search_results_json: "[]",
+        latency_ms: 0,
+        tokens_in: 0,
+        tokens_out: 0,
+        cost_usd: 0,
+        error_code,
+        error_message: error_code ? "upstream unavailable" : null,
+      });
+    }
+
+    const since = new Date(Date.now() - 60_000).toISOString();
+    const reportRows = getAllCallsSince(db, since);
+    expect(reportRows).toHaveLength(2);
+    expect(reportRows.map((row) => row.error_code)).toEqual([null, "transient"]);
+    expect(getCallsSince(db, since).map((row) => row.error_code)).toEqual([null]);
   });
 });
 

@@ -29,12 +29,13 @@ export default function HomePage() {
           <div className="hero-text">
             <span className="kicker">AI-search visibility report</span>
             <h1 className="hero-headline">
-              Is ChatGPT recommending your competitors over you?
+              When buyers ask AI, does your brand make the shortlist?
             </h1>
             <p className="hero-sub">
-              We ask ChatGPT and Claude the buying questions your customers
-              actually type, watch what they recommend, and ship you a $29.99
-              report showing exactly where you&rsquo;re losing visibility.
+              We run the buying questions your customers actually type through
+              grounded OpenAI and Anthropic APIs, watch what they recommend,
+              and ship a $29.99 report showing where you&rsquo;re losing visibility
+              and what to do next.
             </p>
             <p className="hero-actions">
               <Link href="/wizard/brand" className="btn-primary">
@@ -94,11 +95,11 @@ export default function HomePage() {
             </article>
             <article className="step">
               <span className="step-num">02</span>
-              <h3>We ask ChatGPT and Claude</h3>
+              <h3>We run a repeatable test</h3>
               <p>
-                Behind the scenes we run your prompts through the latest GPT
-                and Claude models with web search, capture every answer, and
-                extract every brand citation. No spreadsheets. No screenshots.
+                Behind the scenes we run each prompt three times through current
+                OpenAI and Anthropic API models with web search, capture every
+                answer, and extract every brand citation. No spreadsheets. No screenshots.
               </p>
             </article>
             <article className="step">
@@ -107,7 +108,8 @@ export default function HomePage() {
               <p>
                 Within fifteen minutes, an emailed editorial report tells you
                 where you&rsquo;re cited, where your competitors are cited
-                instead, and the specific content gaps that explain why.
+                instead, and a prioritized action plan linked to the source
+                evidence we captured.
               </p>
             </article>
           </div>
@@ -120,9 +122,9 @@ export default function HomePage() {
             This is what you receive.
           </h2>
           <p className="section-sub">
-            The same report a paying customer gets, with their brand and
-            competitors anonymized. Click through &mdash; it&rsquo;s a real
-            HTML page, not a screenshot.
+            An illustrative dataset rendered through the exact report code a
+            paying customer gets. Click through &mdash; it&rsquo;s a real HTML
+            page, not a screenshot.
           </p>
           <p>
             <Link href="/sample-report.html" className="btn-text">
@@ -149,25 +151,34 @@ export default function HomePage() {
 
             <dt>Why not just ask ChatGPT myself?</dt>
             <dd>
-              You can. But ChatGPT&rsquo;s answers vary run to run, web search
+              You can. But AI answers vary run to run, web search
               results shift, and a single conversation is a sample size of
               one. We run your prompts multiple times across multiple models
               with web search, then parse every response for brand mentions.
               You get the trend, not the anecdote.
             </dd>
 
+            <dt>Is this exactly what I will see in the ChatGPT or Claude app?</dt>
+            <dd>
+              No, and any honest visibility tool should say so. We query the
+              providers&rsquo; grounded APIs. Consumer apps can use different model
+              versions, system instructions, rollouts, and personalization.
+              The report is a reproducible directional benchmark, not a promise
+              that every user will receive the same answer.
+            </dd>
+
             <dt>Will this be a one-time report, or a subscription?</dt>
             <dd>
-              One-time, for now. After you receive your report you can
-              choose to subscribe and get a fresh one every Monday, but
-              there is no recurring charge by default. We want you to see
-              the value before you commit.
+              One-time. There is no subscription and no recurring charge.
+              Purchase another report when you want a fresh snapshot, or use
+              the open-source CLI to run the same workflow on your own schedule.
             </dd>
 
             <dt>Is the underlying CLI open source?</dt>
             <dd>
               Yes. The full <a href="https://github.com/foodaka/openllmrank">openllmrank CLI</a> is
-              MIT-licensed on npm. Bring your own OpenAI and Anthropic keys
+              MIT-licensed on npm. Bring your own OpenAI, Anthropic, Gemini,
+              Perplexity, or xAI key
               and you can self-host the entire system for the cost of a few
               API calls. We charge for the hosted version because most
               marketing leads can&rsquo;t (and shouldn&rsquo;t need to) run
@@ -178,7 +189,8 @@ export default function HomePage() {
             <dd>
               You&rsquo;ll get the most useful report of all. We&rsquo;ll
               show you exactly which competitors are getting cited, on which
-              prompts, and which pages of theirs are doing the work. The
+              prompts, and — when the provider returns source citations —
+              which pages may be contributing. The
               empty state is the value &mdash; you can&rsquo;t fix what you
               can&rsquo;t see.
             </dd>

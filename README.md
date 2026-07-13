@@ -10,7 +10,7 @@ This is the Bun-workspace monorepo for the openllmrank project.
 
 | Package | Path | Description | Visibility |
 |---------|------|-------------|------------|
-| `openllmrank` | [`packages/cli`](./packages/cli) | The open-source CLI. Tracks how your brand appears in answers from ChatGPT and Claude. Published to npm. | Public, MIT |
+| `openllmrank` | [`packages/cli`](./packages/cli) | The open-source CLI. Tracks brand visibility across grounded OpenAI, Anthropic, Gemini, Perplexity, and Grok APIs. Published to npm. | Public, MIT |
 | `@openllmrank/shared` | `packages/shared` | Shared Zod schemas and types used by the CLI and the hosted webapp. | Private |
 
 ## Quick start (CLI users)

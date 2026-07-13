@@ -26,8 +26,8 @@ const empty: WizardState = {
   competitors: [],
   prompts: [],
   providers: [
-    { id: "openai", model: "gpt-4o-mini" },
-    { id: "anthropic", model: "claude-haiku-4-5-20251001" },
+    { id: "openai", model: "gpt-5.4-mini" },
+    { id: "anthropic", model: "claude-haiku-4-5" },
   ],
 };
 

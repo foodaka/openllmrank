@@ -37,8 +37,8 @@ export default function TermsPage() {
           <p>
             openllmrank generates an AI-search visibility report that
             measures how often the brand you specify is cited by
-            ChatGPT and Claude in response to buying questions you
-            provide. The report is delivered by email, typically within
+            grounded OpenAI and Anthropic APIs in response to buying
+            questions you provide. The report is delivered by email, typically within
             fifteen minutes of payment.
           </p>
 
@@ -81,8 +81,9 @@ export default function TermsPage() {
           <p>
             <strong>
               The Service generates analysis using third-party large
-              language models (ChatGPT, Claude) and their web search
-              tools. Outputs are probabilistic and may contain factual
+              language-model APIs (OpenAI and Anthropic) and their web
+              search tools. API output can differ from the providers&rsquo;
+              consumer apps. Outputs are probabilistic and may contain factual
               errors, hallucinated citations, or out-of-date
               information.
             </strong>{" "}

@@ -137,8 +137,17 @@ export default function WizardReviewPage() {
       <dl className="review-summary">
         <div>
           <dt>Brand</dt>
-          <dd>{state.brand.name}</dd>
+          <dd>
+            {state.brand.name}
+            {state.brand.category && <span className="muted"> · {state.brand.category}</span>}
+          </dd>
         </div>
+        {state.brand.website && (
+        <div>
+          <dt>Website</dt>
+          <dd>{new URL(state.brand.website).hostname}</dd>
+        </div>
+        )}
         <div>
           <dt>Competitors</dt>
           <dd>

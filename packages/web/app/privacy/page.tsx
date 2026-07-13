@@ -41,9 +41,9 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong>Brand information</strong> &mdash; the brand name,
-              competitor names, and buying questions you provide through
-              the signup wizard. This is the input we run through ChatGPT
-              and Claude on your behalf.
+              website, category, competitor names, and buying questions you
+              provide through the signup wizard. This is the input we send
+              to grounded OpenAI and Anthropic APIs on your behalf.
             </li>
             <li>
               <strong>Payment information</strong> &mdash; collected

@@ -2,14 +2,9 @@
 // HTML to ./outbox/<id>.html so you can preview it in a browser without a
 // Postmark account.
 //
-// Two emails fire per successful job:
-//   1. order-received — sent right after the webhook flips status='paid',
-//                       so the customer has confirmation while the worker
-//                       generates the report. Short, plain note.
-//   2. report          — sent after the run completes, with a link to the
-//                       hosted report page. The full report is
-//                       rendered on the web app so email clients don't mangle
-//                       the table layout.
+// The worker sends report-ready and refund emails. The web webhook owns the
+// immediate order-received confirmation so payment provisioning has one
+// authoritative implementation.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -37,7 +32,7 @@ async function sendOrStub(args: {
   subject: string;
   htmlBody: string;
   textBody?: string;
-  tag: "order-received" | "report" | "refund";
+  tag: "report" | "refund";
   jobId: string;
 }): Promise<EmailResult> {
   if (isPostmarkStub()) {
@@ -99,93 +94,6 @@ function escapeHtml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-}
-
-// --- order-received template -------------------------------------------------
-
-export function renderOrderReceivedHtml(args: {
-  brand_name: string;
-  competitor_count: number;
-  prompt_count: number;
-  email: string;
-}): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Your openllmrank report is being generated</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&display=swap">
-<style>
-body{margin:0;background:#fbf8f0;color:#241f19;font-family:"DM Sans",-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.55}
-.wrap{max-width:560px;margin:0 auto;padding:48px 28px}
-.kicker{font-size:12px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#376b5b}
-h1{font-family:"Fraunces",Georgia,serif;font-size:36px;font-weight:500;line-height:1.05;margin:12px 0 24px;letter-spacing:-0.01em}
-p{font-size:16px;color:#241f19;margin:0 0 16px}
-.muted{color:#756c60}
-.summary{background:#f2eadc;border:1px solid #e3d8c6;border-radius:7px;padding:20px;margin:24px 0;font-size:15px}
-.summary dt{font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:#756c60;margin-top:8px}
-.summary dt:first-child{margin-top:0}
-.summary dd{margin:2px 0 0 0;font-weight:500}
-hr{border:0;border-top:1px solid #e3d8c6;margin:32px 0}
-.sig{font-family:"Fraunces",Georgia,serif;font-style:italic;color:#756c60}
-</style></head>
-<body><div class="wrap">
-<span class="kicker">Order received</span>
-<h1>Your report is being generated.</h1>
-<p>Thanks for your order. We're now asking ChatGPT and Claude the questions you gave us, watching what they recommend, and compiling your visibility report.</p>
-<dl class="summary">
-<dt>Brand</dt><dd>${args.brand_name}</dd>
-<dt>Competitors tracked</dt><dd>${args.competitor_count}</dd>
-<dt>Prompts</dt><dd>${args.prompt_count}</dd>
-<dt>Estimated time</dt><dd>10–15 minutes</dd>
-</dl>
-<p>Your report will land in this inbox (<span class="muted">${args.email}</span>) when it's ready.</p>
-<hr>
-<p class="sig">— openllmrank</p>
-</div></body></html>`;
-}
-
-export function renderOrderReceivedText(args: {
-  brand_name: string;
-  competitor_count: number;
-  prompt_count: number;
-}): string {
-  return `Your openllmrank report is being generated.
-
-Thanks for your order. We're now asking ChatGPT and Claude the questions
-you gave us and compiling your visibility report.
-
-Brand: ${args.brand_name}
-Competitors tracked: ${args.competitor_count}
-Prompts: ${args.prompt_count}
-Estimated time: 10-15 minutes
-
-Your report will land in your inbox when it's ready.
-
-— openllmrank`;
-}
-
-export async function sendOrderReceived(args: {
-  jobId: string;
-  to: string;
-  brand_name: string;
-  competitor_count: number;
-  prompt_count: number;
-}): Promise<EmailResult> {
-  return await sendOrStub({
-    to: args.to,
-    subject: `Your openllmrank report for ${args.brand_name} is being generated`,
-    htmlBody: renderOrderReceivedHtml({
-      brand_name: args.brand_name,
-      competitor_count: args.competitor_count,
-      prompt_count: args.prompt_count,
-      email: args.to,
-    }),
-    textBody: renderOrderReceivedText({
-      brand_name: args.brand_name,
-      competitor_count: args.competitor_count,
-      prompt_count: args.prompt_count,
-    }),
-    tag: "order-received",
-    jobId: args.jobId,
-  });
 }
 
 // --- report template ---------------------------------------------------------

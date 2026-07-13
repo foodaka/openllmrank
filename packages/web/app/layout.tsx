@@ -15,7 +15,7 @@ const GOOGLE_FONTS_HREF =
 const SITE_URL = "https://openllmrank.xyz";
 const SITE_NAME = "openllmrank";
 const SITE_DESCRIPTION =
-  "Privacy-friendly, open-source analytics for AI search visibility. See how ChatGPT and Claude rank your brand against your competitors. One emailed report, $29.99.";
+  "A repeatable AI-search visibility benchmark with grounded OpenAI and Anthropic APIs, competitor evidence, and a prioritized action plan. One emailed report, $29.99.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

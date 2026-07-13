@@ -8,6 +8,7 @@ import type {
 } from "openllmrank/src/core/db";
 import { computeGap, computeRates } from "openllmrank/src/core/gap";
 import { renderHtmlReport } from "openllmrank/src/core/render-html";
+import { PRODUCT_VERSION } from "openllmrank/src/version";
 import { serviceClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,8 @@ type JobRow = {
   succeeded_at: string | null;
   created_at: string;
   error_message: string | null;
+  succeeded_count: number | null;
+  failed_count: number | null;
 };
 
 type PgRunRow = {
@@ -76,7 +79,7 @@ export async function GET(_req: Request, context: RouteContext): Promise<Respons
   const supabase = serviceClient();
   const { data: job, error: jobErr } = await supabase
     .from("jobs")
-    .select("id,user_id,brand_id,status,config_jsonb,cli_run_id,succeeded_at,created_at,error_message")
+    .select("id,user_id,brand_id,status,config_jsonb,cli_run_id,succeeded_at,created_at,error_message,succeeded_count,failed_count")
     .eq("id", id)
     .single();
 
@@ -247,7 +250,15 @@ async function renderReportForJob(
     runs: runRows,
     since_iso: job.succeeded_at ?? job.created_at,
     generated_at: new Date().toISOString(),
-    project_version: "0.3.0",
+    project_version: PRODUCT_VERSION,
+    brand_website: cfg.brand.website,
+    prompts: promptRows,
+    configured_models: cfg.providers.map((provider) => ({
+      provider: provider.id,
+      model: provider.model,
+    })),
+    expected_calls: (job.succeeded_count ?? callRows.length) + (job.failed_count ?? 0),
+    failed_calls: job.failed_count ?? 0,
   });
 }
 
@@ -257,6 +268,9 @@ function htmlResponse(html: string, status = 200): Response {
     headers: {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store",
+      "x-robots-tag": "noindex, nofollow, noarchive",
+      "referrer-policy": "no-referrer",
+      "content-security-policy": "default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
     },
   });
 }
@@ -275,6 +289,8 @@ function renderStatusPage(args: {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
 ${refresh}
 <title>${escapeHtml(args.title)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
