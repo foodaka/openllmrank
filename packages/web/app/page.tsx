@@ -1,14 +1,53 @@
 import Link from "next/link";
 import { ContactLink } from "./_components/contact-link";
+import { getAllPosts } from "../lib/blog";
 
 // Marketing landing page. Editorial long-scroll, mirrors the approved
 // hero mockup at:
 // ~/.gstack/projects/foodaka-openllmrank/designs/marketing-hero-20260517/variant-A.png
 // Same visual system as packages/cli/src/core/render-html.ts.
 
+const SITE_URL = "https://openllmrank.io";
+
+// How many posts get a direct homepage link. Every post listed here is one hop
+// from the only page Google has actually crawled — see the "Field notes"
+// section below for why that matters.
+const HOMEPAGE_POST_COUNT = 6;
+
 export default function HomePage() {
+  const latestPosts = getAllPosts().slice(0, HOMEPAGE_POST_COUNT);
+
+  // Entity schema for the site itself. The blog posts each ship Article +
+  // FAQPage JSON-LD; the homepage had none, so nothing tied the pages to a
+  // publisher.
+  const siteJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        name: "openllmrank",
+        url: SITE_URL,
+        description:
+          "AI-search visibility analytics across five grounded AI providers.",
+        sameAs: ["https://github.com/foodaka/openllmrank"],
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        name: "openllmrank",
+        url: SITE_URL,
+        publisher: { "@id": `${SITE_URL}/#organization` },
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+      />
       <nav className="site-nav">
         <div className="wordmark">openllmrank</div>
         <ul className="site-nav-links">
@@ -158,6 +197,38 @@ export default function HomePage() {
           <p>
             <Link href="/sample-report.html" className="btn-text">
               Open the sample report &rarr;
+            </Link>
+          </p>
+        </section>
+
+        {/* Direct links to every post. The nav and footer only ever pointed at
+            /blog, which left each post two hops from the homepage behind a hub
+            page Google had not crawled — the whole blog showed up in Search
+            Console as "Discovered, currently not indexed". These links put each
+            post one hop from the only URL with any crawl history. */}
+        <section id="field-notes" className="wrap">
+          <hr className="rule" />
+          <span className="kicker">From the blog</span>
+          <h2 className="section-headline">Field notes on AI search.</h2>
+          <p className="section-sub">
+            Working notes on answer engine optimization &mdash; how ChatGPT,
+            Perplexity, and Gemini decide which brands to recommend, and what
+            the data actually shows.
+          </p>
+
+          <ul className="home-posts">
+            {latestPosts.map((post) => (
+              <li key={post.slug}>
+                <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+                <p>{post.description}</p>
+                <span className="home-post-meta">{post.readingTime}</span>
+              </li>
+            ))}
+          </ul>
+
+          <p>
+            <Link href="/blog" className="btn-text">
+              Read all field notes &rarr;
             </Link>
           </p>
         </section>
@@ -410,6 +481,40 @@ export default function HomePage() {
           max-width: 720px;
         }
 
+        /* Homepage post list — mirrors .post-list-item in the blog layout so
+           the two surfaces read as the same publication. */
+        .home-posts {
+          list-style: none;
+          margin: 8px 0 32px;
+          padding: 0;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0 48px;
+        }
+        .home-posts li {
+          padding: 28px 0;
+          border-top: 1px solid var(--line);
+        }
+        .home-posts a {
+          font-family: var(--font-display);
+          font-size: 22px;
+          line-height: 1.15;
+          color: var(--ink);
+          border-bottom: none;
+        }
+        .home-posts a:hover { color: var(--accent); }
+        .home-posts p {
+          color: var(--muted);
+          font-size: 16px;
+          line-height: 1.6;
+          margin: 10px 0 8px;
+        }
+        .home-post-meta {
+          font-size: 13px;
+          color: var(--muted);
+          font-variant-numeric: tabular-nums;
+        }
+
         .cta-final { padding-bottom: 96px; }
         .cta-final h2 { margin-bottom: 28px; }
 
@@ -434,6 +539,7 @@ export default function HomePage() {
           .site-nav-links { display: none; }
           .section-headline { font-size: 32px; }
           .steps { grid-template-columns: 1fr; gap: 32px; }
+          .home-posts { grid-template-columns: 1fr; gap: 0; }
         }
       `}</style>
     </>

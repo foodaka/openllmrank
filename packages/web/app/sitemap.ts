@@ -3,13 +3,26 @@ import { getAllPosts } from "../lib/blog";
 
 const SITE_URL = "https://openllmrank.io";
 
+// Last substantive edit to the legal pages. A literal, not new Date(): these
+// pages change when we change them, not when we deploy.
+const LEGAL_LAST_MODIFIED = new Date("2026-07-16T00:00:00Z");
+
 // Only public, indexable marketing/legal/blog pages belong here. The wizard,
 // checkout, and per-id report pages are private funnel/app routes and are
 // excluded (and disallowed in robots.ts).
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
+  const allPosts = getAllPosts();
 
-  const posts: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
+  // The homepage and the blog index both list posts, so both genuinely change
+  // when a post ships — and only then. Deriving lastmod from the newest post
+  // keeps it honest. Previously this was new Date(), which stamped a fresh
+  // lastmod on every deploy and taught Google to ignore the field entirely.
+  const newest = allPosts[0];
+  const lastModified = newest
+    ? new Date(`${newest.dateModified ?? newest.date}T00:00:00Z`)
+    : LEGAL_LAST_MODIFIED;
+
+  const posts: MetadataRoute.Sitemap = allPosts.map((post) => ({
     url: `${SITE_URL}/blog/${post.slug}`,
     lastModified: new Date(`${post.dateModified ?? post.date}T00:00:00Z`),
     changeFrequency: "monthly",
@@ -32,13 +45,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...posts,
     {
       url: `${SITE_URL}/privacy`,
-      lastModified,
+      lastModified: LEGAL_LAST_MODIFIED,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${SITE_URL}/terms`,
-      lastModified,
+      lastModified: LEGAL_LAST_MODIFIED,
       changeFrequency: "yearly",
       priority: 0.3,
     },
