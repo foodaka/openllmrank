@@ -82,6 +82,7 @@ describePg("worker end-to-end (stubbed CLI)", () => {
   testPg("claim → run stub CLI → write results → mark completed", async () => {
     const { claimJob, markCompleted } = await import("../src/queue");
     const { writeRunToPostgres } = await import("../src/result-writer");
+    const { backfillRunMetrics, writeRunMetrics } = await import("../src/run-metrics");
 
     // 1. Insert a paid job ready to be claimed.
     const ins = (await sql`
@@ -171,6 +172,8 @@ describePg("worker end-to-end (stubbed CLI)", () => {
       user_id: userId,
       brand_id: brandId,
       cli_run_id: STUB_RUN_ID,
+      brand_name: "SmokeCo",
+      competitor_names: ["RivalCo"],
     });
     expect(typeof run_id_pg).toBe("string");
     expect(run_id_pg.length).toBeGreaterThan(10);
@@ -209,6 +212,62 @@ describePg("worker end-to-end (stubbed CLI)", () => {
     `) as unknown as Array<{ n: number; brands: string[] }>;
     expect(citationRows[0]!.n).toBe(2);
     expect(citationRows[0]!.brands.sort()).toEqual(["RivalCo", "SmokeCo"]);
+
+    const metricRows = (await sql`
+      select own_citation_rate::float, share_of_voice::float, samples_total,
+             per_provider_jsonb::text, per_competitor_jsonb::text, top_gap_prompt,
+             top_gap_score::float
+      from public.run_metrics where run_id = ${run_id_pg}
+    `) as unknown as Array<{
+      own_citation_rate: number;
+      share_of_voice: number;
+      samples_total: number;
+      per_provider_jsonb: string;
+      per_competitor_jsonb: string;
+      top_gap_prompt: string | null;
+      top_gap_score: number | null;
+    }>;
+    expect(metricRows).toHaveLength(1);
+    expect(metricRows[0]!.own_citation_rate).toBe(1);
+    expect(metricRows[0]!.share_of_voice).toBe(0.5);
+    expect(metricRows[0]!.samples_total).toBe(1);
+    expect(JSON.parse(metricRows[0]!.per_provider_jsonb).openai).toBe(1);
+    expect(JSON.parse(metricRows[0]!.per_competitor_jsonb)).toEqual([
+      { name: "RivalCo", rate: 1 },
+    ]);
+    expect(metricRows[0]!.top_gap_prompt).toBe("best CRM for smoke tests");
+    expect(metricRows[0]!.top_gap_score).toBe(0);
+
+    // Recomputing the same run updates its existing row rather than creating
+    // a second dashboard point.
+    await writeRunMetrics(sql, {
+      run_id: run_id_pg,
+      user_id: userId,
+      brand_id: brandId,
+      job_id: jobId,
+      computed_at: new Date().toISOString(),
+      brand_name: "SmokeCo",
+      competitor_names: ["RivalCo"],
+    });
+    const metricCount = (await sql`
+      select count(*)::int as n from public.run_metrics where run_id = ${run_id_pg}
+    `) as unknown as Array<{ n: number }>;
+    expect(metricCount[0]!.n).toBe(1);
+
+    const finishedRows = (await sql`
+      select finished_at::text from public.runs where id = ${run_id_pg}
+    `) as unknown as Array<{ finished_at: string }>;
+    await sql`delete from public.run_metrics where run_id = ${run_id_pg}`;
+    await sql`update public.brands set name = 'Renamed SmokeCo' where id = ${brandId}`;
+    const backfilled = await backfillRunMetrics(sql);
+    expect(backfilled).toBeGreaterThan(0);
+
+    const rebuiltRows = (await sql`
+      select computed_at::text, top_gap_prompt
+      from public.run_metrics where run_id = ${run_id_pg}
+    `) as unknown as Array<{ computed_at: string; top_gap_prompt: string }>;
+    expect(rebuiltRows[0]!.computed_at).toBe(finishedRows[0]!.finished_at);
+    expect(rebuiltRows[0]!.top_gap_prompt).toBe("best CRM for smoke tests");
 
     // Cleanup the stub sqlite file
     rmSync(sqlitePath, { force: true });

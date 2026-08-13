@@ -2,7 +2,7 @@
 // Polls for jobs.refund_status='pending' and tries to issue refunds.
 //
 // Lifecycle:
-//   1. A job terminally fails (markFailed in queue.ts) → refund_status='pending'
+//   1. A one-shot job terminally fails (markFailed in queue.ts) → refund_status='pending'
 //   2. This loop picks up the row, calls Stripe refund API
 //   3. On success: refund_status='completed', send refund-notice email
 //   4. On error: increment refund_attempts, leave status='pending', try again
@@ -21,6 +21,7 @@ type PendingRefundRow = {
   id: string;
   user_id: string;
   brand_id: string;
+  origin: "one_shot";
   email_to: string;
   amount_cents: number;
   currency: string;
@@ -31,15 +32,19 @@ type PendingRefundRow = {
   brand_name: string;
 };
 
-async function fetchPendingRefunds(sql: SQL): Promise<PendingRefundRow[]> {
+// Only one-shot purchases with a payment intent can be refunded. Jobs without
+// one are left for a later reconciliation path instead of being selected here.
+export async function fetchPendingRefunds(sql: SQL): Promise<PendingRefundRow[]> {
   return (await sql`
-    select j.id, j.user_id, j.brand_id, j.email_to, j.amount_cents, j.currency,
+    select j.id, j.user_id, j.brand_id, j.origin, j.email_to, j.amount_cents, j.currency,
            j.error_message, j.stripe_payment_intent_id,
            j.stripe_checkout_session_id, j.refund_attempts,
            b.name as brand_name
     from public.jobs j
     join public.brands b on b.id = j.brand_id
     where j.refund_status = 'pending'
+      and j.origin = 'one_shot'
+      and j.stripe_payment_intent_id is not null
       and j.refund_attempts < ${REFUND_MAX_ATTEMPTS}
     order by j.failed_at asc
     limit 10

@@ -46,6 +46,9 @@ export default function BlogLayout({
             <Link href="/#how-it-works">How it works</Link>
           </li>
           <li>
+            <Link href="/login">Sign in</Link>
+          </li>
+          <li>
             <Link href="/wizard/brand" className="nav-cta">
               Get my report
             </Link>
@@ -58,7 +61,8 @@ export default function BlogLayout({
       <footer className="wrap site-footer">
         <span className="muted">
           openllmrank &middot; Privacy-friendly, open-source analytics for AI
-          search visibility &middot; <Link href="/blog">Blog</Link> &middot;{" "}
+          search visibility &middot; <Link href="/login">Sign in</Link> &middot;{" "}
+          <Link href="/blog">Blog</Link> &middot;{" "}
           <Link href="/privacy">Privacy</Link> &middot;{" "}
           <Link href="/terms">Terms</Link> &middot;{" "}
           <ContactLink>Contact</ContactLink> &middot;{" "}

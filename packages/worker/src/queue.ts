@@ -33,12 +33,14 @@ export type JobStatus =
 
 export type EmailStatus = "not_yet" | "pending" | "sent" | "failed";
 export type RefundStatus = "not_required" | "pending" | "completed" | "failed";
+export type JobOrigin = "one_shot" | "scheduled" | "manual";
 
 export type Job = {
   id: string;
   user_id: string;
   brand_id: string;
   status: JobStatus;
+  origin: JobOrigin;
   email_status: EmailStatus;
   refund_status: RefundStatus;
   config_jsonb: HostedConfig;
@@ -75,7 +77,7 @@ export async function claimJob(sql: SQL): Promise<Job | null> {
       for update skip locked
       limit 1
     )
-    returning id, user_id, brand_id, status, email_status, refund_status,
+    returning id, user_id, brand_id, status, origin, email_status, refund_status,
               config_jsonb, stripe_checkout_session_id, stripe_payment_intent_id,
               amount_cents, currency, email_to, attempts
   `) as unknown as Job[];
@@ -112,8 +114,8 @@ export async function markCompleted(
 }
 
 /**
- * Mark a job failed terminally. Sets email_status='not_yet' (no report to
- * send) and refund_status='pending' so the refunder cron picks it up.
+ * Mark a job failed terminally. One-shot jobs are refundable; scheduled and
+ * manual subscription runs have no individual payment to refund.
  */
 export async function markFailed(
   sql: SQL,
@@ -129,7 +131,10 @@ export async function markFailed(
         failed_at = now(),
         error_code = ${args.error_code},
         error_message = ${args.error_message},
-        refund_status = 'pending'
+        refund_status = case
+          when origin = 'one_shot' then 'pending'::refund_status
+          else 'not_required'::refund_status
+        end
     where id = ${jobId}
   `;
 }

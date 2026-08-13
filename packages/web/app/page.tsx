@@ -63,6 +63,15 @@ export default function HomePage() {
           <li>
             <a href="#faq">FAQ</a>
           </li>
+          <li>
+            {/* Deliberately a static link, not a session check: keeping this
+                page statically rendered matters for SEO. /login redirects to
+                /dashboard when a session already exists, so one link is
+                correct whether you are signed in or not. */}
+            <Link href="/login" className="nav-signin">
+              Sign in
+            </Link>
+          </li>
         </ul>
       </nav>
 
@@ -310,6 +319,7 @@ export default function HomePage() {
         <footer className="wrap site-footer">
           <span className="muted">
             openllmrank &middot; Privacy-friendly, open-source analytics for AI search visibility &middot;{" "}
+            <Link href="/login">Sign in</Link> &middot;{" "}
             <Link href="/blog">Blog</Link> &middot;{" "}
             <Link href="/privacy">Privacy</Link> &middot;{" "}
             <Link href="/terms">Terms</Link> &middot;{" "}
@@ -348,6 +358,10 @@ export default function HomePage() {
         .site-nav-links a:hover {
           color: var(--accent);
           border-bottom-color: var(--accent);
+        }
+        .site-nav-links a.nav-signin {
+          color: var(--accent);
+          font-weight: 600;
         }
 
         .hero {
@@ -536,7 +550,10 @@ export default function HomePage() {
           .hero-actions { flex-direction: column; align-items: flex-start; }
           .report-providers ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .btn-primary { width: 100%; text-align: center; }
-          .site-nav-links { display: none; }
+          /* Section anchors collapse on mobile, but Sign in must survive —
+             it is the only way a paying customer reaches their dashboard. */
+          .site-nav-links li { display: none; }
+          .site-nav-links li:last-child { display: block; }
           .section-headline { font-size: 32px; }
           .steps { grid-template-columns: 1fr; gap: 32px; }
           .home-posts { grid-template-columns: 1fr; gap: 0; }

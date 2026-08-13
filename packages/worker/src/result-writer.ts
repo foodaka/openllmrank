@@ -18,6 +18,7 @@
 
 import { Database } from "bun:sqlite";
 import type { SQL } from "bun";
+import { writeRunMetrics } from "./run-metrics";
 
 type SqliteRunRow = {
   run_id: string;
@@ -76,6 +77,8 @@ export async function writeRunToPostgres(
     user_id: string;
     brand_id: string;
     cli_run_id: string;
+    brand_name: string;
+    competitor_names: string[];
   },
 ): Promise<{ run_id_pg: string }> {
   // Read the entire CLI output upfront. v1 jobs are bounded by the wizard
@@ -234,6 +237,16 @@ export async function writeRunToPostgres(
         `;
       }
     }
+
+    await writeRunMetrics(tx, {
+      run_id: run_id_pg,
+      user_id: args.user_id,
+      brand_id: args.brand_id,
+      job_id: args.job_id,
+      computed_at: runRow.finished_at ?? runRow.started_at,
+      brand_name: args.brand_name,
+      competitor_names: args.competitor_names,
+    });
 
     return { run_id_pg };
   }) as { run_id_pg: string };
