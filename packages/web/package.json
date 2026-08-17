@@ -11,6 +11,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@openllmrank/crawl": "workspace:*",
     "@openllmrank/shared": "workspace:*",
     "@supabase/supabase-js": "^2.49.0",
     "@vercel/analytics": "^2.0.1",

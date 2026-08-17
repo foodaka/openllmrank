@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@openllmrank/crawl": "workspace:*",
     "@openllmrank/shared": "workspace:*",
     "openllmrank": "workspace:*",
     "stripe": "^17.4.0",

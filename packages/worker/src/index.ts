@@ -1,8 +1,11 @@
-// Worker entry point. Three loops run concurrently:
+// Worker entry point. Four loops run concurrently:
 //
-//   1. Main job loop   — claim jobs, run CLI, write results, mark complete/failed.
+//   1. Main job loop   — claim PAID jobs, run CLI, write results, mark complete/failed.
 //   2. Refunder loop   — pick up failed jobs with refund_status='pending', call Stripe.
 //   3. Email loop      — pick up completed jobs with email_status='pending', send report.
+//   4. Crawl loop      — claim FREE crawl checks (own table: crawl_checks) and run
+//                        the @openllmrank/crawl engine. Structurally separate from
+//                        the paid queue so free work can never delay paid jobs.
 //
 // SIGTERM / SIGINT: stop accepting new jobs, finish the current one if any,
 // stop the outboxes, close the DB connection, exit cleanly.
@@ -14,6 +17,7 @@ import { runCliJob, killActiveSubprocess } from "./cli-runner";
 import { writeRunToPostgres } from "./result-writer";
 import { startRefunderLoop } from "./refunder";
 import { startEmailRetryLoop } from "./email-retry";
+import { startCrawlLoop } from "./crawl-loop";
 import { alert } from "./alerts";
 
 let shuttingDown = false;
@@ -183,6 +187,9 @@ async function shutdown(signal: string): Promise<void> {
 
   refunder.stop();
   emailRetry.stop();
+  crawl.stop();
+  // An in-flight crawl is safe to abandon: its lease expires and the row is
+  // reclaimed on the next boot, same as an interrupted paid job.
   await closeDb();
   console.log("[worker] clean shutdown complete.");
   process.exit(0);
@@ -193,9 +200,10 @@ console.log(`[worker] stripe mode: ${env.stripeMode}`);
 console.log(`[worker] postmark mode: ${env.postmarkMode}`);
 console.log(`[worker] poll interval: ${env.pollIntervalMs}ms`);
 
-// Spin up the two outbox loops first, then the main job loop.
+// Spin up the outbox + crawl loops first, then the main job loop.
 const refunder = startRefunderLoop();
 const emailRetry = startEmailRetryLoop();
+const crawl = startCrawlLoop();
 
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 process.on("SIGINT", () => void shutdown("SIGINT"));

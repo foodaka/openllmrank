@@ -147,6 +147,29 @@ export const posts: BlogPost[] = [
       "chatgpt visibility tracker",
     ],
   },
+  {
+    slug: "discovered-currently-not-indexed",
+    title:
+      "Discovered — Currently Not Indexed: The Silent Cause Nobody Checks",
+    description:
+      "Our blog sat invisible in Google for months with every post stuck at \"Discovered — currently not indexed.\" The cause wasn't content quality or crawl budget — it was broken internal links severing the crawl paths. Here's how to diagnose it in 60 seconds, and why the same failure hides you from AI crawlers too.",
+    date: "2026-08-15",
+    dateModified: "2026-08-15",
+    readingTime: "8 min read",
+    tags: ["Technical SEO", "Indexing", "Crawlability", "AEO"],
+    keywords: [
+      "discovered currently not indexed",
+      "discovered not indexed fix",
+      "google not indexing my pages",
+      "blog posts not indexed",
+      "broken internal links seo",
+      "orphan pages seo",
+      "internal linking crawl paths",
+      "site not showing up in google",
+      "crawled currently not indexed vs discovered",
+      "ai crawlers blocked",
+    ],
+  },
 ];
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
@@ -192,6 +215,11 @@ const RELATED: Record<string, string[]> = {
     "what-is-aeo",
     "how-to-get-mentioned-in-chatgpt",
     "geo-vs-seo-vs-aeo",
+  ],
+  "discovered-currently-not-indexed": [
+    "how-to-get-mentioned-in-chatgpt",
+    "which-sources-do-ai-engines-cite",
+    "what-is-aeo",
   ],
 };
 
