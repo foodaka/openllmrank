@@ -44,6 +44,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     ...posts,
     {
+      // The free crawlability check — tool page only; tokenized reports are
+      // noindexed and robots-disallowed.
+      url: `${SITE_URL}/check`,
+      lastModified: new Date("2026-08-15T00:00:00Z"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${SITE_URL}/privacy`,
       lastModified: LEGAL_LAST_MODIFIED,
       changeFrequency: "yearly",
