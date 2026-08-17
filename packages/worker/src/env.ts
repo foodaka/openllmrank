@@ -2,10 +2,15 @@
 // tests can import worker modules without DATABASE_URL being set.
 
 import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 function loadEnvFile(path = ".env.local"): void {
-  if (!existsSync(path)) return;
-  const content = readFileSync(path, "utf8");
+  // CWD first (deployed layout), then package-relative — so tests invoked
+  // from the repo root (`bun test`, the documented flow) still find
+  // packages/worker/.env.local instead of failing on missing DATABASE_URL.
+  const resolved = existsSync(path) ? path : join(import.meta.dir, "..", path);
+  if (!existsSync(resolved)) return;
+  const content = readFileSync(resolved, "utf8");
   for (const line of content.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) continue;
@@ -35,6 +40,7 @@ type EnvShape = {
   reportBaseUrl: string;
   workerId: string;
   pollIntervalMs: number;
+  crawlPollIntervalMs: number;
   leaseTimeoutMs: number;
   cliRunTimeoutMs: number;
   adminWebhook: string;
@@ -92,6 +98,9 @@ function build(): EnvShape {
     ),
     workerId: optional("WORKER_ID", `worker-${process.pid}`),
     pollIntervalMs: int("WORKER_POLL_INTERVAL_MS", 5000),
+    // Faster than the paid poll: the report page promises first signal in
+    // seconds, and claim latency is part of that budget (decision 6A).
+    crawlPollIntervalMs: int("CRAWL_POLL_INTERVAL_MS", 1000),
     leaseTimeoutMs: int("WORKER_LEASE_TIMEOUT_MS", 30 * 60 * 1000),
     cliRunTimeoutMs: int("CLI_RUN_TIMEOUT_MS", 20 * 60 * 1000),
     adminWebhook: optional("ADMIN_ALERT_DISCORD_WEBHOOK"),
