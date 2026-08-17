@@ -58,6 +58,9 @@ export default function HomePage() {
             <a href="#sample">Sample report</a>
           </li>
           <li>
+            <Link href="/check">Free crawl check</Link>
+          </li>
+          <li>
             <Link href="/blog">Blog</Link>
           </li>
           <li>
@@ -201,6 +204,31 @@ export default function HomePage() {
           </p>
         </section>
 
+        {/* Free tool: top-of-funnel entry for the paid report. The crawl
+            check was born from this site's own "Discovered — currently not
+            indexed" incident (see the blog post of the same name). */}
+        <section id="crawl-check" className="wrap">
+          <hr className="rule" />
+          <span className="kicker">Free tool &middot; no signup</span>
+          <h2 className="section-headline">Is your site invisible?</h2>
+          <p className="section-sub">
+            Our own blog sat unindexed for months because broken internal
+            links severed the crawl paths &mdash; and nothing warned us. The
+            free crawl check walks your site the way Googlebot does and shows
+            you every orphan page, broken internal link, and blocked AI
+            crawler in about a minute. Fixes ship as a copy-paste prompt for
+            your coding agent.
+          </p>
+          <p className="hero-actions">
+            <Link href="/check" className="btn-primary">
+              Check my site &mdash; free
+            </Link>
+            <Link href="/blog/discovered-currently-not-indexed" className="btn-text">
+              Read the story behind it
+            </Link>
+          </p>
+        </section>
+
         {/* Direct links to every post. The nav and footer only ever pointed at
             /blog, which left each post two hops from the homepage behind a hub
             page Google had not crawled — the whole blog showed up in Search
@@ -310,6 +338,7 @@ export default function HomePage() {
         <footer className="wrap site-footer">
           <span className="muted">
             openllmrank &middot; Privacy-friendly, open-source analytics for AI search visibility &middot;{" "}
+            <Link href="/check">Free crawl check</Link> &middot;{" "}
             <Link href="/blog">Blog</Link> &middot;{" "}
             <Link href="/privacy">Privacy</Link> &middot;{" "}
             <Link href="/terms">Terms</Link> &middot;{" "}
