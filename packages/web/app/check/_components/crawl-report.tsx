@@ -37,6 +37,78 @@ type Report = {
 
 const POLL_MS = 3000;
 
+// ── Monitoring CTA ──────────────────────────────────────────────────────────
+// The failure class this report detects is silent and recurring — the CTA
+// sells the weekly re-crawl. Email is collected HERE (not by Stripe) so all
+// of one subscriber's domains live under a single Stripe Customer and the
+// no-code billing portal can manage them all.
+
+function MonitorCta({ domain }: { domain: string }) {
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function subscribe(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/monitor/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ domain, email }),
+      });
+      const body = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !body.url) {
+        setError(body.error ?? "Something went wrong. Try again.");
+        setBusy(false);
+        return;
+      }
+      window.location.href = body.url;
+    } catch {
+      setError("Network error. Try again.");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="crawl-cta">
+      <h2>This failure is silent. Don&rsquo;t go blind again.</h2>
+      <p className="muted">
+        We&rsquo;ll re-crawl {domain} every week and email you the moment a
+        page becomes unreachable, a link breaks, or a crawler gets blocked —
+        and an all-clear when everything&rsquo;s healthy. Cancel any time.
+      </p>
+      <form className="check-form" onSubmit={subscribe}>
+        <div className="field">
+          <label htmlFor="monitor-email">Your email</label>
+          <input
+            id="monitor-email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@yoursite.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={busy}
+            required
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "monitor-error" : undefined}
+          />
+          {error ? (
+            <p className="field-error" id="monitor-error" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </div>
+        <button className="btn-primary" type="submit" disabled={busy || email.trim() === ""}>
+          {busy ? "Redirecting to checkout…" : `Monitor ${domain} — $29/mo`}
+        </button>
+      </form>
+    </section>
+  );
+}
+
 // ── First-signals task rows ─────────────────────────────────────────────────
 // Live status rows (running → done/failed) with expandable detail, driven by
 // REAL poll state — never scripted. Motion per DESIGN.md: minimal-functional,
@@ -397,6 +469,9 @@ export function CrawlReport({ token }: { token: string }) {
               <pre className="crawl-prompt">{report.fix_prompt}</pre>
             </section>
           ) : null}
+
+          <hr className="rule" />
+          <MonitorCta domain={report.domain} />
 
           <hr className="rule" />
           <section className="crawl-cta">

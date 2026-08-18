@@ -69,6 +69,18 @@ describePg("crawl tables RLS posture", () => {
     expect(tokens.data ?? []).toHaveLength(0);
   });
 
+  test("anon role sees zero rows in crawl_monitors (subscriber emails!)", async () => {
+    await sql`delete from public.crawl_monitors where domain = ${DOMAIN}`;
+    await sql`
+      insert into public.crawl_monitors (domain, origin, email, stripe_customer_id, stripe_subscription_id)
+      values (${DOMAIN}, ${"https://" + DOMAIN}, 'rls-probe@example.com', 'cus_rls', ${"sub_rls_" + crypto.randomUUID()})
+    `;
+    const { anonClient } = await import("../lib/supabase-server");
+    const monitors = await anonClient().from("crawl_monitors").select("email");
+    expect(monitors.data ?? []).toHaveLength(0);
+    await sql`delete from public.crawl_monitors where domain = ${DOMAIN}`;
+  });
+
   test("service role can read the same row (sanity check the probe row exists)", async () => {
     const { serviceClient } = await import("../lib/supabase-server");
     const { data } = await serviceClient()
