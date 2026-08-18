@@ -44,7 +44,8 @@ export async function claimCrawlCheck(sql: SQL): Promise<CrawlCheckRow | null> {
       where (state = 'queued'
          or (state = 'running' and claimed_at < ${cutoff}::timestamptz))
         and attempts < ${MAX_CRAWL_ATTEMPTS}
-      order by created_at asc
+      -- Paying monitors claim ahead of free checks; oldest-first within each.
+      order by (source = 'monitor') desc, created_at asc
       for update skip locked
       limit 1
     )

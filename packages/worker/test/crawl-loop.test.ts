@@ -109,7 +109,10 @@ describePg("startCrawlLoop", () => {
       expect(row!.finished_at).toBeTruthy();
       expect(row!.claimed_by).toBeTruthy();
     } finally {
-      loop.stop();
+      // stop() resolves when the loop has actually exited — without awaiting,
+      // an in-flight iteration can claim rows AFTER this file finishes and
+      // poison later test files' claim assertions (review finding, observed).
+      await loop.stop();
       // Let the loop observe the stop flag before closing its connection.
       await sleep(1300);
       const { closeDb } = await import("../src/db");

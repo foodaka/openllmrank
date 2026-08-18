@@ -32,7 +32,7 @@ async function sendOrStub(args: {
   subject: string;
   htmlBody: string;
   textBody?: string;
-  tag: "report" | "refund";
+  tag: "report" | "refund" | "monitor";
   jobId: string;
 }): Promise<EmailResult> {
   if (isPostmarkStub()) {
@@ -161,6 +161,26 @@ export async function sendReport(args: {
     }),
     tag: "report",
     jobId: args.jobId,
+  });
+}
+
+/** Generic send for callers that render their own body (monitor emails).
+ * Kept thin so all Postmark/stub plumbing stays in sendOrStub. */
+export async function sendRawEmail(args: {
+  to: string;
+  subject: string;
+  htmlBody: string;
+  textBody: string;
+  tag: "monitor";
+  refId: string;
+}): Promise<EmailResult> {
+  return await sendOrStub({
+    to: args.to,
+    subject: args.subject,
+    htmlBody: args.htmlBody,
+    textBody: args.textBody,
+    tag: args.tag,
+    jobId: args.refId,
   });
 }
 
