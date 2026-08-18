@@ -18,5 +18,12 @@ export { fetchSitemaps, type SitemapResult } from "./sitemap";
 export { extractFromHtml, type PageExtract } from "./extract";
 export { buildFindings } from "./checks";
 export { describeFinding } from "./describe";
+export {
+  classifyMonitorEmail,
+  diffFindings,
+  findingKey,
+  type FindingsDiff,
+  type MonitorEmailKind,
+} from "./diff";
 export { buildFixPrompt, fixableFindings } from "./fix-prompt";
 export * from "./types";

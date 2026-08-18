@@ -16,6 +16,10 @@ import {
   writePhase1,
   writeProgress,
 } from "./crawl-queue";
+import {
+  harvestFinishedMonitorCrawls,
+  startDueMonitorCrawls,
+} from "./monitor-queue";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -36,6 +40,18 @@ export function startCrawlLoop(): CrawlLoopHandle {
     while (!stopped) {
       try {
         const sql = db();
+        // Monitor tick piggybacks the loop: phase A queues due monitor
+        // crawls (so the claim below can pick them up, monitor-first),
+        // phase B diffs+emails monitors whose crawl finished. Both are
+        // cheap indexed queries; both no-op when there are no monitors.
+        try {
+          await startDueMonitorCrawls(sql);
+          await harvestFinishedMonitorCrawls(sql);
+        } catch (e) {
+          await alert("warn", "monitor tick failed", {
+            message: (e as Error).message,
+          });
+        }
         const row = await claimCrawlCheck(sql);
         if (!row) {
           emptyClaims++;

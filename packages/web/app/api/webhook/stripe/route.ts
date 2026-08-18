@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { ServerClient as PostmarkClient } from "postmark";
-import { serviceClient } from "@/lib/supabase-server";
-import { verifyWebhook } from "@/lib/stripe";
+// Relative imports: this route is transitively type-checked from the root
+// tsconfig via packages/web/test/, which has no "@/" alias.
+import { serviceClient } from "../../../../lib/supabase-server";
+import { isSubscriptionActive, verifyWebhook } from "../../../../lib/stripe";
 import { HostedConfigSchema, type HostedConfig } from "@openllmrank/shared/config";
 
 // Stripe webhook handler. Post-payment provisioning lives here. Flow:
@@ -193,6 +195,26 @@ export async function POST(req: Request) {
       .eq("id", event.id);
   };
 
+  // Monitor lifecycle: cancellation deactivates the monitor. Handled BEFORE
+  // the generic non-checkout early-return so it isn't swallowed. Deletions
+  // for unknown subscription ids are fine (out-of-order delivery — the
+  // activation path re-checks live status via isSubscriptionActive).
+  if (event.type === "customer.subscription.deleted") {
+    const sub = event.data.object as { id: string };
+    const { error: cancelErr } = await supabase
+      .from("crawl_monitors")
+      .update({ status: "canceled", canceled_at: new Date().toISOString() })
+      .eq("stripe_subscription_id", sub.id);
+    if (cancelErr) {
+      return NextResponse.json(
+        { error: "DB error canceling monitor", detail: cancelErr.message },
+        { status: 500 },
+      );
+    }
+    await markProcessed();
+    return NextResponse.json({ received: true, monitor_canceled: sub.id });
+  }
+
   // Only checkout.session.completed produces customer data. Other events
   // (charge.*, payment_intent.*) we receive but don't act on; logging
   // them in stripe_events is enough.
@@ -204,9 +226,53 @@ export async function POST(req: Request) {
   const session = event.data.object as {
     id: string;
     payment_intent?: string | null;
+    customer?: string | null;
+    subscription?: string | null;
     customer_email?: string | null;
+    customer_details?: { email?: string | null } | null;
     metadata?: Record<string, string> | null;
   };
+
+  // ── Monitor subscriptions branch BEFORE the report/lead path: monitor
+  // sessions carry kind=monitor and no lead_id (review finding — without
+  // this branch every monitor purchase 400s below).
+  if (session.metadata?.kind === "monitor") {
+    const domain = session.metadata.domain;
+    const origin = session.metadata.origin;
+    const email = (session.customer_details?.email ?? session.customer_email ?? "").toLowerCase();
+    const customerId = session.customer;
+    const subscriptionId = session.subscription;
+    if (!domain || !origin || !email || !customerId || !subscriptionId) {
+      return NextResponse.json(
+        { error: "Monitor session missing required fields" },
+        { status: 400 },
+      );
+    }
+    // Out-of-order defense: only activate if the subscription is alive NOW.
+    const alive = await isSubscriptionActive(subscriptionId);
+    if (!alive) {
+      await markProcessed();
+      return NextResponse.json({ received: true, monitor_skipped: "subscription not active" });
+    }
+    const { error: monErr } = await supabase.from("crawl_monitors").insert({
+      domain,
+      origin,
+      email,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+    });
+    // 23505 on stripe_subscription_id = webhook retry after a crash-window —
+    // the monitor already exists; treat as success.
+    if (monErr && monErr.code !== "23505") {
+      return NextResponse.json(
+        { error: "DB error creating monitor", detail: monErr.message },
+        { status: 500 },
+      );
+    }
+    await markProcessed();
+    return NextResponse.json({ received: true, monitor_created: subscriptionId });
+  }
+
   const leadId = session.metadata?.lead_id;
   if (!leadId) {
     return NextResponse.json(

@@ -41,6 +41,7 @@ type EnvShape = {
   workerId: string;
   pollIntervalMs: number;
   crawlPollIntervalMs: number;
+  monitorPortalUrl: string;
   leaseTimeoutMs: number;
   cliRunTimeoutMs: number;
   adminWebhook: string;
@@ -101,6 +102,9 @@ function build(): EnvShape {
     // Faster than the paid poll: the report page promises first signal in
     // seconds, and claim latency is part of that budget (decision 6A).
     crawlPollIntervalMs: int("CRAWL_POLL_INTERVAL_MS", 1000),
+    // Stripe no-code customer-portal login link (dashboard → Settings →
+    // Billing → Customer portal). Empty in dev → emails fall back to mailto.
+    monitorPortalUrl: optional("STRIPE_PORTAL_URL"),
     leaseTimeoutMs: int("WORKER_LEASE_TIMEOUT_MS", 30 * 60 * 1000),
     cliRunTimeoutMs: int("CLI_RUN_TIMEOUT_MS", 20 * 60 * 1000),
     adminWebhook: optional("ADMIN_ALERT_DISCORD_WEBHOOK"),

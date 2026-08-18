@@ -50,6 +50,15 @@ export default function TermsPage() {
             time of order. Prices are exclusive of any applicable
             taxes, which we will add at checkout where required.
           </p>
+          <p>
+            <strong>Crawl monitoring</strong> is a recurring subscription
+            of <strong>USD 29.00 per month, per monitored domain</strong>,
+            billed by Stripe from the day you subscribe. You can cancel at
+            any time via the billing-portal link included in every
+            monitoring email; monitoring continues until the end of the
+            period you have paid for, then stops. No long-term commitment,
+            no cancellation fee.
+          </p>
 
           <h2>3. Refund policy</h2>
           <p>
