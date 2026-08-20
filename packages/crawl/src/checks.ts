@@ -107,11 +107,35 @@ export function buildFindings(args: {
   };
 
   const okPages = pages.filter((p) => p.status >= 200 && p.status < 300);
-  const reachedByLink = new Set(
-    pages
-      .filter((p) => p.discovered_via === "link")
-      .flatMap((p) => [key(p.url), key(p.final_url)]),
-  );
+  // Link-reachability is BFS over the OBSERVED link graph rooted at `/` —
+  // never "which channel fetched the page". When a hub page's fetch dies
+  // mid-crawl and recovers on the phase-2c retry, everything it links to was
+  // fetched via the sitemap channel; judging by channel branded ~40 healthy
+  // flagstick.live pages critical orphans. The graph doesn't care who
+  // fetched what: a page is reachable when a chain of live pages links to it.
+  const adjacency = new Map<string, string[]>();
+  for (const p of okPages) {
+    if (p.links.length === 0) continue;
+    const linkKeys = p.links.map(key);
+    for (const k of new Set([key(p.url), key(p.final_url)])) {
+      const existing = adjacency.get(k);
+      if (existing) existing.push(...linkKeys);
+      else adjacency.set(k, [...linkKeys]);
+    }
+  }
+  const rootKey = key(`${new URL(args.origin).origin}/`);
+  const reachedByLink = new Set<string>([rootKey]);
+  {
+    const stack = [rootKey];
+    while (stack.length > 0) {
+      for (const next of adjacency.get(stack.pop()!) ?? []) {
+        if (!reachedByLink.has(next)) {
+          reachedByLink.add(next);
+          stack.push(next);
+        }
+      }
+    }
+  }
   const pageByKey = new Map<string, Page>();
   for (const p of pages) {
     pageByKey.set(key(p.url), p);
@@ -153,7 +177,10 @@ export function buildFindings(args: {
       url: page.url,
       status: page.status,
       found_on: sources,
-      severity: "critical",
+      // An HTTP error is the server's own verdict — critical. Status 0 only
+      // says WE couldn't reach it (even after the retry): evidence the link
+      // needs checking, not proof it is broken for real crawlers.
+      severity: page.status === 0 ? "warning" : "critical",
       tier: "headline",
     });
   }
@@ -166,6 +193,12 @@ export function buildFindings(args: {
   const orphans: Finding[] = [];
   const notVerified: Finding[] = [];
   const robotsBlockedFindings: Finding[] = [];
+  // A surviving network-level failure means the link graph is incomplete in
+  // an unknowable way — the unreachable page may hold the very links that
+  // would disprove orphanhood. Orphan claims come only from an undamaged
+  // graph; otherwise the honest label is "not verified", same as a partial
+  // crawl.
+  const graphDamaged = pages.some((p) => p.status === 0);
   for (const url of phase1.sitemap_urls) {
     if (!onAllowedHost(url)) continue; // never crawled → no claim to make
     const k = key(url);
@@ -182,7 +215,7 @@ export function buildFindings(args: {
     const fetched = pageByKey.get(k);
     if (fetched && (fetched.status < 200 || fetched.status >= 400)) continue; // already a broken link finding
     if (!linkCrawlRan) continue; // no link graph → no reachability claims
-    if (state === "complete") {
+    if (state === "complete" && !graphDamaged) {
       orphans.push({ type: "orphan_page", url, severity: "critical", tier: "headline" });
     } else {
       notVerified.push({ type: "not_verified_reachable", url, severity: "warning", tier: "headline" });

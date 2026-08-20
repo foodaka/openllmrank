@@ -135,6 +135,16 @@ export async function runCheck(origin: string, options: CrawlOptions = {}): Prom
     failure_reason: failure,
     pages_crawled: pages.length,
     pages_discovered: discovered.size,
+    // Post-retry survivors, for operator diagnosis (worker logs) — findings
+    // alone can't distinguish "their page is broken" from "we couldn't look".
+    ...(pages.some((p) => p.status === 0)
+      ? {
+          fetch_failures: pages
+            .filter((p) => p.status === 0)
+            .slice(0, 50)
+            .map((p) => ({ url: p.url, error: p.fetch_error ?? "unknown" })),
+        }
+      : {}),
     phase1,
     findings: buildFindings({
       state,
@@ -184,36 +194,11 @@ export async function runCheck(origin: string, options: CrawlOptions = {}): Prom
   let hitDeadline = false;
   let firstFetchFailed: string | null = null;
 
-  const visit = async (url: string, via: Page["discovered_via"]): Promise<void> => {
-    // Re-key at dequeue time: the RedirectMap grows during the crawl, so a
-    // URL enqueued under one key may resolve to an already-visited final URL
-    // by now — without this re-check the same page gets fetched twice.
-    const key = canonicalKey(url, redirects);
-    if (visited.has(key)) return;
-    visited.add(key);
-
-    let res;
-    try {
-      res = await guardedFetch(url, fetchOpts);
-    } catch (err) {
-      if (!(err instanceof GuardedFetchError)) throw err;
-      if (pages.length === 0 && via === "link" && url === rootUrl) {
-        firstFetchFailed = err.message;
-        return;
-      }
-      pages.push({
-        url,
-        status: 0,
-        final_url: url,
-        links: [],
-        canonical: null,
-        noindex: false,
-        title_present: false,
-        description_present: false,
-        discovered_via: via,
-      });
-      return;
-    }
+  // Fetch one URL and build its Page record; throws GuardedFetchError on a
+  // network-level failure. Shared by the BFS/sitemap visits and the phase-2c
+  // retry pass so the two can never drift.
+  const fetchPage = async (url: string, via: Page["discovered_via"]): Promise<Page> => {
+    const res = await guardedFetch(url, fetchOpts);
 
     if (res.finalUrl !== url) {
       redirects.record(url, res.finalUrl);
@@ -236,7 +221,7 @@ export async function runCheck(origin: string, options: CrawlOptions = {}): Prom
       extract = await extractFromHtml(res.body, res.finalUrl);
     }
 
-    pages.push({
+    return {
       url,
       status: res.status,
       final_url: res.finalUrl,
@@ -246,10 +231,44 @@ export async function runCheck(origin: string, options: CrawlOptions = {}): Prom
       title_present: extract.titlePresent,
       description_present: extract.descriptionPresent,
       discovered_via: via,
-    });
+    };
+  };
+
+  const visit = async (url: string, via: Page["discovered_via"]): Promise<void> => {
+    // Re-key at dequeue time: the RedirectMap grows during the crawl, so a
+    // URL enqueued under one key may resolve to an already-visited final URL
+    // by now — without this re-check the same page gets fetched twice.
+    const key = canonicalKey(url, redirects);
+    if (visited.has(key)) return;
+    visited.add(key);
+
+    let page: Page;
+    try {
+      page = await fetchPage(url, via);
+    } catch (err) {
+      if (!(err instanceof GuardedFetchError)) throw err;
+      if (pages.length === 0 && via === "link" && url === rootUrl) {
+        firstFetchFailed = err.message;
+        return;
+      }
+      pages.push({
+        url,
+        status: 0,
+        final_url: url,
+        links: [],
+        canonical: null,
+        noindex: false,
+        title_present: false,
+        description_present: false,
+        discovered_via: via,
+        fetch_error: err.code,
+      });
+      return;
+    }
+    pages.push(page);
 
     if (via === "link") {
-      for (const link of extract.links) {
+      for (const link of page.links) {
         if (!hostAllowed(link)) continue;
         if (!robots.isAllowed(link)) {
           robotsSkipped.add(link);
@@ -306,6 +325,29 @@ export async function runCheck(origin: string, options: CrawlOptions = {}): Prom
     await visit(url, "sitemap");
     await options.onProgress?.({ pages_crawled: pages.length, pages_discovered: discovered.size });
     await sleep(opts.delayMs);
+  }
+
+  // ── Phase 2c: one retry for network-level failures ─────────────────────
+  // A transient blip must not become a page of critical findings: on a
+  // healthy site (flagstick.live), ~half the fetches once died at the
+  // network level and every failure surfaced as a critical broken link or,
+  // through the crippled link graph, a critical orphan. Each status-0 page
+  // gets exactly one more attempt; whatever still fails keeps its status-0
+  // record (fetch_error intact) and checks.ts downgrades the claims a
+  // damaged graph can no longer support.
+  for (let i = 0; i < pages.length; i++) {
+    const failed = pages[i]!;
+    if (failed.status !== 0) continue;
+    if (Date.now() > deadline) {
+      hitDeadline = true;
+      break;
+    }
+    await sleep(opts.delayMs);
+    try {
+      pages[i] = await fetchPage(failed.url, failed.discovered_via);
+    } catch (err) {
+      if (!(err instanceof GuardedFetchError)) throw err;
+    }
   }
 
   // Truncated sitemap discovery also means partial coverage: branches of the

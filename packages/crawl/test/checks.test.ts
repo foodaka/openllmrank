@@ -154,7 +154,9 @@ describe("reachability claim boundaries", () => {
     expect(findings.filter((f) => f.type === "not_verified_reachable")).toHaveLength(1);
   });
 
-  test("status-0 WITH a linking source stays a broken internal link", () => {
+  test("status-0 WITH a linking source is a broken link at WARNING severity", () => {
+    // Status 0 is our own failure to connect (post-retry), not the server's
+    // verdict — it must never render as a critical claim about their site.
     const findings = build({
       pages: [
         page({ url: `${ORIGIN}/`, links: [`${ORIGIN}/dead`] }),
@@ -163,7 +165,40 @@ describe("reachability claim boundaries", () => {
     });
     const broken = findings.filter((f) => f.type === "broken_internal_link");
     expect(broken).toHaveLength(1);
-    expect(broken[0]).toMatchObject({ status: 0 });
+    expect(broken[0]).toMatchObject({ status: 0, severity: "warning" });
+  });
+
+  test("reachability follows the link graph, not the discovery channel", () => {
+    // flagstick.live regression: /hub failed mid-crawl and recovered on the
+    // retry, so /post was fetched via the sitemap channel — but a chain of
+    // live links (root → hub → post) exists and neither page is an orphan.
+    const findings = build({
+      pages: [
+        page({ url: `${ORIGIN}/`, links: [`${ORIGIN}/hub`] }),
+        page({ url: `${ORIGIN}/hub`, links: [`${ORIGIN}/post`], discovered_via: "sitemap" }),
+        page({ url: `${ORIGIN}/post`, discovered_via: "sitemap" }),
+      ],
+      phase1: phase1({ sitemap_urls: [`${ORIGIN}/hub`, `${ORIGIN}/post`] }),
+    });
+    expect(findings.filter((f) => f.type === "orphan_page")).toHaveLength(0);
+    expect(findings.filter((f) => f.type === "not_verified_reachable")).toHaveLength(0);
+  });
+
+  test("a surviving status-0 page downgrades orphan claims to not-verified", () => {
+    // The unreachable page may hold the very links that would disprove
+    // orphanhood — a damaged graph supports no critical orphan claims.
+    const findings = build({
+      pages: [
+        page({ url: `${ORIGIN}/`, links: [`${ORIGIN}/gone`] }),
+        page({ url: `${ORIGIN}/gone`, status: 0, fetch_error: "timeout" }),
+        page({ url: `${ORIGIN}/island`, discovered_via: "sitemap" }),
+      ],
+      phase1: phase1({ sitemap_urls: [`${ORIGIN}/island`] }),
+    });
+    expect(findings.filter((f) => f.type === "orphan_page")).toHaveLength(0);
+    const nv = findings.filter((f) => f.type === "not_verified_reachable");
+    expect(nv).toHaveLength(1);
+    expect(nv[0]).toMatchObject({ url: `${ORIGIN}/island`, severity: "warning" });
   });
 
   test("per-type lists cap at 50 with an aggregate overflow row", () => {

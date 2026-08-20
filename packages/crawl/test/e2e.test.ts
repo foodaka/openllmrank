@@ -10,6 +10,7 @@
 //   /nested     — sitemap is an INDEX file pointing at a child sitemap
 
 import { afterAll, describe, expect, test } from "bun:test";
+import { createServer } from "node:http";
 import { runCheck } from "../src/crawler";
 
 function html(body: string, head = ""): Response {
@@ -216,6 +217,68 @@ describe("www/apex redirect must not orphan the site (stepracers.com regression)
     // The crawl must actually follow the www links, not stall at the seed.
     expect(result.pages_crawled).toBeGreaterThanOrEqual(3);
     expect(result.findings.filter((f) => f.type === "broken_internal_link")).toEqual([]);
+  });
+});
+
+describe("phase-2c retry: a transient network failure produces zero findings", () => {
+  // flagstick.live regression: mid-crawl connection failures on a healthy
+  // site turned into a page of critical broken-link and orphan findings.
+  // This fixture kills the socket on the FIRST hit to /flaky and serves it
+  // fine afterwards — the retry pass must absorb the blip completely.
+  let flakyHits = 0;
+  const rawHtml = (body: string) =>
+    `<!doctype html><html><head><title>t</title><meta name="description" content="d"></head><body>${body}</body></html>`;
+  const flakyServer = createServer((req, res) => {
+    const path = new URL(req.url!, "http://x").pathname;
+    const base = `http://127.0.0.1:${(flakyServer.address() as { port: number }).port}`;
+    if (path === "/robots.txt") {
+      res.writeHead(200, { "content-type": "text/plain" });
+      res.end(`User-agent: *\nAllow: /\nSitemap: ${base}/sitemap.xml`);
+    } else if (path === "/sitemap.xml") {
+      res.writeHead(200, { "content-type": "application/xml" });
+      res.end(
+        `<?xml version="1.0"?><urlset><url><loc>${base}/</loc></url><url><loc>${base}/flaky</loc></url><url><loc>${base}/leaf</loc></url></urlset>`,
+      );
+    } else if (path === "/flaky") {
+      flakyHits++;
+      if (flakyHits === 1) {
+        req.socket.destroy(); // connection dies mid-request → status 0
+        return;
+      }
+      res.writeHead(200, { "content-type": "text/html" });
+      res.end(rawHtml(`<a href="/leaf">leaf</a>`));
+    } else if (path === "/") {
+      res.writeHead(200, { "content-type": "text/html" });
+      res.end(rawHtml(`<a href="/flaky">flaky</a>`));
+    } else if (path === "/leaf") {
+      res.writeHead(200, { "content-type": "text/html" });
+      res.end(rawHtml("leaf"));
+    } else {
+      res.writeHead(404).end("not found");
+    }
+  });
+  afterAll(() => flakyServer.close());
+
+  test("recovered page and everything it links to are clean", async () => {
+    await new Promise<void>((r) => flakyServer.listen(0, "127.0.0.1", r));
+    const port = (flakyServer.address() as { port: number }).port;
+    const result = await runCheck(`http://127.0.0.1:${port}`, {
+      delayMs: 1,
+      fetch: { allowPrivate: true, timeoutMs: 2000 },
+    });
+    expect(flakyHits).toBe(2); // proves the retry actually ran
+    expect(result.state).toBe("complete");
+    expect(result.fetch_failures).toBeUndefined();
+    // /leaf is linked only from the once-flaky page: without the retry (and
+    // graph-based reachability) it would be a critical orphan.
+    expect(
+      result.findings.filter(
+        (f) =>
+          f.type === "broken_internal_link" ||
+          f.type === "orphan_page" ||
+          f.type === "not_verified_reachable",
+      ),
+    ).toEqual([]);
   });
 });
 
