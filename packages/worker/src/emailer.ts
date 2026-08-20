@@ -193,6 +193,9 @@ export function renderRefundHtml(args: {
   error_message: string;
 }): string {
   const amount = (args.amount_cents / 100).toFixed(2);
+  const brandName = escapeHtml(args.brand_name);
+  const currency = escapeHtml(args.currency.toUpperCase());
+  const errorMessage = escapeHtml(args.error_message);
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>openllmrank: your order has been refunded</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=DM+Sans:wght@400;500&display=swap">
@@ -209,9 +212,9 @@ hr{border:0;border-top:1px solid #e3d8c6;margin:32px 0}
 <body><div class="wrap">
 <span class="kicker">Refund processed</span>
 <h1>We couldn't generate your report.</h1>
-<p>Something went wrong while running your openllmrank order for <strong>${args.brand_name}</strong>. We've refunded the full $${amount} ${args.currency.toUpperCase()} to your card. It should appear within 5-10 business days.</p>
+<p>Something went wrong while running your openllmrank order for <strong>${brandName}</strong>. We've refunded the full $${amount} ${currency} to your card. It should appear within 5-10 business days.</p>
 <p>If you'd like to try again, reply to this email and we'll look into what happened.</p>
-<p class="muted">Technical detail: ${args.error_message}</p>
+<p class="muted">Technical detail: ${errorMessage}</p>
 <hr>
 <p class="sig">— openllmrank</p>
 </div></body></html>`;
