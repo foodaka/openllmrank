@@ -161,6 +161,11 @@ export const PageSchema = z.object({
   // "link" = reached by BFS from `/`; "sitemap" = phase-2 fetch of a sitemap
   // URL that the link crawl never reached.
   discovered_via: z.enum(["link", "sitemap"]),
+  // Set when status === 0: the GuardedFetchError code ("timeout",
+  // "dns_failure", "network_error", …). Additive + optional — v1 payloads
+  // written before this field simply lack it. Without it, diagnosing a
+  // failed crawl means guessing (the flagstick.live false-positive hunt).
+  fetch_error: z.string().optional(),
 });
 export type Page = z.infer<typeof PageSchema>;
 
@@ -174,6 +179,12 @@ export const CrawlResultSchema = z.object({
   pages_discovered: z.number(),
   phase1: Phase1Schema,
   findings: z.array(FindingSchema),
+  // URLs still unreachable after the phase-2c retry, with their error codes.
+  // Operator diagnostics (worker logs), not user-facing findings; capped at
+  // 50 and omitted entirely on a clean crawl. Additive + optional.
+  fetch_failures: z
+    .array(z.object({ url: z.string(), error: z.string() }))
+    .optional(),
 });
 export type CrawlResult = z.infer<typeof CrawlResultSchema>;
 

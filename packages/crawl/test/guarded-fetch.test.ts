@@ -133,6 +133,23 @@ describe("guardedFetch against a live fixture", () => {
           });
         case "/stall":
           return new Promise<Response>(() => {});
+        case "/slow-big": {
+          // Large body streamed with >50ms gaps between chunks: under Bun,
+          // req 'close' can fire while the body is still arriving, and a
+          // fixed 50ms grace timer declared healthy large pages dead
+          // (flagstick.live /blog regression).
+          const chunk = "x".repeat(64 * 1024);
+          const stream = new ReadableStream({
+            async start(controller) {
+              for (let i = 0; i < 5; i++) {
+                controller.enqueue(new TextEncoder().encode(chunk));
+                await new Promise((r) => setTimeout(r, 120));
+              }
+              controller.close();
+            },
+          });
+          return new Response(stream, { headers: { "content-type": "text/plain" } });
+        }
         case "/redirect-loop":
           return new Response(null, { status: 302, headers: { location: "/redirect-loop" } });
         default:
@@ -151,6 +168,21 @@ describe("guardedFetch against a live fixture", () => {
     expect(res.body).toBe("hello");
     expect(res.finalUrl).toBe(`${base}/ok`);
     expect(res.truncated).toBe(false);
+  });
+
+  test("connection failure on the first address falls back to the next", async () => {
+    // 127.0.0.9 has no listener (refuses on Linux, hangs on macOS without a
+    // loopback alias — hence the short timeout); either way the fetch must
+    // move on to the fixture's address instead of dying (the
+    // one-dead-address-of-a-multi-A-host failure mode).
+    const res = await guardedFetch(`http://crawlcheck-multi.invalid:${server.port}/ok`, {
+      allowPrivate: true,
+      timeoutMs: 500,
+      resolveOverride: (host) =>
+        host === "crawlcheck-multi.invalid" ? ["127.0.0.9", "127.0.0.1"] : null,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body).toBe("hello");
   });
 
   test("pinned lookup override actually drives the connection", async () => {
@@ -216,6 +248,13 @@ describe("guardedFetch against a live fixture", () => {
     ).rejects.toThrow(/Timed out|Connection closed/);
     expect(Date.now() - started).toBeLessThan(2000);
   });
+
+  test("a large slowly-streamed body completes instead of dying at 50ms", async () => {
+    const res = await guardedFetch(`${base}/slow-big`, { ...testOpts, timeoutMs: 5000 });
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBe(5 * 64 * 1024);
+    expect(res.truncated).toBe(false);
+  }, 10_000);
 
   test("bodies are truncated at maxBytes", async () => {
     const res = await guardedFetch(`${base}/big`, { ...testOpts, maxBytes: 1000 });

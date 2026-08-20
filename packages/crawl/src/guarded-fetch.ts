@@ -39,8 +39,9 @@ export type GuardedFetchOptions = {
    * validated — this is what lets tests prove a redirect hop to a blocked
    * address is refused while the fixture itself is reachable. */
   allowOnly?: string[];
-  /** TEST ONLY: pin hostnames to fixed addresses without real DNS. */
-  resolveOverride?: (hostname: string) => string | null;
+  /** TEST ONLY: pin hostnames to fixed addresses without real DNS. An array
+   * lets tests exercise the multi-address connection fallback. */
+  resolveOverride?: (hostname: string) => string | string[] | null;
 };
 
 export type GuardedFetchResult = {
@@ -76,6 +77,10 @@ const DEFAULTS = {
   timeoutMs: 10_000,
   userAgent: "openllmrank-crawlcheck/1.0 (+https://openllmrank.io/check)",
 };
+
+/** How many resolved addresses to try per hop before giving up. Bounds the
+ * worst case (a host whose every address times out) to one extra timeout. */
+const MAX_ADDRESS_ATTEMPTS = 2;
 
 // ── Address validation ──────────────────────────────────────────────────────
 
@@ -218,10 +223,14 @@ function parseTarget(rawUrl: string, opts: GuardedFetchOptions): URL {
   return url;
 }
 
+/** Resolve a hostname and validate EVERY address. Returns the full validated
+ * list (not just the first): multi-A-record hosts can have one endpoint that
+ * is unreachable from this vantage while the rest serve fine, and the caller
+ * falls back through the list on connection-level failure. */
 async function resolveAndValidate(
   hostname: string,
   opts: GuardedFetchOptions,
-): Promise<string> {
+): Promise<string[]> {
   // URL.hostname wraps IPv6 literals in brackets ("[::1]") — strip them so
   // the literal-IP path below actually sees them.
   const bare = hostname.startsWith("[") && hostname.endsWith("]")
@@ -238,19 +247,22 @@ async function resolveAndValidate(
         `Address ${bare} is in a blocked range`,
       );
     }
-    return bare;
+    return [bare];
   }
 
   if (opts.resolveOverride) {
-    const pinned = opts.resolveOverride(hostname);
-    if (pinned) {
-      // The override replaces DNS, not policy — its answer is validated like
-      // any resolved address (lets tests prove blocked hops are refused).
-      if (!exempt(pinned) && isBlockedAddress(pinned)) {
-        throw new GuardedFetchError(
-          "blocked_address",
-          `${hostname} resolves to blocked address ${pinned}`,
-        );
+    const override = opts.resolveOverride(hostname);
+    const pinned = typeof override === "string" ? [override] : override;
+    if (pinned && pinned.length > 0) {
+      // The override replaces DNS, not policy — its answers are validated
+      // like any resolved address (lets tests prove blocked hops are refused).
+      for (const address of pinned) {
+        if (!exempt(address) && isBlockedAddress(address)) {
+          throw new GuardedFetchError(
+            "blocked_address",
+            `${hostname} resolves to blocked address ${address}`,
+          );
+        }
       }
       return pinned;
     }
@@ -275,7 +287,7 @@ async function resolveAndValidate(
       );
     }
   }
-  return addresses[0]!.address;
+  return addresses.map((a) => a.address);
 }
 
 // ── Pinned request ──────────────────────────────────────────────────────────
@@ -291,6 +303,9 @@ function requestOnce(
     // (req 'close' can precede the response 'end' handler), so every outcome
     // goes through settle()/settleErr() and the first one wins.
     let settled = false;
+    // True once the response callback has run — from then on the response's
+    // own end/close handlers are responsible for settling (see req 'close').
+    let sawResponse = false;
     const settle = (value: {
       status: number;
       headers: Record<string, string>;
@@ -353,6 +368,7 @@ function requestOnce(
         timeout: opts.timeoutMs,
       },
       (res) => {
+        sawResponse = true;
         const chunks: Buffer[] = [];
         let received = 0;
         let truncated = false;
@@ -404,16 +420,25 @@ function requestOnce(
     // Last-resort settlement: destroy() does not reliably emit 'error' in
     // every runtime (observed in Bun when no response ever arrived), which
     // left this promise pending forever. 'close' always fires — but in Bun it
-    // can fire BEFORE the response handlers on success, so give any pending
-    // finish/error a short grace period before declaring the connection dead.
+    // can fire BEFORE the response handlers, so the grace period must depend
+    // on whether a response exists. A fixed short grace here raced LARGE
+    // BODIES: req 'close' fired while the body was still streaming, 50ms
+    // elapsed before res 'end', and a healthy 743KB page was declared dead on
+    // every fetch (the flagstick.live /blog false positive). Once a response
+    // has arrived, settlement belongs to the response's own end/close
+    // handlers — the timer stays only as a can't-hang-forever backstop, at
+    // wall-clock scale, and the wallClock timer above still bounds the
+    // request either way.
     req.on("close", () => {
-      setTimeout(
+      const graceMs = sawResponse ? opts.timeoutMs : 50;
+      const backstop = setTimeout(
         () =>
           settleErr(
             new GuardedFetchError("timeout", `Connection closed fetching ${url.href}`),
           ),
-        50,
+        graceMs,
       );
+      if (typeof backstop.unref === "function") backstop.unref();
     });
     req.on("error", (err) => {
       settleErr(
@@ -436,8 +461,30 @@ export async function guardedFetch(
   let url = parseTarget(rawUrl, options);
 
   for (let hop = 0; hop <= opts.maxRedirects; hop++) {
-    const pinned = await resolveAndValidate(url.hostname, options);
-    const res = await requestOnce(url, pinned, opts);
+    const addresses = await resolveAndValidate(url.hostname, options);
+    // One dead address must not fail the URL: multi-A hosts (CDNs, Vercel)
+    // can have an endpoint that is unreachable from this vantage while the
+    // rest serve fine — picking a single address with no fallback once
+    // failed ~half the fetches of a healthy site (flagstick.live). Only
+    // connection-level failures move on; policy errors propagate untouched.
+    let res: Awaited<ReturnType<typeof requestOnce>> | null = null;
+    let lastNetworkErr: GuardedFetchError | null = null;
+    for (const address of addresses.slice(0, MAX_ADDRESS_ATTEMPTS)) {
+      try {
+        res = await requestOnce(url, address, opts);
+        break;
+      } catch (err) {
+        if (
+          err instanceof GuardedFetchError &&
+          (err.code === "network_error" || err.code === "timeout")
+        ) {
+          lastNetworkErr = err;
+          continue;
+        }
+        throw err;
+      }
+    }
+    if (res === null) throw lastNetworkErr!;
 
     if (res.status >= 300 && res.status < 400 && res.headers.location) {
       // Every hop is parsed and re-validated exactly like the first URL.

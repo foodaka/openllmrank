@@ -81,8 +81,18 @@ export function startCrawlLoop(): CrawlLoopHandle {
             },
           });
           await finishCrawl(sql, row.id, result);
+          // fetch_failures is not persisted — this log line is the only
+          // record of WHY pages were unreachable (timeout vs dns vs reset),
+          // and it is what turns "mystery false positives" into a diagnosis.
+          const failures = result.fetch_failures ?? [];
           console.log(
-            `[worker] crawl=${row.id} ${result.state}: ${result.pages_crawled} pages, ${result.findings.length} findings`,
+            `[worker] crawl=${row.id} ${result.state}: ${result.pages_crawled} pages, ${result.findings.length} findings` +
+              (failures.length > 0
+                ? `, ${failures.length} unreachable after retry: ${failures
+                    .slice(0, 5)
+                    .map((f) => `${f.url} (${f.error})`)
+                    .join(", ")}${failures.length > 5 ? ", …" : ""}`
+                : ""),
           );
         } catch (e) {
           const msg = (e as Error).message;
