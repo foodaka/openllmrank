@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { HostedConfigSchema } from "@openllmrank/shared/config";
+import { getVerifiedReportTokenExpiry } from "@openllmrank/shared/report-token";
 import type {
   CallRow,
   CitationRow,
@@ -9,7 +10,11 @@ import type {
 import { computeGap, computeRates } from "openllmrank/src/core/gap";
 import { renderHtmlReport } from "openllmrank/src/core/render-html";
 import { PRODUCT_VERSION } from "openllmrank/src/version";
-import { serviceClient } from "@/lib/supabase-server";
+import {
+  reportLinkEnforcementEnabled,
+  resolveReportAccess,
+} from "@/lib/report-access";
+import { serviceClient, userClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +34,7 @@ type JobRow = {
   error_message: string | null;
   succeeded_count: number | null;
   failed_count: number | null;
+  report_link_expires_at: string | null;
 };
 
 type PgRunRow = {
@@ -66,7 +72,7 @@ type PgCitationRow = {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export async function GET(_req: Request, context: RouteContext): Promise<Response> {
+export async function GET(req: Request, context: RouteContext): Promise<Response> {
   const { id } = await context.params;
   if (!UUID_RE.test(id)) {
     return htmlResponse(renderStatusPage({
@@ -77,13 +83,40 @@ export async function GET(_req: Request, context: RouteContext): Promise<Respons
   }
 
   const supabase = serviceClient();
+  const url = new URL(req.url);
+  const token = url.searchParams.get("t");
+  const hasToken = url.searchParams.has("t");
   const { data: job, error: jobErr } = await supabase
     .from("jobs")
-    .select("id,user_id,brand_id,status,config_jsonb,cli_run_id,succeeded_at,created_at,error_message,succeeded_count,failed_count")
+    .select("id,user_id,brand_id,status,config_jsonb,cli_run_id,succeeded_at,created_at,error_message,succeeded_count,failed_count,report_link_expires_at")
     .eq("id", id)
     .single();
 
-  if (jobErr || !job) {
+  const loadedJob = jobErr || !job ? null : (job as JobRow);
+  const access = reportLinkEnforcementEnabled()
+    ? await resolveReportAccess({
+        jobId: id,
+        job: loadedJob,
+        token,
+        hasToken,
+        secret: process.env.REPORT_LINK_SECRET,
+        getUserId: async () => {
+          try {
+            const client = await userClient();
+            const {
+              data: { user },
+            } = await client.auth.getUser();
+            return user?.id ?? null;
+          } catch {
+            return null;
+          }
+        },
+      })
+    : loadedJob
+      ? { allowed: true as const, method: "rollback" as const }
+      : { allowed: false as const, status: 404 as const };
+
+  if (!access.allowed && access.status === 404) {
     return htmlResponse(renderStatusPage({
       kicker: "Report not found",
       title: "That report link did not match a report.",
@@ -91,7 +124,42 @@ export async function GET(_req: Request, context: RouteContext): Promise<Respons
     }), 404);
   }
 
-  const parsedConfig = HostedConfigSchema.safeParse((job as JobRow).config_jsonb);
+  if (!access.allowed) {
+    const tokenExpiry =
+      hasToken && token && process.env.REPORT_LINK_SECRET
+        ? getVerifiedReportTokenExpiry(
+            token,
+            id,
+            process.env.REPORT_LINK_SECRET,
+          )
+        : null;
+    const legacyExpiry = !hasToken ? loadedJob?.report_link_expires_at ?? null : null;
+    const expiredAt = tokenExpiry
+      ? new Date(tokenExpiry * 1000)
+      : legacyExpiry
+        ? new Date(legacyExpiry)
+        : null;
+    const stoppedDays = expiredAt && expiredAt.getTime() < Date.now()
+      ? Math.max(1, Math.floor((Date.now() - expiredAt.getTime()) / (24 * 60 * 60 * 1000)))
+      : null;
+    const expiredTitle = stoppedDays
+      ? `This report link stopped working ${stoppedDays} day${stoppedDays === 1 ? "" : "s"} ago. The report did not.`
+      : "This report link stopped working. The report did not.";
+    return htmlResponse(renderStatusPage({
+      kicker: "Link expired",
+      title: expiredTitle,
+      body: "Emailed links last 90 days, because a forwarded one would otherwise hand your competitive analysis to anyone who received it. Sign in with the email that bought the report and it opens straight away.",
+      action: {
+        href: `/login?next=${encodeURIComponent(`/reports/${id}`)}`,
+        label: "Sign in to read it",
+      },
+      note: "Not your report? Whoever bought it can share a fresh link from their dashboard.",
+      variant: "expired",
+    }), 401);
+  }
+
+  const jobRow = loadedJob as JobRow;
+  const parsedConfig = HostedConfigSchema.safeParse(jobRow.config_jsonb);
   if (!parsedConfig.success) {
     return htmlResponse(renderStatusPage({
       kicker: "Report unavailable",
@@ -100,7 +168,6 @@ export async function GET(_req: Request, context: RouteContext): Promise<Respons
     }), 500);
   }
 
-  const jobRow = job as JobRow;
   const brandName = parsedConfig.data.brand.name;
 
   if (jobRow.status === "failed") {
@@ -280,6 +347,9 @@ function renderStatusPage(args: {
   title: string;
   body: string;
   refreshSeconds?: number;
+  action?: { href: string; label: string };
+  note?: string;
+  variant?: "expired";
 }): string {
   const refresh = args.refreshSeconds
     ? `<meta http-equiv="refresh" content="${args.refreshSeconds}">`
@@ -298,13 +368,16 @@ ${refresh}
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&display=swap">
 <style>
 :root{--paper:#fbf8f0;--ink:#241f19;--muted:#756c60;--line:#e3d8c6;--accent:#376b5b}
-*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;line-height:1.55}.wrap{max-width:680px;margin:0 auto;padding:64px 28px}.kicker{font-size:12px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--accent)}h1{font-family:"Fraunces",Georgia,"Times New Roman",serif;font-weight:500;font-size:42px;line-height:1.04;margin:12px 0 20px}p{font-size:17px;color:var(--muted);margin:0}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;line-height:1.55}.wrap{max-width:680px;margin:0 auto;padding:64px 28px}.brand{font-family:"Fraunces",Georgia,"Times New Roman",serif;font-size:26px;font-weight:600;margin-bottom:76px}.kicker{font-size:12px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--accent)}h1{font-family:"Fraunces",Georgia,"Times New Roman",serif;font-weight:500;font-size:42px;line-height:1.04;margin:12px 0 20px}p{font-size:17px;color:var(--muted);margin:0}.expired{max-width:572px}.expired .kicker{color:#c76620}.expired h1{font-size:48px}.expired .note{border-left:2px solid var(--line);padding-left:20px;margin-top:36px;font-size:16px}
 </style>
 </head>
-<body><main class="wrap">
+<body><main class="wrap${args.variant ? ` ${args.variant}` : ""}">
+<div class="brand">openllmrank</div>
 <span class="kicker">${escapeHtml(args.kicker)}</span>
 <h1>${escapeHtml(args.title)}</h1>
 <p>${escapeHtml(args.body)}</p>
+${args.action ? `<p style="margin-top:28px"><a href="${escapeHtml(args.action.href)}" style="display:inline-block;background:var(--accent);color:var(--paper);text-decoration:none;border-radius:7px;padding:12px 18px;font-weight:700">${escapeHtml(args.action.label)}</a></p>` : ""}
+${args.note ? `<p class="note">${escapeHtml(args.note)}</p>` : ""}
 </main></body>
 </html>`;
 }

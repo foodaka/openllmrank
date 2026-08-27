@@ -21,6 +21,10 @@ import type {
 } from "openllmrank/src/core/db";
 import { computeRates, computeGap } from "openllmrank/src/core/gap";
 import { PRODUCT_VERSION } from "openllmrank/src/version";
+import {
+  createReportToken,
+  REPORT_LINK_TTL_SECONDS,
+} from "@openllmrank/shared/report-token";
 
 const EMAIL_POLL_INTERVAL_MS = 60_000;
 const EMAIL_MAX_ATTEMPTS = 6;
@@ -189,8 +193,13 @@ async function renderReportFromPg(
   });
 }
 
-function reportUrlForJob(jobId: string): string {
-  return `${env.reportBaseUrl.replace(/\/+$/, "")}/reports/${jobId}`;
+export function reportUrlForJob(jobId: string): string {
+  if (!env.reportLinkSecret) {
+    throw new Error("REPORT_LINK_SECRET required to send report links");
+  }
+  const expiresAt = Math.floor(Date.now() / 1000) + REPORT_LINK_TTL_SECONDS;
+  const token = createReportToken(jobId, env.reportLinkSecret, expiresAt);
+  return `${env.reportBaseUrl.replace(/\/+$/, "")}/reports/${jobId}?t=${encodeURIComponent(token)}`;
 }
 
 async function processOneEmail(
@@ -202,6 +211,26 @@ async function processOneEmail(
     set email_attempts = email_attempts + 1
     where id = ${row.id}
   `;
+
+  let reportUrl: string;
+  try {
+    reportUrl = reportUrlForJob(row.id);
+  } catch (e) {
+    const msg = (e as Error).message;
+    await sql`
+      update public.jobs
+      set email_last_error = ${"link: " + msg}
+      where id = ${row.id}
+    `;
+    if (row.email_attempts + 1 >= EMAIL_MAX_ATTEMPTS) {
+      await sql`update public.jobs set email_status = 'failed' where id = ${row.id}`;
+      await alert("error", "email-retry: report link generation failed", {
+        job_id: row.id,
+        error: msg,
+      });
+    }
+    return;
+  }
 
   try {
     await renderReportFromPg(sql, row);
@@ -226,7 +255,7 @@ async function processOneEmail(
     jobId: row.id,
     to: row.email_to,
     brand_name: row.brand_name,
-    reportUrl: reportUrlForJob(row.id),
+    reportUrl,
   });
 
   if (result.ok) {
