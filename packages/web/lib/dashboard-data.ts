@@ -118,7 +118,9 @@ export async function getSubscription(): Promise<Subscription | null> {
   const { data } = await supabase
     .from("subscriptions")
     .select("status,current_period_end,cancel_at_period_end")
-    .in("status", ["incomplete", "active", "past_due"])
+    .in("status", ["incomplete", "active", "past_due", "canceled"])
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
   return (data as Subscription) ?? null;
 }

@@ -45,10 +45,13 @@ export default function TermsPage() {
 
           <h2>2. Price and payment</h2>
           <p>
-            The Service costs <strong>USD 29.99</strong> per report, as
-            a one-time charge. Payment is processed by Stripe at the
-            time of order. Prices are exclusive of any applicable
-            taxes, which we will add at checkout where required.
+            One-time reports cost <strong>USD 29.99</strong> per report.
+            For ongoing tracking, the subscription plan costs <strong>USD
+            29 per month</strong> and includes unlimited brands, weekly
+            tracking on up to two, monthly beyond that. Subscription
+            payments renew monthly until canceled through the Stripe Billing
+            Portal. Prices are exclusive of any applicable taxes, which we
+            will add at checkout where required.
           </p>
 
           <h2>3. Refund policy</h2>

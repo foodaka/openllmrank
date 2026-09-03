@@ -15,23 +15,28 @@ const STATUS_COPY: Record<string, string> = {
 export default async function BillingPage() {
   const [subscription, brands] = await Promise.all([getSubscription(), getBrands()]);
 
-  if (!subscription) {
+  if (!subscription || subscription.status === "canceled") {
+    const canceled = subscription?.status === "canceled";
     return (
       <>
         <span className="kicker">Billing</span>
-        <h1 className="standfirst">Keep tracking, every week.</h1>
+        <h1 className="standfirst">
+          {canceled ? "Your subscription has ended." : "Keep tracking, every week."}
+        </h1>
         <p className="sub">
-          You bought a one-time report. A subscription re-runs it on a schedule
-          so you can see whether your changes moved anything, and unlocks
-          tracking for as many brands as you want.
+          {canceled
+            ? "Your previous reports remain readable. Restart your subscription whenever you want to keep tracking changes over time."
+            : "You bought a one-time report. A subscription re-runs it on a schedule so you can see whether your changes moved anything."}
         </p>
         <p className="sub">
-          <strong>$29 a month.</strong> Weekly runs on up to two brands, monthly
-          beyond that, plus two manual re-runs a month.
+          <strong>$29 a month.</strong> Unlimited brands, weekly tracking on up
+          to two, monthly beyond that, plus two manual re-runs a month.
         </p>
-        <button className="btn-primary" type="button" disabled>
-          Subscribe (not wired in this prototype)
-        </button>
+        <form action="/api/billing/checkout" method="post">
+          <button className="btn-primary" type="submit">
+            {canceled ? "Restart tracking — $29/month" : "Subscribe — $29/month"}
+          </button>
+        </form>
       </>
     );
   }
@@ -46,12 +51,13 @@ export default async function BillingPage() {
       </h1>
 
       <p className="sub">
-        $29 per month, {brands.length} brand{brands.length === 1 ? "" : "s"}{" "}
-        tracked.
+        <strong>$29 per month.</strong> Unlimited brands, weekly tracking on up
+        to two, monthly beyond that. {brands.length} brand
+        {brands.length === 1 ? "" : "s"} tracked.
         {subscription.current_period_end
           ? subscription.cancel_at_period_end
             ? ` Ends ${longDate(subscription.current_period_end)}.`
-            : ` Renews ${longDate(subscription.current_period_end)}.`
+            : ` Next charge ${longDate(subscription.current_period_end)}.`
           : ""}
       </p>
 
@@ -69,11 +75,14 @@ export default async function BillingPage() {
       )}
 
       <hr className="rule" />
-      <button className="btn-primary" type="button" disabled>
-        Manage in Stripe (not wired in this prototype)
-      </button>
-      {"  ·  "}
-      <Link href="/dashboard">Back to dashboard</Link>
+      <form action="/api/billing/portal" method="post">
+        <button className="btn-primary" type="submit">
+          Manage billing in Stripe
+        </button>
+      </form>
+      <p>
+        <Link href="/dashboard">Back to dashboard</Link>
+      </p>
     </>
   );
 }
