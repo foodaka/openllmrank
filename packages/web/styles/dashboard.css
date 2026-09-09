@@ -89,6 +89,14 @@
   margin: 0 0 var(--space-lg);
 }
 
+.standfirst-secondary {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.2;
+  max-width: 34ch;
+  margin: calc(var(--space-sm) * -1) 0 var(--space-lg);
+}
+
 .rule {
   border: 0;
   border-top: 1px solid var(--line);
@@ -110,19 +118,47 @@
   height: auto;
   display: block;
   overflow: visible;
+  margin-top: var(--space-lg);
 }
 
 .trend-axis { stroke: var(--line); stroke-width: 1; }
-.trend-grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+.trend-area { fill: var(--accent); opacity: 0.1; }
 .trend-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.trend-competitor-line { fill: none; stroke: var(--accent-2); stroke-width: 2; stroke-dasharray: 7 6; stroke-linejoin: round; stroke-linecap: round; }
 .trend-dot { fill: var(--paper); stroke: var(--accent); stroke-width: 2; }
 .trend-dot-last { fill: var(--accent); stroke: var(--accent); stroke-width: 2; }
+.trend-competitor-dot { fill: var(--paper); stroke: var(--accent-2); stroke-width: 1.75; }
+.trend-competitor-dot-last { fill: var(--accent-2); stroke: var(--accent-2); stroke-width: 1.75; }
+.trend-event-line { stroke: var(--accent-2); stroke-width: 1; stroke-dasharray: 3 5; opacity: 0.65; }
+.trend-event-label { font-family: var(--font-body); font-size: 12px; fill: var(--accent-2); }
+.trend-story { font-family: var(--font-display); font-size: 17px; line-height: 1.2; fill: var(--ink); }
+.trend-story-leader { stroke: var(--accent-2); stroke-width: 1; stroke-dasharray: 3 3; }
+.trend-crossover-dot { fill: var(--paper); stroke: var(--accent-2); stroke-width: 2; }
 .trend-label {
   font-family: var(--font-body);
   font-size: 11px;
   fill: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+.trend-end-name { font-family: var(--font-body); font-size: 12px; font-weight: 600; }
+.trend-end-name.own { fill: var(--accent); }
+.trend-end-name.competitor { fill: var(--accent-2); }
+.trend-end-value { font-family: var(--font-display); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.trend-end-value.own { fill: var(--accent); }
+.trend-end-value.competitor { fill: var(--accent-2); }
+
+/* ------------------------------------------------------ editorial close */
+
+.editorial-close {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 500;
+  max-width: 25ch;
+  margin: var(--space-sm) 0 var(--space-sm);
+}
+
+.editorial-detail { margin-bottom: 0; }
 
 /* ------------------------------------------------------------- rate bars */
 
@@ -296,6 +332,7 @@
 
 @media (max-width: 820px) {
   .standfirst { font-size: 30px; max-width: none; }
+  .standfirst-secondary { font-size: 20px; }
   .dash-wrap { padding: var(--space-lg) var(--space-md) var(--space-xl); }
   .dash-header-inner { padding: var(--space-md); flex-wrap: wrap; gap: var(--space-sm); }
   .dash-nav { margin-left: 0; width: 100%; }

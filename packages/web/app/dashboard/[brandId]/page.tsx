@@ -8,6 +8,7 @@ import {
   longDate,
   pct,
 } from "@/lib/dashboard-data";
+import { buildSecondaryStandfirst } from "@/lib/trend-data";
 import { TrendChart } from "../_components/trend-chart";
 import { RateBars } from "../_components/rate-bars";
 
@@ -15,7 +16,7 @@ import { RateBars } from "../_components/rate-bars";
 //
 //   kicker      WEEK OF AUGUST 11
 //   standfirst  one serif sentence saying what changed
-//   trend       inline SVG, own citation rate per run
+//   trend       inline SVG, own + leading competitor rate per run
 //   rate bars   you vs each competitor, latest run
 //   providers   per-provider breakdown
 //   link        read the full report
@@ -66,6 +67,7 @@ export default async function BrandDashboard({
   const dir = previous
     ? direction(latest.own_citation_rate, previous.own_citation_rate)
     : null;
+  const secondaryStandfirst = buildSecondaryStandfirst(metrics);
 
   const providerEntries = Object.entries(latest.per_provider_jsonb).sort(
     (a, b) => b[1] - a[1],
@@ -94,6 +96,10 @@ export default async function BrandDashboard({
         )}
       </h1>
 
+      {secondaryStandfirst && (
+        <p className="standfirst-secondary">{secondaryStandfirst}</p>
+      )}
+
       <p className="sub">
         Across {latest.samples_total} sampled answers from five grounded
         providers.
@@ -103,7 +109,7 @@ export default async function BrandDashboard({
       </p>
 
       {metrics.length >= 2 ? (
-        <TrendChart metrics={metrics} />
+        <TrendChart metrics={metrics} ownName={brand.name} />
       ) : (
         <p className="note">
           Your trend line starts with run two. One run is a snapshot; the point
@@ -140,25 +146,27 @@ export default async function BrandDashboard({
       {/* Only claim a gap when one exists. A brand that out-cites every rival
           on every tracked question should be told that, not shown "you trail
           by 0 points". */}
-      {latest.top_gap_prompt && (latest.top_gap_score ?? 0) > 0.005 && (
+      {latest.top_gap_prompt && (
         <>
           <hr className="rule" />
-          <span className="kicker">Biggest gap</span>
-          <p className="sub" style={{ marginTop: "12px" }}>
-            &ldquo;{latest.top_gap_prompt}&rdquo; — you trail the leading
-            competitor by {Math.round((latest.top_gap_score ?? 0) * 100)} points
-            on this question.
-          </p>
-        </>
-      )}
-
-      {latest.top_gap_prompt && (latest.top_gap_score ?? 0) <= 0.005 && (
-        <>
-          <hr className="rule" />
-          <span className="kicker">Where you lead</span>
-          <p className="sub" style={{ marginTop: "12px" }}>
-            You out-cite every tracked competitor on all of your questions this
-            run.
+          <span className="kicker">
+            {(latest.top_gap_score ?? 0) > 0.005 ? "Biggest gap" : "Where you lead"}
+          </span>
+          <h2 className="editorial-close">
+            {(latest.top_gap_score ?? 0) > 0.005
+              ? "Your widest gap of the run, and the one worth a page."
+              : "You lead this run."}
+          </h2>
+          <p className="sub editorial-detail">
+            {(latest.top_gap_score ?? 0) > 0.005 ? (
+              <>
+                &ldquo;{latest.top_gap_prompt}&rdquo; — you trail the leading
+                competitor by {Math.round((latest.top_gap_score ?? 0) * 100)} points
+                on this question.
+              </>
+            ) : (
+              "You out-cite every tracked competitor on all of your questions this run."
+            )}
           </p>
         </>
       )}

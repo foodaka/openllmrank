@@ -9,6 +9,7 @@ export type RunMetric = {
   run_id: string;
   job_id: string;
   computed_at: string;
+  origin: JobOrigin | null;
   own_citation_rate: number;
   share_of_voice: number;
   samples_total: number;
@@ -17,6 +18,8 @@ export type RunMetric = {
   top_gap_prompt: string | null;
   top_gap_score: number | null;
 };
+
+export type JobOrigin = "one_shot" | "scheduled" | "manual";
 
 export type DashBrand = {
   id: string;
@@ -41,6 +44,7 @@ function toMetric(row: Record<string, unknown>): RunMetric {
     run_id: row.run_id as string,
     job_id: row.job_id as string,
     computed_at: row.computed_at as string,
+    origin: (row.origin as JobOrigin) ?? null,
     own_citation_rate: Number(row.own_citation_rate),
     share_of_voice: Number(row.share_of_voice),
     samples_total: Number(row.samples_total),
@@ -89,7 +93,27 @@ export async function getMetrics(brandId: string): Promise<RunMetric[]> {
     .eq("brand_id", brandId)
     .order("computed_at", { ascending: true });
   if (error) throw new Error(`run_metrics: ${error.message}`);
-  return (data ?? []).map((r) => toMetric(r as Record<string, unknown>));
+
+  const metrics = (data ?? []).map((r) => toMetric(r as Record<string, unknown>));
+  const jobIds = metrics.map((metric) => metric.job_id);
+  if (jobIds.length === 0) return metrics;
+
+  // run_metrics stores the job id but not its origin. Fetch the origins in one
+  // RLS-scoped query so the chart can distinguish scheduled runs from manual
+  // reruns without making one request per point.
+  const { data: jobs, error: jobsError } = await supabase
+    .from("jobs")
+    .select("id,origin")
+    .in("id", jobIds);
+  if (jobsError) throw new Error(`jobs: ${jobsError.message}`);
+
+  const origins = new Map(
+    (jobs ?? []).map((job) => [job.id as string, job.origin as JobOrigin]),
+  );
+  return metrics.map((metric) => ({
+    ...metric,
+    origin: origins.get(metric.job_id) ?? null,
+  }));
 }
 
 /** Latest metric per brand, for the brand list. One query, not N. */
@@ -125,7 +149,7 @@ export async function getSubscription(): Promise<Subscription | null> {
 
 export type RunHistoryRow = {
   id: string;
-  origin: "one_shot" | "scheduled" | "manual";
+  origin: JobOrigin;
   status: string;
   created_at: string;
   succeeded_at: string | null;
