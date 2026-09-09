@@ -10,7 +10,8 @@
     ".": "./src/index.ts",
     "./config": "./src/config.ts",
     "./design-tokens": "./src/design-tokens.ts",
-    "./design-tokens.css": "./src/design-tokens.css"
+    "./design-tokens.css": "./src/design-tokens.css",
+    "./report-token": "./src/report-token.ts"
   },
   "dependencies": {
     "zod": "^3.25.0"

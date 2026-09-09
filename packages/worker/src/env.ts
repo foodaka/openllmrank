@@ -33,6 +33,7 @@ type EnvShape = {
   postmarkFromName: string;
   postmarkReplyTo: string;
   reportBaseUrl: string;
+  reportLinkSecret: string;
   workerId: string;
   pollIntervalMs: number;
   leaseTimeoutMs: number;
@@ -90,6 +91,7 @@ function build(): EnvShape {
       "REPORT_BASE_URL",
       optional("NEXT_PUBLIC_SITE_ORIGIN", "http://localhost:3000"),
     ),
+    reportLinkSecret: optional("REPORT_LINK_SECRET"),
     workerId: optional("WORKER_ID", `worker-${process.pid}`),
     pollIntervalMs: int("WORKER_POLL_INTERVAL_MS", 5000),
     leaseTimeoutMs: int("WORKER_LEASE_TIMEOUT_MS", 30 * 60 * 1000),
