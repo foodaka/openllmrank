@@ -21,6 +21,21 @@ export type CheckoutSessionResult = {
   mode: "local_stub" | "test" | "live";
 };
 
+export type SubscriptionSessionInput = {
+  amountCents: number;
+  currency: string;
+  productName: string;
+  userId: string;
+  email: string;
+  successUrl: string;
+  cancelUrl: string;
+};
+
+export type BillingPortalSessionInput = {
+  customerId: string;
+  returnUrl: string;
+};
+
 // Stub mode is OPT-IN only — production must explicitly set STRIPE_MODE.
 // A missing STRIPE_MODE env var in production would otherwise default this to
 // "local_stub", which the webhook accepts with header `x-stub-event: 1` and
@@ -99,6 +114,82 @@ export async function createCheckoutSession(
   }
   return {
     id: session.id,
+    url: session.url,
+    mode: (process.env.STRIPE_MODE as "test" | "live") ?? "test",
+  };
+}
+
+export async function createSubscriptionSession(
+  input: SubscriptionSessionInput,
+): Promise<CheckoutSessionResult> {
+  if (isStubMode()) {
+    // Keep the stub URL shaped like a real Checkout success URL. The success
+    // page turns its query parameters into the same webhook event Stripe
+    // would send after a completed recurring Checkout session.
+    const sessionId = `cs_stub_subscription_${crypto.randomUUID()}`;
+    const subscriptionId = `sub_stub_${crypto.randomUUID()}`;
+    const customerId = `cus_stub_${input.userId}`;
+    const stubUrl = new URL(input.successUrl);
+    stubUrl.searchParams.set("session_id", sessionId);
+    stubUrl.searchParams.set("stub", "1");
+    stubUrl.searchParams.set("subscription", "1");
+    stubUrl.searchParams.set("user_id", input.userId);
+    stubUrl.searchParams.set("subscription_id", subscriptionId);
+    stubUrl.searchParams.set("customer_id", customerId);
+    return { id: sessionId, url: stubUrl.toString(), mode: "local_stub" };
+  }
+
+  const stripe = realStripe();
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer_email: input.email,
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: input.currency,
+          unit_amount: input.amountCents,
+          recurring: { interval: "month" },
+          product_data: { name: input.productName },
+        },
+      },
+    ],
+    metadata: {
+      user_id: input.userId,
+    },
+    subscription_data: {
+      metadata: {
+        user_id: input.userId,
+      },
+    },
+    success_url: input.successUrl + "?session_id={CHECKOUT_SESSION_ID}&subscription=1",
+    cancel_url: input.cancelUrl,
+  });
+
+  if (!session.url) {
+    throw new Error("Stripe did not return a checkout URL");
+  }
+  return {
+    id: session.id,
+    url: session.url,
+    mode: (process.env.STRIPE_MODE as "test" | "live") ?? "test",
+  };
+}
+
+export async function createBillingPortalSession(
+  input: BillingPortalSessionInput,
+): Promise<{ url: string; mode: "local_stub" | "test" | "live" }> {
+  if (isStubMode()) {
+    const returnUrl = new URL(input.returnUrl);
+    returnUrl.searchParams.set("portal", "stub");
+    return { url: returnUrl.toString(), mode: "local_stub" };
+  }
+
+  const session = await realStripe().billingPortal.sessions.create({
+    customer: input.customerId,
+    return_url: input.returnUrl,
+  });
+  return {
     url: session.url,
     mode: (process.env.STRIPE_MODE as "test" | "live") ?? "test",
   };

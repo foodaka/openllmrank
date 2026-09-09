@@ -29,7 +29,11 @@ function CheckoutSuccessInner() {
   const params = useSearchParams();
   const sessionId = params.get("session_id");
   const isStub = params.get("stub") === "1";
+  const isSubscription = params.get("subscription") === "1";
   const leadId = params.get("lead_id");
+  const userId = params.get("user_id");
+  const subscriptionId = params.get("subscription_id");
+  const customerId = params.get("customer_id");
   const [stubStatus, setStubStatus] = useState<
     "idle" | "firing" | "ok" | "err"
   >("idle");
@@ -41,7 +45,9 @@ function CheckoutSuccessInner() {
   }, []);
 
   useEffect(() => {
-    if (!isStub || !sessionId || !leadId) return;
+    if (!isStub || !sessionId) return;
+    if (isSubscription && (!userId || !subscriptionId || !customerId)) return;
+    if (!isSubscription && !leadId) return;
     setStubStatus("firing");
     fetch("/api/webhook/stripe", {
       method: "POST",
@@ -55,8 +61,17 @@ function CheckoutSuccessInner() {
         data: {
           object: {
             id: sessionId,
-            payment_intent: `pi_stub_${sessionId}`,
-            metadata: { lead_id: leadId },
+            ...(isSubscription
+              ? {
+                  mode: "subscription",
+                  subscription: subscriptionId,
+                  customer: customerId,
+                  metadata: { user_id: userId },
+                }
+              : {
+                  payment_intent: `pi_stub_${sessionId}`,
+                  metadata: { lead_id: leadId },
+                }),
           },
         },
       }),
@@ -73,7 +88,15 @@ function CheckoutSuccessInner() {
         setStubStatus("err");
         setStubErr((e as Error).message);
       });
-  }, [isStub, sessionId, leadId]);
+  }, [
+    isStub,
+    isSubscription,
+    sessionId,
+    leadId,
+    userId,
+    subscriptionId,
+    customerId,
+  ]);
 
   return (
     <main>
@@ -83,18 +106,26 @@ function CheckoutSuccessInner() {
         </Link>
       </nav>
       <div className="wrap success-wrap">
-        <span className="kicker">Order received</span>
-        <h1>Your report is being generated.</h1>
+        <span className="kicker">
+          {isSubscription ? "Subscription started" : "Order received"}
+        </span>
+        <h1>
+          {isSubscription
+            ? "Your tracking is ready."
+            : "Your report is being generated."}
+        </h1>
         <p className="lede">
-          A confirmation just landed in your inbox. We&rsquo;re now sending the
-          questions you gave us across five grounded AI providers. Expect the report by
-          email in about fifteen minutes.
+          {isSubscription
+            ? "Your brands are set to run on a recurring schedule. You can follow the trend from your dashboard."
+            : "A confirmation just landed in your inbox. We&rsquo;re now sending the questions you gave us across five grounded AI providers. Expect the report by email in about fifteen minutes."}
         </p>
 
         <hr className="rule" />
 
         <p className="next-steps">
-          You can close this tab. We&rsquo;ll handle the rest.
+          {isSubscription
+            ? "You can close this tab. We&rsquo;ll handle the next run."
+            : "You can close this tab. We&rsquo;ll handle the rest."}
         </p>
 
         {isStub && (
@@ -102,7 +133,9 @@ function CheckoutSuccessInner() {
             <strong>Local-stub mode.</strong>{" "}
             {stubStatus === "firing" && "Firing synthetic webhook…"}
             {stubStatus === "ok" &&
-              "Synthetic webhook delivered. The job is marked paid in Postgres."}
+              (isSubscription
+                ? "Synthetic webhook delivered. The subscription is active in Postgres."
+                : "Synthetic webhook delivered. The job is marked paid in Postgres.")}
             {stubStatus === "err" && (
               <span>
                 Webhook stub failed: {stubErr}
@@ -112,8 +145,10 @@ function CheckoutSuccessInner() {
         )}
 
         <p>
-          <Link href="/" className="btn-text">
-            &larr; Back to openllmrank.com
+          <Link href={isSubscription ? "/dashboard" : "/"} className="btn-text">
+            {isSubscription
+              ? "Go to dashboard"
+              : "\u2190 Back to openllmrank.com"}
           </Link>
         </p>
       </div>

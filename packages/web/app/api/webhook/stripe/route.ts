@@ -17,18 +17,14 @@ import { HostedConfigSchema, type HostedConfig } from "@openllmrank/shared/confi
 //       │ if duplicate → return 200 OK silently
 //       ▼
 //   switch (event.type) {
-//     case 'checkout.session.completed':
-//       1. metadata.lead_id  →  lookup leads row
-//       2. createUser (or fetch existing by email)
-//       3. INSERT brand
-//       4. INSERT job with status='paid' immediately
-//       5. UPDATE leads SET status='converted', job_id, converted_at
+//     case 'checkout.session.completed' (payment): provision brand + job
+//     case 'checkout.session.completed' (subscription): activate tracking
+//     case subscription lifecycle events: sync billing + cadence state
 //   }
 //
-// On error mid-flow: we've already inserted to stripe_events so a retry
-// would short-circuit. v1 trade-off: paid customers in this state need
-// manual intervention. v1.1 should add a `processed_at` column to
-// stripe_events to support retry-the-post-event-work pattern.
+// Events are inserted with processed_at=null before work starts. A failed
+// handler therefore remains retryable, while a completed event short-circuits
+// duplicate Stripe delivery.
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +131,144 @@ async function sendOrderReceivedEmail(args: {
   }
 }
 
+type SubscriptionStatus = "incomplete" | "active" | "past_due" | "canceled";
+
+type SubscriptionWebhookObject = {
+  id?: unknown;
+  customer?: unknown;
+  subscription?: unknown;
+  status?: unknown;
+  current_period_end?: unknown;
+  cancel_at_period_end?: unknown;
+  metadata?: Record<string, string> | null;
+};
+
+function stripeId(value: unknown): string | null {
+  if (typeof value === "string" && value.length > 0) return value;
+  if (value && typeof value === "object" && "id" in value) {
+    const id = (value as { id?: unknown }).id;
+    return typeof id === "string" && id.length > 0 ? id : null;
+  }
+  return null;
+}
+
+function stripeDate(value: unknown): string | null | undefined {
+  if (value === null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return new Date(value * 1000).toISOString();
+  }
+  if (typeof value === "string" && value.length > 0) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+  }
+  return undefined;
+}
+
+function subscriptionStatus(value: unknown): SubscriptionStatus | null {
+  switch (value) {
+    case "active":
+    case "trialing":
+      return "active";
+    case "past_due":
+    case "unpaid":
+      return "past_due";
+    case "incomplete":
+      return "incomplete";
+    case "canceled":
+    case "incomplete_expired":
+      return "canceled";
+    default:
+      return null;
+  }
+}
+
+async function findSubscriptionForEvent(
+  supabase: ReturnType<typeof serviceClient>,
+  subscriptionId: string | null,
+  customerId: string | null,
+) {
+  if (subscriptionId) {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select("id,user_id,stripe_subscription_id,stripe_customer_id")
+      .eq("stripe_subscription_id", subscriptionId)
+      .maybeSingle();
+    if (error) throw new Error(`subscription lookup: ${error.message}`);
+    if (data) return data;
+  }
+
+  if (!customerId) return null;
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("id,user_id,stripe_subscription_id,stripe_customer_id")
+    .eq("stripe_customer_id", customerId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`customer subscription lookup: ${error.message}`);
+  return data;
+}
+
+async function setBrandCadence(
+  supabase: ReturnType<typeof serviceClient>,
+  userId: string,
+  cadence: "weekly" | "paused",
+): Promise<void> {
+  const values =
+    cadence === "paused"
+      ? { cadence, next_run_at: null }
+      : { cadence, next_run_at: new Date().toISOString() };
+  let query = supabase.from("brands").update(values).eq("user_id", userId);
+  if (cadence === "weekly") query = query.is("archived_at", null);
+  const { error } = await query;
+  if (error) throw new Error(`brand cadence update: ${error.message}`);
+}
+
+async function syncSubscription(
+  supabase: ReturnType<typeof serviceClient>,
+  object: SubscriptionWebhookObject,
+  forcedStatus?: SubscriptionStatus,
+  cadenceAction?: "resume" | "pause",
+) {
+  const subscriptionId = stripeId(object.subscription ?? object.id);
+  const customerId = stripeId(object.customer);
+  const existing = await findSubscriptionForEvent(
+    supabase,
+    subscriptionId,
+    customerId,
+  );
+  if (!existing) return null;
+
+  const status = forcedStatus ?? subscriptionStatus(object.status);
+  if (!status) return { existing, status: null };
+
+  const update: Record<string, unknown> = { status };
+  if (customerId) update.stripe_customer_id = customerId;
+  if ("current_period_end" in object) {
+    const currentPeriodEnd = stripeDate(object.current_period_end);
+    if (currentPeriodEnd !== undefined) {
+      update.current_period_end = currentPeriodEnd;
+    }
+  }
+  if (typeof object.cancel_at_period_end === "boolean") {
+    update.cancel_at_period_end = object.cancel_at_period_end;
+  }
+
+  const { error } = await supabase
+    .from("subscriptions")
+    .update(update)
+    .eq("id", existing.id);
+  if (error) throw new Error(`subscription update: ${error.message}`);
+
+  if (cadenceAction === "pause" || status === "canceled") {
+    await setBrandCadence(supabase, existing.user_id, "paused");
+  } else if (cadenceAction === "resume") {
+    await setBrandCadence(supabase, existing.user_id, "weekly");
+  }
+
+  return { existing, status };
+}
+
 export async function POST(req: Request) {
   const rawBody = await req.text();
   const signature = req.headers.get("stripe-signature");
@@ -199,20 +333,179 @@ export async function POST(req: Request) {
       .eq("id", event.id);
   };
 
-  // Only checkout.session.completed produces customer data. Other events
-  // (charge.*, payment_intent.*) we receive but don't act on; logging
-  // them in stripe_events is enough.
+  // Subscription lifecycle events arrive after Checkout and are matched by
+  // Stripe's subscription/customer IDs. Unknown Stripe events are still
+  // logged and acknowledged; only events we understand can mutate state.
   if (event.type !== "checkout.session.completed") {
+    const object = event.data.object as SubscriptionWebhookObject;
+    let result:
+      | Awaited<ReturnType<typeof syncSubscription>>
+      | undefined;
+
+    switch (event.type) {
+      case "customer.subscription.updated":
+        result = await syncSubscription(supabase, object);
+        break;
+      case "customer.subscription.deleted":
+        result = await syncSubscription(supabase, object, "canceled", "pause");
+        break;
+      case "invoice.payment_failed":
+        result = await syncSubscription(supabase, object, "past_due");
+        break;
+      case "invoice.paid":
+        result = await syncSubscription(supabase, object, "active", "resume");
+        break;
+      default:
+        await markProcessed();
+        return NextResponse.json({ received: true, type: event.type });
+    }
+
+    if (!result) {
+      // A lifecycle event can race the Checkout event. Returning non-2xx
+      // leaves processed_at null so Stripe retries instead of losing it.
+      return NextResponse.json(
+        { error: "Subscription not found", type: event.type },
+        { status: 404 },
+      );
+    }
+
     await markProcessed();
-    return NextResponse.json({ received: true, type: event.type });
+    return NextResponse.json({
+      received: true,
+      type: event.type,
+      status: result.status,
+    });
   }
 
   const session = event.data.object as {
     id: string;
+    mode?: string;
     payment_intent?: string | null;
+    customer?: unknown;
+    subscription?: unknown;
     customer_email?: string | null;
     metadata?: Record<string, string> | null;
   };
+
+  if (session.mode === "subscription") {
+    const userId = session.metadata?.user_id;
+    const subscriptionId = stripeId(session.subscription);
+    const customerId = stripeId(session.customer);
+    if (!userId || !subscriptionId || !customerId) {
+      return NextResponse.json(
+        { error: "Subscription checkout is missing user, subscription, or customer metadata" },
+        { status: 400 },
+      );
+    }
+
+    const { data: sameSubscription, error: sameSubscriptionError } = await supabase
+      .from("subscriptions")
+      .select("id,user_id,stripe_subscription_id")
+      .eq("stripe_subscription_id", subscriptionId)
+      .maybeSingle();
+    if (sameSubscriptionError) {
+      return NextResponse.json(
+        { error: "Could not check subscription", detail: sameSubscriptionError.message },
+        { status: 500 },
+      );
+    }
+    if (sameSubscription && sameSubscription.user_id !== userId) {
+      return NextResponse.json(
+        { error: "Subscription belongs to a different account" },
+        { status: 409 },
+      );
+    }
+
+    const { data: liveSubscription, error: liveSubscriptionError } = await supabase
+      .from("subscriptions")
+      .select("id,user_id,stripe_subscription_id")
+      .eq("user_id", userId)
+      .in("status", ["incomplete", "active", "past_due"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (liveSubscriptionError) {
+      return NextResponse.json(
+        { error: "Could not check live subscription", detail: liveSubscriptionError.message },
+        { status: 500 },
+      );
+    }
+
+    // Two separate completed Checkout sessions may race each other. Keep the
+    // first live subscription and acknowledge the second without creating a
+    // second billing row; the partial unique index enforces this in Postgres.
+    if (
+      liveSubscription &&
+      liveSubscription.stripe_subscription_id !== subscriptionId
+    ) {
+      await markProcessed();
+      return NextResponse.json({
+        received: true,
+        duplicate_subscription: true,
+        subscription_id: liveSubscription.stripe_subscription_id,
+      });
+    }
+
+    let subscriptionRowId = sameSubscription?.id ?? null;
+    if (sameSubscription) {
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({
+          status: "active",
+          stripe_customer_id: customerId,
+        })
+        .eq("id", sameSubscription.id);
+      if (error) {
+        return NextResponse.json(
+          { error: "Could not activate subscription", detail: error.message },
+          { status: 500 },
+        );
+      }
+    } else {
+      const { data: inserted, error } = await supabase
+        .from("subscriptions")
+        .insert({
+          user_id: userId,
+          stripe_subscription_id: subscriptionId,
+          stripe_customer_id: customerId,
+          status: "active",
+          cancel_at_period_end: false,
+        })
+        .select("id")
+        .single();
+      if (error || !inserted) {
+        if (error?.code === "23505") {
+          await markProcessed();
+          return NextResponse.json({
+            received: true,
+            duplicate_subscription: true,
+          });
+        }
+        return NextResponse.json(
+          { error: "Could not create subscription", detail: error?.message },
+          { status: 500 },
+        );
+      }
+      subscriptionRowId = inserted.id;
+    }
+
+    try {
+      await setBrandCadence(supabase, userId, "weekly");
+    } catch (e) {
+      return NextResponse.json(
+        { error: "Could not start brand tracking", detail: (e as Error).message },
+        { status: 500 },
+      );
+    }
+
+    await markProcessed();
+    return NextResponse.json({
+      received: true,
+      subscription_id: subscriptionRowId,
+      user_id: userId,
+    });
+  }
+
   const leadId = session.metadata?.lead_id;
   if (!leadId) {
     return NextResponse.json(
