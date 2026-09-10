@@ -199,6 +199,20 @@ export async function writeRunMetrics(
       top_gap_score = excluded.top_gap_score
   `;
 
+  // Keep the list's ordering field in sync with the metric it represents.
+  // The greatest guard prevents a late retry or backfill from moving a brand
+  // backwards when runs finish out of order.
+  await sql`
+    update public.brands
+    set last_run_at = case
+      when last_run_at is null or last_run_at < ${context.computed_at}::timestamptz
+        then ${context.computed_at}::timestamptz
+      else last_run_at
+    end
+    where id = ${context.brand_id}
+      and user_id = ${context.user_id}
+  `;
+
   return values;
 }
 
