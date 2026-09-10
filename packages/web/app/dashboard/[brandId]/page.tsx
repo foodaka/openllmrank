@@ -28,7 +28,7 @@ import { SubscriptionNotice } from "../_components/subscription-notice";
 //   link        read the full report
 //
 // Three states, because a dashboard is mostly empty at the start:
-//   0 runs -> queued state with a refresh hint
+//   0 runs -> queued state with a refresh hint while the page is open
 //   1 run  -> standfirst with no direction claim, no trend line
 //   2+     -> the full composition above
 
@@ -104,6 +104,22 @@ export default async function BrandDashboard({
   );
 
   if (!latest) {
+    if (brand.archived_at) {
+      return (
+        <>
+          <span className="kicker">Archived · {brand.name}</span>
+          <h1 className="standfirst">{brand.name} is archived.</h1>
+          <p className="sub">
+            Scheduled runs have stopped. Any previous reports remain readable by
+            direct link.
+          </p>
+          <Link href={`/dashboard/${brand.id}/runs`}>Read run history</Link>
+          {"  ·  "}
+          <Link href="/dashboard">Back to dashboard</Link>
+        </>
+      );
+    }
+
     return (
       <>
         <span className="kicker">{brand.name}</span>
@@ -164,10 +180,21 @@ export default async function BrandDashboard({
 
       <p className="sub">
         Across {latest.samples_total} sampled answers from {providerPhrase}.
-        {brand.next_run_at && brand.cadence !== "paused"
+        {!brand.archived_at && brand.next_run_at && brand.cadence !== "paused"
           ? ` Next run ${longDate(brand.next_run_at)}.`
           : ""}
       </p>
+      {brand.archived_at ? (
+        <p className="note">
+          This brand is archived. Scheduled runs have stopped; previous reports
+          remain readable.
+        </p>
+      ) : subscription?.status !== "active" && (
+        <p className="note">
+          Subscribe to keep tracking {brand.name} weekly. {" "}
+          <Link href="/dashboard/billing">See the plan</Link>
+        </p>
+      )}
 
       {flashes}
 

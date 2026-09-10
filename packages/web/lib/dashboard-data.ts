@@ -24,13 +24,45 @@ export type JobOrigin = "one_shot" | "scheduled" | "manual";
 export type DashBrand = {
   id: string;
   name: string;
+  aliases: string[];
   website: string | null;
   category: string | null;
+  config_jsonb: Record<string, unknown> | null;
   cadence: "weekly" | "monthly" | "paused";
   next_run_at: string | null;
   last_run_at: string | null;
   archived_at: string | null;
 };
+
+function timestampOrNegativeInfinity(value: string | null | undefined): number {
+  if (!value) return Number.NEGATIVE_INFINITY;
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? Number.NEGATIVE_INFINITY : timestamp;
+}
+
+/**
+ * Prefer the denormalized field, but fall back to metric history while older
+ * rows are being backfilled. This keeps the list truthful during deployment.
+ */
+export function sortBrandsByLatestRun(
+  brands: DashBrand[],
+  metricsByBrand: ReadonlyMap<string, RunMetric[]>,
+): DashBrand[] {
+  return brands
+    .map((brand, index) => {
+      const latestMetric = metricsByBrand.get(brand.id)?.at(-1);
+      return {
+        brand,
+        index,
+        latestRunAt: Math.max(
+          timestampOrNegativeInfinity(brand.last_run_at),
+          timestampOrNegativeInfinity(latestMetric?.computed_at),
+        ),
+      };
+    })
+    .sort((a, b) => b.latestRunAt - a.latestRunAt || a.index - b.index)
+    .map(({ brand }) => brand);
+}
 
 export type Subscription = {
   status: "incomplete" | "active" | "past_due" | "canceled";
@@ -65,8 +97,9 @@ export async function getBrands(): Promise<DashBrand[]> {
   const supabase = await userClient();
   const { data, error } = await supabase
     .from("brands")
-    .select("id,name,website,category,cadence,next_run_at,last_run_at,archived_at")
+    .select("id,name,aliases,website,category,config_jsonb,cadence,next_run_at,last_run_at,archived_at")
     .is("archived_at", null)
+    .order("last_run_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: true });
   if (error) throw new Error(`brands: ${error.message}`);
   return (data ?? []) as DashBrand[];
@@ -76,7 +109,7 @@ export async function getBrand(brandId: string): Promise<DashBrand | null> {
   const supabase = await userClient();
   const { data } = await supabase
     .from("brands")
-    .select("id,name,website,category,cadence,next_run_at,last_run_at,archived_at")
+    .select("id,name,aliases,website,category,config_jsonb,cadence,next_run_at,last_run_at,archived_at")
     .eq("id", brandId)
     .maybeSingle();
   return (data as DashBrand) ?? null;

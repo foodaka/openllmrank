@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WizardShell } from "../wizard-shell";
-import { readWizardState, writeWizardState } from "@/lib/wizard-state";
+import {
+  getWizardMode,
+  readWizardState,
+  wizardPath,
+  writeWizardState,
+  type WizardMode,
+} from "@/lib/wizard-state";
 
 export default function WizardBrandPage() {
   const router = useRouter();
@@ -13,10 +19,13 @@ export default function WizardBrandPage() {
   const [aliasInput, setAliasInput] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hydrated, setHydrated] = useState(false);
+  const [mode, setMode] = useState<WizardMode>("one-shot");
 
   // Hydrate from localStorage on mount
   useEffect(() => {
-    const s = readWizardState();
+    const nextMode = getWizardMode();
+    setMode(nextMode);
+    const s = readWizardState(nextMode);
     if (s.brand?.name) setName(s.brand.name);
     if (s.brand?.website) setWebsite(s.brand.website);
     if (s.brand?.category) setCategory(s.brand.category);
@@ -61,8 +70,8 @@ export default function WizardBrandPage() {
         website: new URL(normalizedWebsite).toString(),
         category: category.trim(),
       },
-    });
-    router.push("/wizard/competitors");
+    }, mode);
+    router.push(wizardPath("/wizard/competitors", mode));
   }
 
   if (!hydrated) return null;
@@ -70,9 +79,16 @@ export default function WizardBrandPage() {
   return (
     <WizardShell
       step={1}
-      kicker="Your brand"
-      heading="What brand are we tracking?"
+      kicker={mode === "add-brand" ? "" : "Your brand"}
+      heading="Which brand are we tracking?"
+      description={
+        mode === "add-brand"
+          ? "No payment — this brand joins your subscription and runs on the same schedule as the others."
+          : undefined
+      }
+      cancelHref={mode === "add-brand" ? "/dashboard" : undefined}
       onNext={handleNext}
+      nextLabel="Next — competitors"
       nextDisabled={!name.trim() || !website.trim() || !category.trim()}
     >
       <div className="field">
@@ -139,7 +155,7 @@ export default function WizardBrandPage() {
       </div>
 
       <div className="field">
-        <label htmlFor="brand-aliases">Other names you go by (optional)</label>
+        <label htmlFor="brand-aliases">Other names you go by</label>
         <input
           id="brand-aliases"
           type="text"

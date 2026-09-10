@@ -13,7 +13,10 @@ export type WizardShellProps = {
   totalSteps?: number;
   kicker: string;
   heading: string;
+  description?: ReactNode;
   backHref?: string;
+  cancelHref?: string;
+  cancelLabel?: string;
   onNext?: () => void;
   nextLabel?: string;
   nextDisabled?: boolean;
@@ -25,7 +28,10 @@ export function WizardShell({
   totalSteps = 4,
   kicker,
   heading,
+  description,
   backHref,
+  cancelHref,
+  cancelLabel = "Cancel",
   onNext,
   nextLabel = "Next",
   nextDisabled = false,
@@ -40,10 +46,27 @@ export function WizardShell({
       </nav>
 
       <div className="wizard-wrap">
+        <nav className="wizard-steps" aria-label="Setup progress">
+          {["Brand", "Rivals", "Questions", "Review"].map((label, index) => {
+            const stepNumber = index + 1;
+            const current = stepNumber === step;
+            return (
+              <span
+                className={`wizard-step${current ? " current" : ""}${stepNumber < step ? " complete" : ""}`}
+                aria-current={current ? "step" : undefined}
+                key={label}
+              >
+                {stepNumber} {label}
+              </span>
+            );
+          })}
+        </nav>
         <span className="kicker">
-          {kicker.toUpperCase()} &middot; STEP {step} OF {totalSteps}
+          {kicker ? `${kicker.toUpperCase()} ` : ""}
+          {kicker && <>&middot; </>}STEP {step} OF {totalSteps}
         </span>
         <h1 className="wizard-heading">{heading}</h1>
+        {description && <p className="wizard-description">{description}</p>}
         <hr className="rule" />
         <div className="wizard-body">{children}</div>
         <footer className="wizard-footer">
@@ -51,6 +74,10 @@ export function WizardShell({
             {backHref ? (
               <Link href={backHref} className="btn-text">
                 &larr; Back
+              </Link>
+            ) : cancelHref ? (
+              <Link href={cancelHref} className="btn-text">
+                {cancelLabel}
               </Link>
             ) : (
               <span />
@@ -69,9 +96,9 @@ export function WizardShell({
 
       <style>{`
         .wizard-topbar {
-          max-width: 720px;
+          max-width: 1120px;
           margin: 0 auto;
-          padding: 24px 24px 0;
+          padding: 24px 32px 0;
         }
         .wizard-topbar .wordmark {
           font-family: var(--font-display);
@@ -85,10 +112,41 @@ export function WizardShell({
           margin: 0 auto;
           padding: 48px 24px 96px;
         }
+        .wizard-steps {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-bottom: 32px;
+        }
+        .wizard-step {
+          border: 1px solid var(--line);
+          border-radius: var(--radius-pill);
+          background: var(--soft);
+          color: var(--muted);
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          padding: 8px 12px;
+          text-transform: uppercase;
+        }
+        .wizard-step.current {
+          background: var(--accent);
+          border-color: var(--accent);
+          color: var(--paper);
+        }
+        .wizard-step.complete {
+          color: var(--accent);
+        }
         .wizard-heading {
           font-size: 44px;
           line-height: 1.05;
           margin: 16px 0 24px;
+        }
+        .wizard-description {
+          color: var(--muted);
+          font-size: 17px;
+          margin: -8px 0 24px;
+          max-width: 58ch;
         }
         .wizard-body { margin: 24px 0; }
         .wizard-footer {
@@ -98,6 +156,9 @@ export function WizardShell({
           margin-top: 48px;
         }
         @media (max-width: 820px) {
+          .wizard-topbar { padding: 20px 16px 0; }
+          .wizard-steps { gap: 6px; margin-bottom: 24px; }
+          .wizard-step { padding: 7px 9px; font-size: 11px; }
           .wizard-heading { font-size: 32px; }
           .wizard-footer .btn-primary { flex: 1; }
         }
