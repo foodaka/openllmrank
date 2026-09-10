@@ -115,6 +115,15 @@ describePg("auth foundation integration", () => {
       userId = body.user_id;
       expect(typeof body.job_id).toBe("string");
 
+      const { data: brand, error: brandError } = await admin!.from("brands")
+        .select("website,category,config_jsonb")
+        .eq("user_id", userId)
+        .single();
+      expect(brandError).toBeNull();
+      expect(brand?.website).toBe(config.brand.website);
+      expect(brand?.category).toBe(config.brand.category);
+      expect((brand?.config_jsonb as typeof config).prompts).toEqual(config.prompts);
+
       const { data: user, error: userError } = await admin!.auth.admin.getUserById(userId);
       expect(userError).toBeNull();
       expect(user.user?.email).toBe(email);
