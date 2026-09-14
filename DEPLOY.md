@@ -74,8 +74,32 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 
 PRICE_CENTS=2999
 PRODUCT_NAME=openllmrank AI-search visibility report
-NEXT_PUBLIC_SITE_ORIGIN=https://app.openllmrank.com   # or your domain
+NEXT_PUBLIC_SITE_ORIGIN=https://openllmrank.io        # REQUIRED: magic-link, invite, and Stripe return URLs
+
+# Dashboard + subscriptions (login-dashboard epic)
+SUBSCRIPTION_PRICE_CENTS=2900
+SUBSCRIPTION_PRODUCT_NAME=openllmrank tracking
+MANUAL_RERUNS_PER_MONTH=2
+REPORT_LINK_SECRET=<openssl rand -hex 32>             # REQUIRED; identical on Railway
+
+# Account invite + order-received emails are sent from the web app too
+POSTMARK_MODE=live
+POSTMARK_SERVER_TOKEN=<same as Railway>
+POSTMARK_FROM=reports@openllmrank.io
+POSTMARK_FROM_NAME=openllmrank
 ```
+
+### 1.2a Hosted Supabase auth (Authentication → URL Configuration)
+
+Magic links, password-setup invites, and the `/auth/callback` exchange all
+depend on the hosted project's redirect allow-list. Local dev is covered by
+`supabase/config.toml`; production is configured in the dashboard:
+
+- **Site URL**: `https://openllmrank.io`
+- **Redirect URLs**: add `https://openllmrank.io/**` (covers `/auth/callback?next=…` and `/auth/set-password`). Supabase treats the list as exact-match-or-glob; without the `/**` entry `emailRedirectTo` is silently ignored and every magic link lands on the homepage with no error.
+- **Email OTP expiry**: 3600 seconds, to match the "expires in an hour" copy in the invite email.
+- **Enable sign-ups**: leave on. Checkout provisions accounts through the admin API; the login page only signs in.
+- Apply migrations `0006`–`0010` (`supabase db push`) before the first deploy of this version. `0010` revokes browser writes to the scheduler-owned brand columns.
 
 ### 1.3 First deploy
 
@@ -99,10 +123,17 @@ In https://dashboard.stripe.com/test/webhooks (must be TEST mode toggle on, top-
 
 1. **Add endpoint**
 2. **Endpoint URL**: `https://app.openllmrank.com/api/webhook/stripe`
-3. **Events to send**: select `checkout.session.completed` (minimum). Also worth including `charge.dispute.created` and `payment_intent.payment_failed` for future use.
+3. **Events to send**: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Also worth including `charge.dispute.created` and `payment_intent.payment_failed` for future use. The endpoint's API version is whatever the Dashboard assigns; the handler reads both the pre- and post-Basil field shapes (`current_period_end` at the top level or under `items.data[0]`, invoice subscription at `subscription` or `parent.subscription_details.subscription`).
 4. **Reveal signing secret** after creation. Copy `whsec_test_...`
 5. Paste this into Vercel's `STRIPE_WEBHOOK_SECRET` env var (overwriting the placeholder from 1.2)
 6. Click **Redeploy** in Vercel so the new env var takes effect.
+
+### 1.6 Stripe Customer Portal
+
+`/dashboard/billing` → "Manage billing in Stripe" opens a Billing Portal
+session. Stripe refuses to create one until the portal is configured once:
+**Settings → Billing → Customer portal** → enable, allow customers to cancel
+and update payment methods, save. Do this in both test and live mode.
 
 ## Step 2 — Railway (Bun worker)
 
@@ -146,11 +177,16 @@ STRIPE_SECRET_KEY=sk_test_...           # same as Vercel
 
 POSTMARK_MODE=local_stub                # flip to "live" after step 3
 POSTMARK_SERVER_TOKEN=                  # leave empty until step 3
-POSTMARK_FROM=reports@openllmrank.com
+POSTMARK_FROM=reports@openllmrank.io
 POSTMARK_FROM_NAME=openllmrank
-POSTMARK_REPLY_TO=help@openllmrank.com  # optional, monitored reply inbox
+POSTMARK_REPLY_TO=help@openllmrank.io   # optional, monitored reply inbox
 
-REPORT_BASE_URL=https://app.openllmrank.com
+REPORT_BASE_URL=https://openllmrank.io
+REPORT_LINK_SECRET=<same value as Vercel>  # signs /reports/<id>?t= links in emails
+
+# Scheduler (subscription runs)
+SCHEDULER_POLL_MS=60000
+SCHEDULER_WEEKLY_MAX_BRANDS=2           # D12 margin guard; accounts above this run monthly
 
 WORKER_ID=railway-prod-1
 WORKER_POLL_INTERVAL_MS=5000
@@ -271,7 +307,12 @@ Railway auto-redeploys.
 
 ### Final pre-launch checklist
 
-- [ ] Stripe Live mode webhook configured + signing secret in Vercel
+- [ ] Stripe Live mode webhook configured + signing secret in Vercel, subscribed to the five events in 1.5
+- [ ] Stripe Customer Portal enabled in live mode (1.6)
+- [ ] `REPORT_LINK_SECRET` set and identical on Vercel and Railway
+- [ ] `NEXT_PUBLIC_SITE_ORIGIN=https://openllmrank.io` on Vercel; Supabase Site URL + Redirect URLs set (1.2a)
+- [ ] Migrations 0006–0010 applied to the hosted database
+- [ ] Sign in with a real account, add a brand, confirm the worker log shows `[scheduler] queued job=…` within a minute
 - [ ] Vercel STRIPE_MODE=live; Railway STRIPE_MODE=live
 - [ ] Postmark in live mode (you've verified DNS)
 - [ ] Your sample-report.html link works in production (`https://app.openllmrank.com/sample-report.html`)
