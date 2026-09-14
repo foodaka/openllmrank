@@ -192,3 +192,20 @@ a:hover { border-bottom-color: var(--accent); }
   .wrap { padding: var(--space-lg) var(--space-md); }
   .auth-wrap { padding: var(--space-xl) var(--space-md); }
 }
+
+/* Keyboard focus is visible on every interactive element (DESIGN.md). The
+ * button classes above set their own ring; this covers plain links, nav
+ * items, and form buttons that have none. */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Inline error line used by auth and brand forms. */
+.err {
+  color: var(--loss);
+  font-size: 15px;
+  margin: var(--space-sm) 0 var(--space-md);
+}

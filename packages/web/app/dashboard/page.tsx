@@ -26,7 +26,7 @@ export default async function DashboardIndex() {
         <h1 className="standfirst">Track your first brand.</h1>
         <p className="sub">
           Tell us your brand, who you compete with, and the questions your buyers
-          ask. We query five grounded AI providers and show you where you appear.
+          ask. We query grounded AI providers and show you where you appear.
         </p>
         <Link href="/dashboard/brands/new" className="btn-primary">
           Add a brand

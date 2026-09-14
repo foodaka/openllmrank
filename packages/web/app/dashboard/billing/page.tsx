@@ -47,7 +47,7 @@ export default async function BillingPage() {
     <>
       <span className="kicker">Billing</span>
       <h1 className="standfirst">
-        {STATUS_COPY[subscription.status] ?? subscription.status}.
+        {STATUS_COPY[subscription.status] ?? "Subscription"}.
       </h1>
 
       <p className="sub">

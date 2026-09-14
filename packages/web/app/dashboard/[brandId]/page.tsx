@@ -5,12 +5,18 @@ import {
   elapsedPhrase,
   getBrand,
   getMetrics,
+  getRunHistory,
+  getSubscription,
   longDate,
   pct,
 } from "@/lib/dashboard-data";
+import { getRerunQuota } from "@/lib/rerun-quota";
+import { userClient } from "@/lib/supabase-server";
 import { buildSecondaryStandfirst } from "@/lib/trend-data";
 import { TrendChart } from "../_components/trend-chart";
 import { RateBars } from "../_components/rate-bars";
+import { RerunControl } from "../_components/rerun-control";
+import { SubscriptionNotice } from "../_components/subscription-notice";
 
 // Brand home (E4, D11). Composition, top to bottom:
 //
@@ -34,31 +40,87 @@ const PROVIDER_LABELS: Record<string, string> = {
   xai: "xAI",
 };
 
+const RERUN_MESSAGES: Record<string, string> = {
+  quota: "You have used this period's manual re-runs. The schedule continues as planned.",
+  in_flight: "A run is already in progress. Results land in about fifteen minutes.",
+  no_subscription: "Manual re-runs need an active subscription.",
+  no_config: "This brand has no tracking configuration yet. Add one in settings first.",
+  not_found: "That brand could not be found.",
+};
+
 export default async function BrandDashboard({
   params,
+  searchParams,
 }: {
   params: Promise<{ brandId: string }>;
+  searchParams: Promise<{ queued?: string; rerun?: string }>;
 }) {
   const { brandId } = await params;
+  const query = await searchParams;
 
   const brand = await getBrand(brandId);
   // RLS returns zero rows for another tenant's brand, so this is also the
   // cross-tenant response. 404, not 403 — do not confirm the id exists.
   if (!brand) notFound();
 
-  const metrics = await getMetrics(brandId);
+  const [metrics, history, subscription] = await Promise.all([
+    getMetrics(brandId),
+    getRunHistory(brandId),
+    getSubscription(),
+  ]);
   const latest = metrics.at(-1);
+  const inFlight = history.some((job) => job.status === "paid" || job.status === "running");
+  const providerCount = latest
+    ? Object.keys(latest.per_provider_jsonb).length
+    : null;
+  const providerPhrase = providerCount
+    ? `${providerCount} grounded provider${providerCount === 1 ? "" : "s"}`
+    : "grounded AI providers";
+
+  const quota =
+    subscription?.status === "active"
+      ? await getRerunQuota(await userClient(), subscription.current_period_end)
+      : null;
+
+  const flashes = (
+    <>
+      {query.queued === "1" && (
+        <p className="note" role="status">
+          Re-run queued. Results land in about fifteen minutes; this page updates
+          itself.
+        </p>
+      )}
+      {query.rerun && RERUN_MESSAGES[query.rerun] && (
+        <p className="note" role="alert">{RERUN_MESSAGES[query.rerun]}</p>
+      )}
+      <SubscriptionNotice subscription={subscription} brandName={brand.name} />
+    </>
+  );
+
+  const settingsLink = (
+    <p className="brand-tools">
+      <Link href={`/dashboard/${brand.id}/settings`}>Brand settings</Link>
+    </p>
+  );
 
   if (!latest) {
     return (
       <>
         <span className="kicker">{brand.name}</span>
-        <h1 className="standfirst">Your first run is on its way.</h1>
+        <h1 className="standfirst">
+          {inFlight ? "Your first run is on its way." : "No runs yet."}
+        </h1>
         <p className="sub">
-          We are querying five grounded AI providers with your questions. Reports
-          take 10 to 15 minutes. This page updates itself.
+          {inFlight
+            ? "We are querying grounded AI providers with your questions. Reports take 10 to 15 minutes. This page updates itself."
+            : subscription?.status === "active"
+              ? "The next scheduled run will start shortly. You can also start one now."
+              : "Runs start when a subscription is active."}
         </p>
-        <meta httpEquiv="refresh" content="30" />
+        {flashes}
+        {quota && <RerunControl brandId={brand.id} quota={quota} inFlight={inFlight} />}
+        {settingsLink}
+        {inFlight && <meta httpEquiv="refresh" content="30" />}
       </>
     );
   }
@@ -101,12 +163,13 @@ export default async function BrandDashboard({
       )}
 
       <p className="sub">
-        Across {latest.samples_total} sampled answers from five grounded
-        providers.
+        Across {latest.samples_total} sampled answers from {providerPhrase}.
         {brand.next_run_at && brand.cadence !== "paused"
           ? ` Next run ${longDate(brand.next_run_at)}.`
           : ""}
       </p>
+
+      {flashes}
 
       {metrics.length >= 2 ? (
         <TrendChart metrics={metrics} ownName={brand.name} />
@@ -134,7 +197,7 @@ export default async function BrandDashboard({
       <hr className="rule" />
 
       <span className="kicker">By provider</span>
-      <div className="providers" style={{ marginTop: "16px" }}>
+      <div className="providers">
         {providerEntries.map(([id, rate]) => (
           <div className="provider" key={id}>
             <span className="provider-name">{PROVIDER_LABELS[id] ?? id}</span>
@@ -173,13 +236,17 @@ export default async function BrandDashboard({
 
       <hr className="rule" />
 
-      <Link href={`/reports/${latest.job_id}`}>
-        Read the full {longDate(latest.computed_at)} report →
-      </Link>
-      {"  ·  "}
-      <Link href={`/dashboard/${brand.id}/runs`}>
-        All {metrics.length} run{metrics.length === 1 ? "" : "s"}
-      </Link>
+      <p className="brand-footer-links">
+        <Link href={`/reports/${latest.job_id}`}>
+          Read the full {longDate(latest.computed_at)} report →
+        </Link>
+        {"  ·  "}
+        <Link href={`/dashboard/${brand.id}/runs`}>
+          All {metrics.length} run{metrics.length === 1 ? "" : "s"}
+        </Link>
+      </p>
+      {quota && <RerunControl brandId={brand.id} quota={quota} inFlight={inFlight} />}
+      {settingsLink}
     </>
   );
 }

@@ -35,6 +35,20 @@ export default async function RunsPage({
 
   const rateByJob = new Map(metrics.map((m) => [m.job_id, m.own_citation_rate]));
 
+  if (jobs.length === 0) {
+    return (
+      <>
+        <span className="kicker">{brand.name}</span>
+        <h1 className="standfirst">No runs yet.</h1>
+        <p className="sub">
+          Every scheduled run and manual re-run will be listed here, with the
+          rate it measured and a link to its report.
+        </p>
+        <Link href={`/dashboard/${brand.id}`}>← Back to {brand.name}</Link>
+      </>
+    );
+  }
+
   return (
     <>
       <span className="kicker">{brand.name}</span>

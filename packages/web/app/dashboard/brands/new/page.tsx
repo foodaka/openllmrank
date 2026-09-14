@@ -1,20 +1,24 @@
 import Link from "next/link";
-import { getSubscription } from "@/lib/dashboard-data";
+import { getBrands, getSubscription } from "@/lib/dashboard-data";
+import { BrandForm } from "../../_components/brand-form";
+import { createBrandAction } from "../actions";
 
-// Add-brand (E5). The real implementation reuses the existing wizard steps
-// (brand -> competitors -> prompts) writing to brands.config_jsonb with no
-// payment step, since the subscription already covers it. Stubbed in the
-// prototype so the gating rule is visible without rebuilding the wizard.
+// Add-brand (E5). The subscription already covers the run, so there is no
+// payment step: the form writes brands.config_jsonb and the scheduler queues
+// the first run on its next tick.
 
 export default async function NewBrandPage() {
-  const subscription = await getSubscription();
+  const [subscription, brands] = await Promise.all([getSubscription(), getBrands()]);
   const active = subscription?.status === "active";
 
   if (!active) {
+    const first = brands.length === 0;
     return (
       <>
         <span className="kicker">Add a brand</span>
-        <h1 className="standfirst">Tracking more brands needs a subscription.</h1>
+        <h1 className="standfirst">
+          {first ? "Tracking a brand needs a subscription." : "Tracking more brands needs a subscription."}
+        </h1>
         <p className="sub">
           $29 a month covers as many brands as you want to track, with weekly
           runs on up to two and monthly beyond that.
@@ -31,15 +35,17 @@ export default async function NewBrandPage() {
       <span className="kicker">Add a brand</span>
       <h1 className="standfirst">What should we track?</h1>
       <p className="sub">
-        In the shipped version this is the existing wizard — brand, competitors,
-        questions — writing to <code>brands.config_jsonb</code> with no payment
-        step, then scheduling the first run immediately.
+        Your brand, who you compete with, and the questions your buyers ask.
+        The first run starts as soon as you save.
       </p>
-      <p className="note">
-        Stubbed in this prototype. The gating above is real: without an active
-        subscription this page shows the upgrade prompt and creates nothing.
+      <BrandForm
+        action={createBrandAction}
+        initial={{ name: "", website: "", category: "", aliases: "", competitors: "", prompts: "" }}
+        submitLabel="Start tracking"
+      />
+      <p className="brand-tools">
+        <Link href="/dashboard">Back to dashboard</Link>
       </p>
-      <Link href="/dashboard">Back to dashboard</Link>
     </>
   );
 }

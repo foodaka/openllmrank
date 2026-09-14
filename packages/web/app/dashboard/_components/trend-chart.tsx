@@ -3,10 +3,15 @@ import { buildTrendSeries, type TrendSeries } from "@/lib/trend-data";
 
 // Server-rendered inline SVG. The chart is deliberately a document: no chart
 // library, no client JavaScript, and no generic dashboard controls.
+//
+// The story sentence is HTML above the drawing, not text inside it, so it
+// wraps at phone width and can be selected and read by assistive tech. The
+// SVG keeps a minimum drawn width (styles/dashboard.css .trend) and scrolls
+// sideways on narrow screens instead of shrinking its labels to nothing.
 
 const W = 720;
-const H = 300;
-const PAD = { top: 74, right: 126, bottom: 38, left: 18 };
+const H = 250;
+const PAD = { top: 40, right: 126, bottom: 38, left: 18 };
 
 function pathFor(
   values: (number | null)[],
@@ -28,31 +33,14 @@ function pathFor(
   return path.trim();
 }
 
-function wrapStory(text: string, maxCharacters = 66): string[] {
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let line = "";
-
-  for (const word of words) {
-    const next = line ? `${line} ${word}` : word;
-    if (line && next.length > maxCharacters) {
-      lines.push(line);
-      line = word;
-    } else {
-      line = next;
-    }
-  }
-  if (line) lines.push(line);
-  return lines;
-}
-
-function ratioPhrase(competitorRate: number, ownRate: number): string {
-  if (ownRate <= 0) return "far more often";
+/** "three times as often as", "twice as often as", "more often than". */
+function ratioClause(competitorRate: number, ownRate: number): string {
+  if (ownRate <= 0) return "far more often than";
   const ratio = competitorRate / ownRate;
-  if (ratio >= 2.75) return "three times";
-  if (ratio >= 1.75) return "twice";
-  if (ratio >= 1.25) return `${Math.round(ratio * 10) / 10} times`;
-  return "more often";
+  if (ratio >= 2.75) return "three times as often as";
+  if (ratio >= 1.75) return "twice as often as";
+  if (ratio >= 1.25) return `${Math.round(ratio * 10) / 10} times as often as`;
+  return "more often than";
 }
 
 function storyFor(ownName: string, series: TrendSeries): string {
@@ -63,10 +51,10 @@ function storyFor(ownName: string, series: TrendSeries): string {
   if (series.crossoverIndex !== null) {
     const crossover = series.points[series.crossoverIndex]!;
     const before = series.points[series.crossoverIndex - 1]!;
-    return `${series.competitorName} was cited ${ratioPhrase(
+    return `${series.competitorName} was cited ${ratioClause(
       before.competitorRate!,
       before.ownRate,
-    )} as often as ${ownName} earlier in this view. On ${longDate(
+    )} ${ownName} earlier in this view. On ${longDate(
       crossover.computedAt,
     )} you passed it for the first time.`;
   }
@@ -138,7 +126,7 @@ export function TrendChart({
     y,
   );
   const ownAreaPath = `${ownPath} L${x(lastIndex).toFixed(1)},${baseline} L${x(0).toFixed(1)},${baseline} Z`;
-  const storyLines = wrapStory(storyFor(ownName, series));
+  const story = storyFor(ownName, series);
   const labelIndices = new Set([0, lastIndex, Math.floor(lastIndex / 2)]);
   const latest = series.points[lastIndex]!;
   const ownEndY = y(latest.ownRate);
@@ -161,10 +149,10 @@ export function TrendChart({
           PAD.top,
           baseline,
         );
-  const storyLeaderY = 24 + (storyLines.length - 1) * 20 + 10;
-  const storyLeaderX = Math.min(W - PAD.right - 80, PAD.left + 330);
-
   return (
+    <figure className="trend-figure">
+    <p className="trend-story-text">{story}</p>
+    <div className="trend-scroll">
     <svg
       className="trend"
       viewBox={`0 0 ${W} ${H}`}
@@ -180,15 +168,7 @@ export function TrendChart({
       }.`}
     >
       <title>{`${ownName} citation rate over time`}</title>
-      <desc>{storyFor(ownName, series)}</desc>
-
-      <text className="trend-story" x={PAD.left} y={24}>
-        {storyLines.map((line, index) => (
-          <tspan key={`${line}-${index}`} x={PAD.left} dy={index === 0 ? 0 : 20}>
-            {line}
-          </tspan>
-        ))}
-      </text>
+      <desc>{story}</desc>
 
       {series.points.map((point, index) =>
         point.origin === "manual" ? (
@@ -222,21 +202,12 @@ export function TrendChart({
       />
 
       {series.crossoverIndex !== null && (
-        <>
-          <line
-            className="trend-story-leader"
-            x1={storyLeaderX}
-            y1={storyLeaderY}
-            x2={x(series.crossoverIndex)}
-            y2={y(series.points[series.crossoverIndex]!.ownRate)}
-          />
-          <circle
-            className="trend-crossover-dot"
-            cx={x(series.crossoverIndex)}
-            cy={y(series.points[series.crossoverIndex]!.ownRate)}
-            r={5}
-          />
-        </>
+        <circle
+          className="trend-crossover-dot"
+          cx={x(series.crossoverIndex)}
+          cy={y(series.points[series.crossoverIndex]!.ownRate)}
+          r={6}
+        />
       )}
 
       <path className="trend-line" d={ownPath} />
@@ -317,5 +288,7 @@ export function TrendChart({
         ) : null,
       )}
     </svg>
+    </div>
+    </figure>
   );
 }

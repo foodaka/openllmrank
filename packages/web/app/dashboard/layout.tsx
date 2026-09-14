@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "../../styles/dashboard.css";
 import { getBrands } from "@/lib/dashboard-data";
+import { NavLink } from "./_components/nav-link";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -26,13 +27,14 @@ export default async function DashboardLayout({
           <Link href="/dashboard" className="wordmark">
             openllmrank
           </Link>
-          <nav className="dash-nav">
+          <nav className="dash-nav" aria-label="Dashboard">
             {brands.map((b) => (
-              <Link key={b.id} href={`/dashboard/${b.id}`}>
+              <NavLink key={b.id} href={`/dashboard/${b.id}`}>
                 {b.name}
-              </Link>
+              </NavLink>
             ))}
-            <Link href="/dashboard/billing">Billing</Link>
+            <NavLink href="/dashboard/brands/new">Add a brand</NavLink>
+            <NavLink href="/dashboard/billing">Billing</NavLink>
             <form action="/auth/signout" method="post">
               <button type="submit">Sign out</button>
             </form>
