@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { userClient } from "@/lib/supabase-server";
+import { safeNext } from "@/lib/safe-next";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
@@ -14,15 +15,14 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next, error } = await searchParams;
 
   // Only accept same-origin relative paths. Without this check, a link like
   // /login?next=https://evil.example turns our own login into an open
   // redirect that lands a freshly authenticated user on someone else's site.
-  const target =
-    next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  const target = safeNext(next);
 
   const supabase = await userClient();
   const {
@@ -51,7 +51,21 @@ export default async function LoginPage({
       <Link href="/" className="wordmark">
         openllmrank
       </Link>
-      <LoginForm next={target} devHint={devHint} />
+      <LoginForm next={target} devHint={devHint} initialError={loginErrorCopy(error)} />
     </main>
   );
+}
+
+// The callback route sends failures here as ?error=<code>. Map them to plain
+// copy; never echo Supabase's message to the customer.
+function loginErrorCopy(code: string | undefined): string | null {
+  if (!code) return null;
+  switch (code) {
+    case "link_expired":
+      return "That sign-in link has expired or was already used. Request a new one below.";
+    case "missing_code":
+      return "That sign-in link was incomplete. Request a new one below.";
+    default:
+      return "Sign-in did not complete. Try again.";
+  }
 }

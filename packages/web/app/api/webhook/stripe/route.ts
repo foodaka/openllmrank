@@ -121,7 +121,7 @@ async function sendOrderReceivedEmail(args: {
   try {
     const brandName = escapeHtml(args.brandName);
     const client = new PostmarkClient(token);
-    const fromAddr = process.env.POSTMARK_FROM ?? "reports@openllmrank.com";
+    const fromAddr = process.env.POSTMARK_FROM ?? "reports@openllmrank.io";
     const fromName = process.env.POSTMARK_FROM_NAME ?? "openllmrank";
     await client.sendEmail({
       From: `${fromName} <${fromAddr}>`,

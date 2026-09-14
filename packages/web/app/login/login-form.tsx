@@ -18,9 +18,12 @@ type Mode = "magic" | "password";
 
 export function LoginForm({
   next,
+  initialError,
   devHint,
 }: {
   next: string;
+  /** Server-mapped message from /auth/callback failures. */
+  initialError?: string | null;
   /** Local dev only. Magic-link mail goes to Mailpit, not a real inbox, so
    *  defaulting to magic mode locally strands whoever is trying the app. */
   devHint?: { email: string; password: string; mailpitUrl: string };
@@ -30,7 +33,7 @@ export function LoginForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError ?? null);
   const [sent, setSent] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {

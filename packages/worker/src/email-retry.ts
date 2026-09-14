@@ -12,6 +12,7 @@ import { db } from "./db";
 import { sendReport } from "./emailer";
 import { alert } from "./alerts";
 import { env } from "./env";
+import { signedReportUrl } from "@openllmrank/shared/report-token";
 import { renderHtmlReport } from "openllmrank/src/core/render-html";
 import type {
   CallRow,
@@ -190,7 +191,9 @@ async function renderReportFromPg(
 }
 
 function reportUrlForJob(jobId: string): string {
-  return `${env.reportBaseUrl.replace(/\/+$/, "")}/reports/${jobId}`;
+  // Signed link (E2): works from the email without a session for 90 days,
+  // and a forwarded email stops working after that instead of forever.
+  return signedReportUrl(env.reportBaseUrl, jobId, env.reportLinkSecret);
 }
 
 async function processOneEmail(

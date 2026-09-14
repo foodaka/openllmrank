@@ -13,10 +13,13 @@ function escapeHtml(value: string): string {
 }
 
 function siteOrigin(): string {
-  return (process.env.NEXT_PUBLIC_SITE_ORIGIN ?? DEFAULT_SITE_ORIGIN).replace(
-    /\/+$/,
-    "",
-  );
+  const configured = process.env.NEXT_PUBLIC_SITE_ORIGIN;
+  if (!configured && process.env.NODE_ENV === "production") {
+    // A missing origin would put http://localhost:3000 in a customer's
+    // password-setup email. Fail loudly instead.
+    throw new Error("NEXT_PUBLIC_SITE_ORIGIN is required in production");
+  }
+  return (configured ?? DEFAULT_SITE_ORIGIN).replace(/\/+$/, "");
 }
 
 export function accountInviteRedirectUrl(): string {
@@ -71,7 +74,7 @@ export async function sendAccountInviteEmail(args: {
 
   try {
     const client = new PostmarkClient(token);
-    const fromAddr = process.env.POSTMARK_FROM ?? "reports@openllmrank.com";
+    const fromAddr = process.env.POSTMARK_FROM ?? "reports@openllmrank.io";
     const fromName = process.env.POSTMARK_FROM_NAME ?? "openllmrank";
     const brandLine = args.brandName
       ? ` for ${escapeHtml(args.brandName)}`

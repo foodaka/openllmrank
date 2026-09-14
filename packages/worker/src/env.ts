@@ -3,6 +3,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { reportLinkSecret } from "@openllmrank/shared/report-token";
 
 function loadEnvFile(path = ".env.local"): void {
   // CWD first (deployed layout), then package-relative — so tests invoked
@@ -38,9 +39,12 @@ type EnvShape = {
   postmarkFromName: string;
   postmarkReplyTo: string;
   reportBaseUrl: string;
+  reportLinkSecret: string;
   workerId: string;
   pollIntervalMs: number;
   crawlPollIntervalMs: number;
+  schedulerPollMs: number;
+  schedulerWeeklyMaxBrands: number;
   monitorPortalUrl: string;
   leaseTimeoutMs: number;
   cliRunTimeoutMs: number;
@@ -97,11 +101,19 @@ function build(): EnvShape {
       "REPORT_BASE_URL",
       optional("NEXT_PUBLIC_SITE_ORIGIN", "http://localhost:3000"),
     ),
+    // Signs /reports/<id>?t= links in report emails. Must match the web app's
+    // REPORT_LINK_SECRET or every emailed link 401s. Required in production.
+    reportLinkSecret: reportLinkSecret(process.env),
     workerId: optional("WORKER_ID", `worker-${process.pid}`),
     pollIntervalMs: int("WORKER_POLL_INTERVAL_MS", 5000),
     // Faster than the paid poll: the report page promises first signal in
     // seconds, and claim latency is part of that budget (decision 6A).
     crawlPollIntervalMs: int("CRAWL_POLL_INTERVAL_MS", 1000),
+    // Scheduled runs are due on a weekly/monthly horizon, so a minute of
+    // claim latency is invisible to the customer.
+    schedulerPollMs: int("SCHEDULER_POLL_MS", 60_000),
+    // D12 margin guard: past this many active brands an account runs monthly.
+    schedulerWeeklyMaxBrands: int("SCHEDULER_WEEKLY_MAX_BRANDS", 2),
     // Stripe no-code customer-portal login link (dashboard → Settings →
     // Billing → Customer portal). Empty in dev → emails fall back to mailto.
     monitorPortalUrl: optional("STRIPE_PORTAL_URL"),

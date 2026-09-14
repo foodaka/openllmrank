@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { safeNext } from "../../../lib/safe-next";
 
 // Magic-link landing. Supabase redirects here with ?code=..., we exchange it
 // for a session and write the cookies, then send the user where they were
@@ -15,11 +16,8 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const nextParam = searchParams.get("next");
 
-  // Same-origin relative paths only — see the note in app/login/page.tsx.
-  const next =
-    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
-      ? nextParam
-      : "/dashboard";
+  // Same-origin relative paths only — see lib/safe-next.ts.
+  const next = safeNext(nextParam);
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=missing_code`);
@@ -46,9 +44,10 @@ export async function GET(request: NextRequest) {
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(error.message)}`,
-    );
+    // Only a code goes back to /login; the page maps it to customer copy.
+    // Supabase's message ("PKCE code verifier not found…") is for our logs.
+    console.warn("[auth/callback] exchange failed:", error.message);
+    return NextResponse.redirect(`${origin}/login?error=link_expired`);
   }
 
   return response;
