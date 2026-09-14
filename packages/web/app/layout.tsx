@@ -27,6 +27,11 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   alternates: {
     canonical: "/",
+    types: {
+      "application/rss+xml": [
+        { url: "/blog/feed.xml", title: "openllmrank — Field notes" },
+      ],
+    },
   },
   openGraph: {
     type: "website",

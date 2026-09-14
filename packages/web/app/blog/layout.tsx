@@ -23,6 +23,17 @@ export default function BlogLayout({
 }) {
   return (
     <>
+      {/* Feed autodiscovery on every blog URL, index and post alike. React 19
+          hoists this into <head>. It lives here rather than in each page's
+          `alternates` because a child's `alternates` replaces the parent's
+          wholesale, and every post already sets its own canonical there. */}
+      <link
+        rel="alternate"
+        type="application/rss+xml"
+        title="openllmrank — Field notes on AI search visibility"
+        href="/blog/feed.xml"
+      />
+
       <nav className="site-nav">
         <Link href="/" className="wordmark">
           openllmrank

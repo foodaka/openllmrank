@@ -15,6 +15,7 @@ WORKDIR /app
 # not on every source-code edit.
 COPY package.json bun.lock ./
 COPY packages/cli/package.json ./packages/cli/package.json
+COPY packages/crawl/package.json ./packages/crawl/package.json
 COPY packages/shared/package.json ./packages/shared/package.json
 COPY packages/web/package.json ./packages/web/package.json
 COPY packages/worker/package.json ./packages/worker/package.json

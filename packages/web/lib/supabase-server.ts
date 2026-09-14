@@ -13,10 +13,9 @@ import { cookies } from "next/headers";
 //     gating). NEVER expose to the client. NEVER use in a route that takes
 //     user-controlled input without explicit gating.
 //
-// The old anonClient() was deleted: it set persistSession:false and never
-// read cookies, so it could not carry a user session. Keeping it around
-// invited someone to reach for it and silently get an unauthenticated
-// client on a page that looked authenticated.
+//   anonClient(): anon key, NO session. It cannot carry a user's cookies, so
+//     it is never what a dashboard page wants. It exists for one purpose:
+//     RLS posture tests that prove the anon role sees zero rows.
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -26,7 +25,23 @@ function requireEnv(name: string): string {
   return value;
 }
 
+let _anon: SupabaseClient | null = null;
 let _service: SupabaseClient | null = null;
+
+/**
+ * Unauthenticated anon-role client. Test-only by intent: it has no session
+ * and therefore sees only what RLS grants to `anon`, which should be nothing.
+ * Use userClient() for anything performed on behalf of a signed-in user.
+ */
+export function anonClient(): SupabaseClient {
+  if (_anon) return _anon;
+  _anon = createClient(
+    requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    { auth: { persistSession: false } },
+  );
+  return _anon;
+}
 
 /**
  * RLS-respecting client bound to the caller's session cookies. Every read a

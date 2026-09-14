@@ -11,9 +11,11 @@
     "backfill:metrics": "bun run scripts/backfill-run-metrics.ts"
   },
   "dependencies": {
+    "@openllmrank/crawl": "workspace:*",
     "@openllmrank/shared": "workspace:*",
     "openllmrank": "workspace:*",
     "stripe": "^17.4.0",
-    "postmark": "^4.0.7"
+    "postmark": "^4.0.7",
+    "zod": "^3.25.0"
   }
 }

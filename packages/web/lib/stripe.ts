@@ -140,9 +140,12 @@ export async function createSubscriptionSession(
   }
 
   const stripe = realStripe();
+  // One Customer per email, shared with the crawl-monitor checkout, so the
+  // billing portal reaches every subscription a person holds.
+  const customerId = await findOrCreateCustomer(input.email);
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
-    customer_email: input.email,
+    customer: customerId,
     line_items: [
       {
         quantity: 1,
@@ -193,6 +196,101 @@ export async function createBillingPortalSession(
     url: session.url,
     mode: (process.env.STRIPE_MODE as "test" | "live") ?? "test",
   };
+}
+
+// ── Crawl monitoring (subscriptions) ────────────────────────────────────────
+
+export type MonitorCheckoutInput = {
+  domain: string; // bare lowercased hostname
+  origin: string; // https://<domain>
+  email: string; // collected by our CTA so we can reuse ONE Stripe Customer
+  amountCents: number;
+  successUrl: string;
+  cancelUrl: string;
+};
+
+/** One Stripe Customer per email (Codex-hardened): without this, every
+ * subscription checkout creates a fresh Customer and the no-code billing
+ * portal can only reach the newest one — older domain subscriptions would
+ * become unmanageable for multi-domain subscribers. Shared by the crawl
+ * monitor checkout and the dashboard subscription checkout so one email
+ * always maps to one Customer. */
+export async function findOrCreateCustomer(email: string): Promise<string> {
+  const stripe = realStripe();
+  const existing = await stripe.customers.list({ email, limit: 1 });
+  if (existing.data[0]) return existing.data[0].id;
+  const created = await stripe.customers.create({ email });
+  return created.id;
+}
+
+export async function createMonitorCheckoutSession(
+  input: MonitorCheckoutInput,
+): Promise<CheckoutSessionResult> {
+  // Metadata goes in BOTH places: session metadata (read by our
+  // checkout.session.completed handler) and subscription_data.metadata
+  // (rides along on subscription lifecycle events, which do NOT inherit
+  // session metadata).
+  const metadata = {
+    kind: "monitor",
+    domain: input.domain,
+    origin: input.origin,
+  };
+
+  if (isStubMode()) {
+    const sessionId = `cs_stub_monitor_${crypto.randomUUID()}`;
+    const stubUrl =
+      `${input.successUrl}?stub=1&session_id=${encodeURIComponent(sessionId)}` +
+      `&domain=${encodeURIComponent(input.domain)}&email=${encodeURIComponent(input.email)}`;
+    return { id: sessionId, url: stubUrl, mode: "local_stub" };
+  }
+
+  const stripe = realStripe();
+  const customerId = await findOrCreateCustomer(input.email);
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer: customerId,
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: input.amountCents,
+          recurring: { interval: "month" },
+          product_data: { name: `Crawl monitoring — ${input.domain}` },
+        },
+      },
+    ],
+    metadata,
+    subscription_data: { metadata },
+    success_url: input.successUrl + "?session_id={CHECKOUT_SESSION_ID}",
+    cancel_url: input.cancelUrl,
+  });
+  if (!session.url) throw new Error("Stripe did not return a checkout URL");
+  return {
+    id: session.id,
+    url: session.url,
+    mode: (process.env.STRIPE_MODE as "test" | "live") ?? "test",
+  };
+}
+
+/** Out-of-order webhook defense: before activating a monitor, confirm the
+ * subscription is actually alive right now. Stripe does not guarantee event
+ * ordering — a deletion can arrive before the checkout completion. */
+export async function isSubscriptionActive(subscriptionId: string): Promise<boolean> {
+  if (isStubMode()) return true; // stub events are synthesized in order
+  const sub = await realStripe().subscriptions.retrieve(subscriptionId);
+  return sub.status === "active" || sub.status === "trialing";
+}
+
+/** Cancel a subscription immediately, crediting any unused time. Used when a
+ * second Checkout completes for a user who already has a live subscription:
+ * the duplicate must stop billing, not merely be ignored in our database. */
+export async function cancelSubscription(subscriptionId: string): Promise<void> {
+  if (isStubMode()) return;
+  await realStripe().subscriptions.cancel(subscriptionId, {
+    prorate: true,
+    invoice_now: true,
+  });
 }
 
 // Verify a Stripe webhook signature. In stub mode we accept a magic header

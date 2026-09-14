@@ -14,6 +14,7 @@
     "auth:invite-existing": "bun --env-file=.env.local scripts/send-account-invites.ts"
   },
   "dependencies": {
+    "@openllmrank/crawl": "workspace:*",
     "@openllmrank/shared": "workspace:*",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.49.0",

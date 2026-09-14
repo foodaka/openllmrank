@@ -190,7 +190,7 @@ that is a bug.
 
 ## Schema Changes
 
-### Migration `0004_subscriptions_and_tracking.sql`
+### Migration `0006_subscriptions_and_tracking.sql`
 
 ```sql
 -- ---------------------------------------------------------------------------
@@ -309,7 +309,7 @@ create policy run_metrics_select_own
   using (auth.uid() = user_id);
 ```
 
-### Migration `0005_report_tokens.sql`
+### Migration `0007_report_tokens.sql`
 
 ```sql
 -- Signed report links (D6, D10). We do NOT store tokens: a token is
@@ -717,8 +717,8 @@ no row is deleted. `0005`'s backfill only sets a column that did not exist befor
 
 | File | Change |
 |---|---|
-| `supabase/migrations/0004_subscriptions_and_tracking.sql` | New: subscriptions, brand tracking, job origin, run_metrics |
-| `supabase/migrations/0005_report_tokens.sql` | New: report link expiry + backfill |
+| `supabase/migrations/0006_subscriptions_and_tracking.sql` | New: subscriptions, brand tracking, job origin, run_metrics |
+| `supabase/migrations/0007_report_tokens.sql` | New: report link expiry + backfill |
 | `packages/web/package.json` | Add `@supabase/ssr` |
 | `packages/web/middleware.ts` | New: session refresh + `/dashboard/*` guard |
 | `packages/web/lib/supabase-server.ts:24` | Delete `anonClient()`, add cookie-based `userClient()` |

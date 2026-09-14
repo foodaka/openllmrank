@@ -164,6 +164,38 @@ Tracked work outside the current sprint. Items marked **v1 MUST** are required f
 
 ---
 
+## Crawl check follow-ups (added by /plan-eng-review, 2026-08-15)
+
+### Open-source indexability skill for Hermes + Claude Code
+
+**What:** Publish a skill repo wrapping `packages/crawl`'s check rules as a diagnosis playbook users install into their own agent (Hermes, Claude Code, Cursor). Their agent crawls the site locally, diagnoses, and opens the fix PR with their own credentials; Hermes's natural-language cron covers scheduled re-checks at zero infra cost to us. Report output carries a "powered by openllmrank.io" footer linking to the web check and paid report.
+
+**Why:** Reaches the Hermes and Claude Code ecosystems the web check can't; the founder's original wish ("Hermes runs a cron for the sites") lands here.
+
+**Pros:** ~1 CC day once the engine exists; engine already fully tested; strong X-launch material into two agent communities.
+
+**Cons:** Install-gated reach — only agent users; weaker funnel than report URLs on our domain.
+
+**Context:** Approach C in design doc `markhinschberger-main-design-20260815-094212.md` (approved 2026-08-15). Prompt-injection fencing rules from eng review decision 5A apply to the skill's playbook too — site-derived text is untrusted data.
+
+**Depends on:** `packages/crawl` shipped (milestone 1 of the crawl-check build).
+
+### Split the crawl loop into its own Railway service
+
+**What:** Move the crawl loop out of the shared worker process into a second Railway service (entrypoint + railway config split, ~1 CC hour). Code structure already permits it: separate loop, separate `crawl_checks` table.
+
+**Why:** Eng review decision 8A (2026-08-15) kept crawls in the shared worker with guards (own try/catch, size/time caps, memory bounds) because paid volume is low and a split is cheap later. This TODO records the escape hatch and its trigger.
+
+**Trigger:** Any incident where a crawl crash or restart delays a paid job, OR sustained >50 crawls/day.
+
+**Pros:** True isolation for the paid-job SLA; no shared event loop, memory, or lifecycle.
+
+**Cons:** Second deploy target + idle cost; not justified before external demand exists.
+
+**Depends on:** Nothing — can execute the moment the trigger fires.
+
+---
+
 ## Completed
 
 ### Gemini, Perplexity, and xAI providers
