@@ -1,4 +1,4 @@
-// Worker entry point. Four loops run concurrently:
+// Worker entry point. Five loops run concurrently:
 //
 //   1. Main job loop   — claim PAID jobs, run CLI, write results, mark complete/failed.
 //   2. Refunder loop   — pick up failed jobs with refund_status='pending', call Stripe.
@@ -6,6 +6,8 @@
 //   4. Crawl loop      — claim FREE crawl checks (own table: crawl_checks) and run
 //                        the @openllmrank/crawl engine. Structurally separate from
 //                        the paid queue so free work can never delay paid jobs.
+//   5. Scheduler loop  — turn due brands (active subscription, next_run_at passed)
+//                        into paid jobs with origin='scheduled'. See scheduler.ts.
 //
 // SIGTERM / SIGINT: stop accepting new jobs, finish the current one if any,
 // stop the outboxes, close the DB connection, exit cleanly.
@@ -18,6 +20,7 @@ import { writeRunToPostgres } from "./result-writer";
 import { startRefunderLoop } from "./refunder";
 import { startEmailRetryLoop } from "./email-retry";
 import { startCrawlLoop } from "./crawl-loop";
+import { startSchedulerLoop } from "./scheduler";
 import { alert } from "./alerts";
 
 let shuttingDown = false;
@@ -202,6 +205,7 @@ async function shutdown(signal: string): Promise<void> {
   refunder.stop();
   emailRetry.stop();
   crawl.stop();
+  scheduler.stop();
   // An in-flight crawl is safe to abandon: its lease expires and the row is
   // reclaimed on the next boot, same as an interrupted paid job.
   await closeDb();
@@ -218,6 +222,7 @@ console.log(`[worker] poll interval: ${env.pollIntervalMs}ms`);
 const refunder = startRefunderLoop();
 const emailRetry = startEmailRetryLoop();
 const crawl = startCrawlLoop();
+const scheduler = startSchedulerLoop();
 
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 process.on("SIGINT", () => void shutdown("SIGINT"));

@@ -60,9 +60,9 @@ beforeEach(async () => {
   await sql`delete from auth.users where email like 'queue-test-%@example.com'`;
 
   const u = (await sql`
-    insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at)
+    insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, confirmation_token, recovery_token, email_change, email_change_token_new, email_change_token_current, phone_change, phone_change_token, reauthentication_token)
     values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-            'queue-test-a@example.com', '$2a$10$fake', now())
+            'queue-test-a@example.com', '$2a$10$fake', now(), now(), now(), '', '', '', '', '', '', '', '')
     returning id
   `) as unknown as Array<{ id: string }>;
   userA = u[0]!.id;

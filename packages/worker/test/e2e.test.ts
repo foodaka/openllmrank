@@ -66,9 +66,9 @@ beforeEach(async () => {
   if (!reachable) return;
   await sql`delete from auth.users where email like 'e2e-test%@example.com'`;
   const u = (await sql`
-    insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at)
+    insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, confirmation_token, recovery_token, email_change, email_change_token_new, email_change_token_current, phone_change, phone_change_token, reauthentication_token)
     values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-            'e2e-test@example.com', '$2a$10$fake', now())
+            'e2e-test@example.com', '$2a$10$fake', now(), now(), now(), '', '', '', '', '', '', '', '')
     returning id
   `) as unknown as Array<{ id: string }>;
   userId = u[0]!.id;
@@ -259,7 +259,7 @@ describePg("worker end-to-end (stubbed CLI)", () => {
     `) as unknown as Array<{ finished_at: string }>;
     await sql`delete from public.run_metrics where run_id = ${run_id_pg}`;
     await sql`update public.brands set name = 'Renamed SmokeCo' where id = ${brandId}`;
-    const backfilled = await backfillRunMetrics(sql);
+    const backfilled = await backfillRunMetrics(sql, { runIds: [run_id_pg] });
     expect(backfilled).toBeGreaterThan(0);
 
     const rebuiltRows = (await sql`

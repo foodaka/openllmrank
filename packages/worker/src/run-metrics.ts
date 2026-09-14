@@ -221,7 +221,21 @@ function parseHostedConfig(value: unknown): ReturnType<typeof HostedConfigSchema
   }
 }
 
-export async function backfillRunMetrics(sql: SQL): Promise<number> {
+/**
+ * Recompute run_metrics for completed runs. Runs with no calls rows are left
+ * untouched: they carry no signal, and overwriting an existing metric row
+ * with zeros would put a false cliff in a customer's trend. Pass `runIds` to
+ * scope the backfill (tests must never backfill a shared database globally).
+ * Returns the number of runs actually written.
+ */
+export async function backfillRunMetrics(
+  sql: SQL,
+  opts: { runIds?: string[] } = {},
+): Promise<number> {
+  const scoped = opts.runIds !== undefined;
+  const runIds = opts.runIds ?? [];
+  if (scoped && runIds.length === 0) return 0;
+
   const runs = (await sql`
     select r.id as run_id, r.user_id, r.brand_id, r.job_id,
            r.finished_at::text as computed_at, j.config_jsonb
@@ -229,9 +243,12 @@ export async function backfillRunMetrics(sql: SQL): Promise<number> {
     join public.jobs j on j.id = r.job_id
     where j.status = 'completed'
       and r.finished_at is not null
+      and exists (select 1 from public.calls c where c.run_id = r.id)
+      and (${!scoped} or r.id = any(string_to_array(${runIds.join(",")}, ',')::uuid[]))
     order by r.finished_at asc
   `) as unknown as BackfillRunRow[];
 
+  let written = 0;
   for (const run of runs) {
     const parsed = parseHostedConfig(run.config_jsonb);
     if (!parsed.success) {
@@ -246,8 +263,9 @@ export async function backfillRunMetrics(sql: SQL): Promise<number> {
       computed_at: run.computed_at,
       brand_name: parsed.data.brand.name,
       competitor_names: parsed.data.competitors.map((competitor) => competitor.name),
-    }, { skipEmptyRun: false });
+    });
+    written++;
   }
 
-  return runs.length;
+  return written;
 }
