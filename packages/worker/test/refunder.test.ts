@@ -50,9 +50,9 @@ beforeEach(async () => {
 
   await sql`delete from auth.users where email like 'refund-test%@example.com'`;
   const users = (await sql`
-    insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at)
+    insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, confirmation_token, recovery_token, email_change, email_change_token_new, email_change_token_current, phone_change, phone_change_token, reauthentication_token)
     values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-            'refund-test@example.com', '$2a$10$fake', now())
+            'refund-test@example.com', '$2a$10$fake', now(), now(), now(), '', '', '', '', '', '', '', '')
     returning id
   `) as unknown as Array<{ id: string }>;
   userId = users[0]!.id;
@@ -66,7 +66,7 @@ beforeEach(async () => {
 });
 
 describePg("fetchPendingRefunds", () => {
-  testPg("returns refundable one-shot jobs and excludes subscription failures", async () => {
+  testPg("returns one-shot jobs, with or without a cached payment intent, and excludes subscription failures", async () => {
     const rows = (await sql`
       insert into public.jobs (
         user_id, brand_id, status, origin, refund_status, config_jsonb,
@@ -84,7 +84,10 @@ describePg("fetchPendingRefunds", () => {
       returning id
     `) as unknown as Array<{ id: string }>;
 
+    // Both one-shot rows are candidates: the one without a cached payment
+    // intent is resolved from its Checkout session by processOneRefund (the
+    // async-payment case). Subscription runs never are.
     const candidates = await fetchPendingRefunds(sql);
-    expect(candidates.map((row) => row.id)).toEqual([rows[0]!.id]);
+    expect(candidates.map((row) => row.id).sort()).toEqual([rows[0]!.id, rows[3]!.id].sort());
   });
 });

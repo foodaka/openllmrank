@@ -38,6 +38,10 @@ function CheckoutSuccessInner() {
     "idle" | "firing" | "ok" | "err"
   >("idle");
   const [stubErr, setStubErr] = useState<string | null>(null);
+  // Subscription confirmation. Stripe's webhook usually lands within a few
+  // seconds of the redirect; the page says "ready" only once Postgres has
+  // the row, so a customer never opens a dashboard that still says Subscribe.
+  const [confirm, setConfirm] = useState<"waiting" | "ready" | "timeout">("waiting");
 
   useEffect(() => {
     // Persist nothing else — wizard state can be cleared now.
@@ -98,6 +102,51 @@ function CheckoutSuccessInner() {
     customerId,
   ]);
 
+  useEffect(() => {
+    if (!isSubscription) return;
+    // In stub mode the synthetic webhook fires from this page; wait for it.
+    if (isStub && stubStatus !== "ok" && stubStatus !== "err") return;
+    let cancelled = false;
+    const startedAt = Date.now();
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        const res = await fetch("/api/billing/status", { cache: "no-store" });
+        if (res.ok) {
+          const body = (await res.json()) as { status: string | null };
+          if (body.status && body.status !== "canceled") {
+            setConfirm("ready");
+            return;
+          }
+        }
+      } catch {
+        // transient; keep polling
+      }
+      if (Date.now() - startedAt > 30_000) {
+        setConfirm("timeout");
+        return;
+      }
+      setTimeout(tick, 2000);
+    };
+    void tick();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSubscription, isStub, stubStatus]);
+
+  const subscriptionHeadline =
+    confirm === "ready"
+      ? "Your tracking is ready."
+      : confirm === "timeout"
+        ? "Stripe is still confirming your payment."
+        : "Confirming your subscription…";
+  const subscriptionLede =
+    confirm === "ready"
+      ? "Your brands are set to run on a recurring schedule. You can follow the trend from your dashboard."
+      : confirm === "timeout"
+        ? "Your dashboard will update within a few minutes. If Billing still shows Subscribe after that, reply to your receipt email and we will sort it out."
+        : "This usually takes a few seconds.";
+
   return (
     <main>
       <nav className="topbar">
@@ -109,23 +158,23 @@ function CheckoutSuccessInner() {
         <span className="kicker">
           {isSubscription ? "Subscription started" : "Order received"}
         </span>
-        <h1>
-          {isSubscription
-            ? "Your tracking is ready."
-            : "Your report is being generated."}
+        <h1 aria-live="polite">
+          {isSubscription ? subscriptionHeadline : "Your report is being generated."}
         </h1>
         <p className="lede">
           {isSubscription
-            ? "Your brands are set to run on a recurring schedule. You can follow the trend from your dashboard."
-            : "A confirmation just landed in your inbox. We&rsquo;re now sending the questions you gave us across five grounded AI providers. Expect the report by email in about fifteen minutes."}
+            ? subscriptionLede
+            : "A confirmation just landed in your inbox. We\u2019re now sending the questions you gave us across five grounded AI providers. Expect the report by email in about fifteen minutes."}
         </p>
 
         <hr className="rule" />
 
         <p className="next-steps">
           {isSubscription
-            ? "You can close this tab. We&rsquo;ll handle the next run."
-            : "You can close this tab. We&rsquo;ll handle the rest."}
+            ? confirm === "ready"
+              ? "You can close this tab. We\u2019ll handle the next run."
+              : "Keep this tab open for a moment."
+            : "You can close this tab. We\u2019ll handle the rest."}
         </p>
 
         {isStub && (
@@ -145,10 +194,15 @@ function CheckoutSuccessInner() {
         )}
 
         <p>
-          <Link href={isSubscription ? "/dashboard" : "/"} className="btn-text">
+          <Link
+            href={isSubscription ? (confirm === "timeout" ? "/dashboard/billing" : "/dashboard") : "/"}
+            className="btn-text"
+          >
             {isSubscription
-              ? "Go to dashboard"
-              : "\u2190 Back to openllmrank.com"}
+              ? confirm === "timeout"
+                ? "Open billing"
+                : "Go to dashboard"
+              : "\u2190 Back to openllmrank.io"}
           </Link>
         </p>
       </div>

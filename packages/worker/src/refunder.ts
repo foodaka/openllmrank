@@ -32,8 +32,10 @@ type PendingRefundRow = {
   brand_name: string;
 };
 
-// Only one-shot purchases with a payment intent can be refunded. Jobs without
-// one are left for a later reconciliation path instead of being selected here.
+// Only one-shot purchases are refundable; scheduled and manual subscription
+// runs never enter refund_status='pending' (queue.ts markFailed). A one-shot
+// job without a cached payment intent is still selected: processOneRefund
+// resolves it from the Checkout session, which is the async-payment case.
 export async function fetchPendingRefunds(sql: SQL): Promise<PendingRefundRow[]> {
   return (await sql`
     select j.id, j.user_id, j.brand_id, j.origin, j.email_to, j.amount_cents, j.currency,
@@ -44,7 +46,6 @@ export async function fetchPendingRefunds(sql: SQL): Promise<PendingRefundRow[]>
     join public.brands b on b.id = j.brand_id
     where j.refund_status = 'pending'
       and j.origin = 'one_shot'
-      and j.stripe_payment_intent_id is not null
       and j.refund_attempts < ${REFUND_MAX_ATTEMPTS}
     order by j.failed_at asc
     limit 10
