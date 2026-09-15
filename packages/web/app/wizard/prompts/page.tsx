@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WizardShell } from "../wizard-shell";
-import { readWizardState, writeWizardState } from "@/lib/wizard-state";
+import {
+  getWizardMode,
+  readWizardState,
+  wizardPath,
+  writeWizardState,
+  type WizardMode,
+} from "@/lib/wizard-state";
 import { HOSTED_CAPS } from "@openllmrank/shared/config";
 
 const MIN_PROMPTS = 1;
@@ -26,15 +32,18 @@ export default function WizardPromptsPage() {
   const [prompts, setPrompts] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [mode, setMode] = useState<WizardMode>("one-shot");
 
   useEffect(() => {
-    const s = readWizardState();
+    const nextMode = getWizardMode();
+    setMode(nextMode);
+    const s = readWizardState(nextMode);
     if (!s.brand?.name) {
-      router.replace("/wizard/brand");
+      router.replace(wizardPath("/wizard/brand", nextMode));
       return;
     }
     if (s.competitors.length === 0) {
-      router.replace("/wizard/competitors");
+      router.replace(wizardPath("/wizard/competitors", nextMode));
       return;
     }
     if (s.prompts.length > 0) {
@@ -78,8 +87,8 @@ export default function WizardPromptsPage() {
   function handleNext() {
     if (!validate()) return;
     const cleaned = prompts.map((p) => p.trim()).filter(Boolean);
-    writeWizardState({ prompts: cleaned });
-    router.push("/wizard/review");
+    writeWizardState({ prompts: cleaned }, mode);
+    router.push(wizardPath("/wizard/review", mode));
   }
 
   if (!hydrated) return null;
@@ -89,10 +98,11 @@ export default function WizardPromptsPage() {
   return (
     <WizardShell
       step={3}
-      kicker="Their questions"
+      kicker={mode === "add-brand" ? "" : "Their questions"}
       heading="What do customers ask AI?"
-      backHref="/wizard/competitors"
+      backHref={wizardPath("/wizard/competitors", mode)}
       onNext={handleNext}
+      nextLabel="Review"
       nextDisabled={nonEmptyCount < MIN_PROMPTS || nonEmptyCount > MAX_PROMPTS}
     >
       <p className="muted-intro">

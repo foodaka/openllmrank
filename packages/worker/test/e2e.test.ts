@@ -178,6 +178,32 @@ describePg("worker end-to-end (stubbed CLI)", () => {
     expect(typeof run_id_pg).toBe("string");
     expect(run_id_pg.length).toBeGreaterThan(10);
 
+    const finishedRows = (await sql`
+      select finished_at::text from public.runs where id = ${run_id_pg}
+    `) as unknown as Array<{ finished_at: string }>;
+    const brandRows = (await sql`
+      select last_run_at::text from public.brands where id = ${brandId}
+    `) as unknown as Array<{ last_run_at: string | null }>;
+    expect(new Date(brandRows[0]!.last_run_at!).toISOString()).toBe(
+      new Date(finishedRows[0]!.finished_at).toISOString(),
+    );
+
+    await writeRunMetrics(sql, {
+      run_id: run_id_pg,
+      user_id: userId,
+      brand_id: brandId,
+      job_id: jobId,
+      computed_at: "2026-01-01T00:00:00.000Z",
+      brand_name: "SmokeCo",
+      competitor_names: ["RivalCo"],
+    });
+    const protectedBrandRows = (await sql`
+      select last_run_at::text from public.brands where id = ${brandId}
+    `) as unknown as Array<{ last_run_at: string | null }>;
+    expect(new Date(protectedBrandRows[0]!.last_run_at!).toISOString()).toBe(
+      new Date(finishedRows[0]!.finished_at).toISOString(),
+    );
+
     // 5. Mark the job complete.
     await markCompleted(sql, jobId, {
       cli_run_id: STUB_RUN_ID,
@@ -254,9 +280,6 @@ describePg("worker end-to-end (stubbed CLI)", () => {
     `) as unknown as Array<{ n: number }>;
     expect(metricCount[0]!.n).toBe(1);
 
-    const finishedRows = (await sql`
-      select finished_at::text from public.runs where id = ${run_id_pg}
-    `) as unknown as Array<{ finished_at: string }>;
     await sql`delete from public.run_metrics where run_id = ${run_id_pg}`;
     await sql`update public.brands set name = 'Renamed SmokeCo' where id = ${brandId}`;
     const backfilled = await backfillRunMetrics(sql, { runIds: [run_id_pg] });

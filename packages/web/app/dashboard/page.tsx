@@ -7,6 +7,7 @@ import {
   direction,
   longDate,
   pct,
+  sortBrandsByLatestRun,
 } from "@/lib/dashboard-data";
 
 // Brand list (E5). With exactly one brand this redirects straight to it —
@@ -28,6 +29,21 @@ export default async function DashboardIndex() {
           Tell us your brand, who you compete with, and the questions your buyers
           ask. We query grounded AI providers and show you where you appear.
         </p>
+        <hr className="rule" />
+        <div className="empty-steps">
+          <div>
+            <span className="empty-step-number">1</span>
+            <p>Name the brand and category you want tracked.</p>
+          </div>
+          <div>
+            <span className="empty-step-number">2</span>
+            <p>List up to three competitors you expect to be cited.</p>
+          </div>
+          <div>
+            <span className="empty-step-number">3</span>
+            <p>Write the questions your buyers actually ask.</p>
+          </div>
+        </div>
         <Link href="/dashboard/brands/new" className="btn-primary">
           Add a brand
         </Link>
@@ -37,7 +53,8 @@ export default async function DashboardIndex() {
 
   if (brands.length === 1) redirect(`/dashboard/${brands[0]!.id}`);
 
-  const throttled = brands.length > 2 && brands.every((b) => b.cadence === "monthly");
+  const orderedBrands = sortBrandsByLatestRun(brands, metricsByBrand);
+  const throttled = brands.length > 2;
 
   return (
     <>
@@ -47,7 +64,7 @@ export default async function DashboardIndex() {
       </h1>
 
       <div className="brand-list">
-        {brands.map((b) => {
+        {orderedBrands.map((b) => {
           const series = metricsByBrand.get(b.id) ?? [];
           const latest = series.at(-1);
           const prev = series.at(-2);

@@ -8,6 +8,7 @@ import {
   updateBrand,
   type BrandFormErrors,
   type BrandFormInput,
+  type BrandCadence,
 } from "@/lib/brand-writes";
 
 // Server actions behind the add-brand and settings forms. The same library
@@ -32,6 +33,13 @@ function readInput(formData: FormData): BrandFormInput {
     competitors: text("competitors"),
     prompts: text("prompts"),
   };
+}
+
+function readCadence(formData: FormData): BrandCadence | undefined {
+  const value = formData.get("cadence");
+  return value === "weekly" || value === "monthly" || value === "paused"
+    ? value
+    : undefined;
 }
 
 async function session() {
@@ -73,6 +81,7 @@ export async function updateBrandAction(
     userId,
     brandId,
     input: readInput(formData),
+    cadence: readCadence(formData),
   });
   if (!result.ok) {
     if ("errors" in result) return { errors: result.errors };

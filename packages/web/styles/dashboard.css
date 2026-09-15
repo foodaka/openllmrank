@@ -369,6 +369,34 @@
 .btn-danger { color: var(--loss); padding-left: 0; }
 .btn-danger:hover { color: var(--loss); }
 
+.cadence-field {
+  border: 0;
+  border-top: 1px solid var(--line);
+  padding: var(--space-lg) 0 0;
+  margin: var(--space-lg) 0 0;
+}
+.cadence-field legend,
+.cadence-option strong { font-weight: 600; }
+.cadence-field legend {
+  color: var(--accent);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0;
+}
+.cadence-option {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-start;
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.cadence-option input { margin-top: 3px; accent-color: var(--accent); }
+.cadence-option span { display: grid; gap: 3px; }
+.cadence-option small { color: var(--muted); font-size: 14px; }
+.cadence-option:has(input:disabled) { color: var(--muted); cursor: not-allowed; }
+
 /* ---------------------------------------------------------------- mobile */
 
 @media (max-width: 820px) {

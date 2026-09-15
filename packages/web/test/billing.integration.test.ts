@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { SQL } from "bun";
 import { createClient } from "@supabase/supabase-js";
+import { HOSTED_REPORT_PROVIDERS } from "@openllmrank/shared/config";
 import { createSubscriptionSession } from "../lib/stripe";
 
 const SUPABASE_URL =
@@ -176,6 +177,31 @@ describePg("subscription billing integration", () => {
   testPg("completing checkout is active, local, and double-billing safe", async () => {
     const fixture = await createFixture("checkout");
     try {
+      const legacyConfig = {
+        brand: {
+          name: `Billing ${fixture.email}`,
+          aliases: ["Legacy Billing"],
+          website: "https://legacy-billing.example.com",
+          category: "billing software",
+        },
+        competitors: [{ name: "Rival Billing", aliases: [] }],
+        prompts: ["best billing software"],
+        providers: [...HOSTED_REPORT_PROVIDERS],
+        samples_per_prompt: 3,
+        concurrency_per_provider: 1,
+      };
+      const { error: legacyJobError } = await admin!.from("jobs").insert({
+        user_id: fixture.userId,
+        brand_id: fixture.brandId,
+        origin: "one_shot",
+        status: "completed",
+        config_jsonb: legacyConfig,
+        amount_cents: 2999,
+        email_to: fixture.email,
+        stripe_checkout_session_id: `cs_legacy_${crypto.randomUUID()}`,
+      });
+      expect(legacyJobError).toBeNull();
+
       const session = await createSubscriptionSession({
         amountCents: 2900,
         currency: "usd",
@@ -211,11 +237,16 @@ describePg("subscription billing integration", () => {
 
       const { data: brand } = await admin!
         .from("brands")
-        .select("cadence,next_run_at")
+        .select("cadence,next_run_at,website,category,config_jsonb")
         .eq("id", fixture.brandId)
         .single();
       expect(brand?.cadence).toBe("weekly");
       expect(brand?.next_run_at).not.toBeNull();
+      expect(brand?.website).toBe(legacyConfig.brand.website);
+      expect(brand?.category).toBe(legacyConfig.brand.category);
+      expect((brand?.config_jsonb as typeof legacyConfig).prompts).toEqual(
+        legacyConfig.prompts,
+      );
 
       const duplicate = await postEvent(fixture, event);
       expect(duplicate.status).toBe(200);

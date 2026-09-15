@@ -9,7 +9,11 @@ import {
   verifyWebhook,
 } from "../../../../lib/stripe";
 import { sendAccountInviteEmail } from "../../../../lib/account-invite";
-import { HostedConfigSchema, type HostedConfig } from "@openllmrank/shared/config";
+import {
+  HostedConfigSchema,
+  HOSTED_REPORT_PROVIDERS,
+  type HostedConfig,
+} from "@openllmrank/shared/config";
 
 // Stripe webhook handler. Post-payment provisioning lives here. Flow:
 //
@@ -280,6 +284,69 @@ async function findMonitorForEvent(
     .maybeSingle();
   if (error) throw new Error(`monitor customer lookup: ${error.message}`);
   return data;
+
+}
+
+// Brands created by the original one-shot flow kept their HostedConfig on the
+// job only. Hydrate those rows when tracking starts so an existing customer can
+// enter the settings flow and the scheduler has a config to copy into jobs.
+async function backfillLegacyBrandConfigs(
+  supabase: ReturnType<typeof serviceClient>,
+  userId: string,
+): Promise<void> {
+  const { data: brands, error: brandsError } = await supabase
+    .from("brands")
+    .select("id")
+    .eq("user_id", userId)
+    .is("config_jsonb", null)
+    .is("archived_at", null);
+  if (brandsError) throw new Error(`legacy brand lookup: ${brandsError.message}`);
+  if (!brands?.length) return;
+
+  const brandIds = brands.map((brand) => brand.id as string);
+  const { data: jobs, error: jobsError } = await supabase
+    .from("jobs")
+    .select("brand_id,config_jsonb")
+    .eq("user_id", userId)
+    .eq("origin", "one_shot")
+    .in("brand_id", brandIds)
+    .order("created_at", { ascending: false });
+  if (jobsError) throw new Error(`legacy job lookup: ${jobsError.message}`);
+
+  const latestJobByBrand = new Map<string, unknown>();
+  for (const job of jobs ?? []) {
+    const brandId = job.brand_id as string;
+    if (!latestJobByBrand.has(brandId)) {
+      latestJobByBrand.set(brandId, job.config_jsonb);
+    }
+  }
+
+  for (const brand of brands) {
+    const rawConfig = latestJobByBrand.get(brand.id as string);
+    if (rawConfig === undefined) continue;
+
+    const parsed = HostedConfigSchema.safeParse(rawConfig);
+    if (!parsed.success) {
+      throw new Error(
+        `legacy brand config is invalid for ${brand.id}: ${parsed.error.message}`,
+      );
+    }
+    const config = {
+      ...parsed.data,
+      providers: HOSTED_REPORT_PROVIDERS.map((provider) => ({ ...provider })),
+    };
+    const { error } = await supabase
+      .from("brands")
+      .update({
+        website: config.brand.website ?? null,
+        category: config.brand.category ?? null,
+        config_jsonb: config,
+      })
+      .eq("id", brand.id)
+      .eq("user_id", userId)
+      .is("config_jsonb", null);
+    if (error) throw new Error(`legacy brand backfill: ${error.message}`);
+  }
 }
 
 async function setBrandCadence(
@@ -287,6 +354,9 @@ async function setBrandCadence(
   userId: string,
   cadence: "weekly" | "paused",
 ): Promise<void> {
+  if (cadence === "weekly") {
+    await backfillLegacyBrandConfigs(supabase, userId);
+  }
   const values =
     cadence === "paused"
       ? { cadence, next_run_at: null }
@@ -725,6 +795,9 @@ export async function POST(req: Request) {
       user_id: userId,
       name: config.brand.name,
       aliases: config.brand.aliases,
+      website: config.brand.website ?? null,
+      category: config.brand.category ?? null,
+      config_jsonb: config,
     })
     .select("id")
     .single();

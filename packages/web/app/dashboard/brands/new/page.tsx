@@ -1,11 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getBrands, getSubscription } from "@/lib/dashboard-data";
-import { BrandForm } from "../../_components/brand-form";
-import { createBrandAction } from "../actions";
 
-// Add-brand (E5). The subscription already covers the run, so there is no
-// payment step: the form writes brands.config_jsonb and the scheduler queues
-// the first run on its next tick.
+// Add-brand (E5). The existing four-step wizard owns the form state and is
+// reused here in add mode so this path never opens a second payment flow.
 
 export default async function NewBrandPage() {
   const [subscription, brands] = await Promise.all([getSubscription(), getBrands()]);
@@ -30,22 +28,5 @@ export default async function NewBrandPage() {
     );
   }
 
-  return (
-    <>
-      <span className="kicker">Add a brand</span>
-      <h1 className="standfirst">What should we track?</h1>
-      <p className="sub">
-        Your brand, who you compete with, and the questions your buyers ask.
-        The first run starts as soon as you save.
-      </p>
-      <BrandForm
-        action={createBrandAction}
-        initial={{ name: "", website: "", category: "", aliases: "", competitors: "", prompts: "" }}
-        submitLabel="Start tracking"
-      />
-      <p className="brand-tools">
-        <Link href="/dashboard">Back to dashboard</Link>
-      </p>
-    </>
-  );
+  redirect("/wizard/brand?mode=add");
 }

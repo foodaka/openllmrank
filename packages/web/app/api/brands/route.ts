@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { RunCadence } from "@openllmrank/shared/cadence";
 // Relative imports: type-checked from packages/web/test without the "@/" alias.
 import { serviceClient, userClient } from "../../../lib/supabase-server";
 import { createBrand, type BrandFormInput } from "../../../lib/brand-writes";
@@ -10,7 +11,15 @@ export const dynamic = "force-dynamic";
 // The dashboard form uses the server action in app/dashboard/brands/actions.ts;
 // this route exposes the same write for tests and integrations.
 
-export async function readBrandInput(req: Request): Promise<BrandFormInput> {
+export type BrandRequestInput = BrandFormInput & { cadence?: RunCadence };
+
+function cadenceOf(value: unknown): RunCadence | undefined {
+  return value === "weekly" || value === "monthly" || value === "paused"
+    ? value
+    : undefined;
+}
+
+export async function readBrandInput(req: Request): Promise<BrandRequestInput> {
   const text = (v: unknown) => (typeof v === "string" ? v : "");
   const type = req.headers.get("content-type") ?? "";
   if (type.includes("application/json")) {
@@ -22,6 +31,7 @@ export async function readBrandInput(req: Request): Promise<BrandFormInput> {
       aliases: text(body.aliases),
       competitors: text(body.competitors),
       prompts: text(body.prompts),
+      cadence: cadenceOf(body.cadence),
     };
   }
   const form = await req.formData();
@@ -32,6 +42,7 @@ export async function readBrandInput(req: Request): Promise<BrandFormInput> {
     aliases: text(form.get("aliases")),
     competitors: text(form.get("competitors")),
     prompts: text(form.get("prompts")),
+    cadence: cadenceOf(form.get("cadence")),
   };
 }
 

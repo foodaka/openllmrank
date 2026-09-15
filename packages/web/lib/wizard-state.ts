@@ -21,7 +21,12 @@ export type WizardState = {
   email?: string;
 };
 
-const STORAGE_KEY = "openllmrank.wizard.v1";
+export type WizardMode = "one-shot" | "add-brand";
+
+const STORAGE_KEYS: Record<WizardMode, string> = {
+  "one-shot": "openllmrank.wizard.v1",
+  "add-brand": "openllmrank.wizard.add-brand.v1",
+};
 
 const empty: WizardState = {
   competitors: [],
@@ -29,34 +34,61 @@ const empty: WizardState = {
   providers: HOSTED_REPORT_PROVIDERS.map((provider) => ({ ...provider })),
 };
 
-export function readWizardState(): WizardState {
-  if (typeof window === "undefined") return empty;
+function storageKey(mode: WizardMode): string {
+  return STORAGE_KEYS[mode];
+}
+
+function emptyState(): WizardState {
+  return {
+    ...empty,
+    competitors: [],
+    prompts: [],
+    providers: HOSTED_REPORT_PROVIDERS.map((provider) => ({ ...provider })),
+  };
+}
+
+export function getWizardMode(): WizardMode {
+  if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mode") === "add") {
+    return "add-brand";
+  }
+  return "one-shot";
+}
+
+export function wizardPath(path: string, mode: WizardMode): string {
+  return mode === "add-brand" ? `${path}?mode=add` : path;
+}
+
+export function readWizardState(mode: WizardMode = "one-shot"): WizardState {
+  if (typeof window === "undefined") return emptyState();
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return empty;
+    const raw = window.localStorage.getItem(storageKey(mode));
+    if (!raw) return emptyState();
     return {
-      ...empty,
+      ...emptyState(),
       ...JSON.parse(raw),
       // Provider selection is part of the hosted product, not a wizard input.
       // Normalize old saved sessions to the current report lineup.
       providers: HOSTED_REPORT_PROVIDERS.map((provider) => ({ ...provider })),
     };
   } catch {
-    return empty;
+    return emptyState();
   }
 }
 
-export function writeWizardState(patch: Partial<WizardState>): WizardState {
-  const current = readWizardState();
+export function writeWizardState(
+  patch: Partial<WizardState>,
+  mode: WizardMode = "one-shot",
+): WizardState {
+  const current = readWizardState(mode);
   const next = { ...current, ...patch };
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    window.localStorage.setItem(storageKey(mode), JSON.stringify(next));
   }
   return next;
 }
 
-export function clearWizardState(): void {
+export function clearWizardState(mode: WizardMode = "one-shot"): void {
   if (typeof window !== "undefined") {
-    window.localStorage.removeItem(STORAGE_KEY);
+    window.localStorage.removeItem(storageKey(mode));
   }
 }

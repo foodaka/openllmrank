@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WizardShell } from "../wizard-shell";
-import { readWizardState, writeWizardState } from "@/lib/wizard-state";
+import {
+  getWizardMode,
+  readWizardState,
+  wizardPath,
+  writeWizardState,
+  type WizardMode,
+} from "@/lib/wizard-state";
 import type { Brand } from "@openllmrank/shared/config";
 
 const MAX_COMPETITORS = 10;
@@ -15,11 +21,14 @@ export default function WizardCompetitorsPage() {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [mode, setMode] = useState<WizardMode>("one-shot");
 
   useEffect(() => {
-    const s = readWizardState();
+    const nextMode = getWizardMode();
+    setMode(nextMode);
+    const s = readWizardState(nextMode);
     if (!s.brand?.name) {
-      router.replace("/wizard/brand");
+      router.replace(wizardPath("/wizard/brand", nextMode));
       return;
     }
     setItems(s.competitors ?? []);
@@ -57,8 +66,8 @@ export default function WizardCompetitorsPage() {
 
   function handleNext() {
     if (!validate()) return;
-    writeWizardState({ competitors: items });
-    router.push("/wizard/prompts");
+    writeWizardState({ competitors: items }, mode);
+    router.push(wizardPath("/wizard/prompts", mode));
   }
 
   if (!hydrated) return null;
@@ -66,10 +75,11 @@ export default function WizardCompetitorsPage() {
   return (
     <WizardShell
       step={2}
-      kicker="Their competitors"
+      kicker={mode === "add-brand" ? "" : "Their competitors"}
       heading="Who are you up against?"
-      backHref="/wizard/brand"
+      backHref={wizardPath("/wizard/brand", mode)}
       onNext={handleNext}
+      nextLabel="Next — questions"
       nextDisabled={items.length < MIN_COMPETITORS}
     >
       <p className="muted-intro">
