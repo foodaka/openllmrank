@@ -3,7 +3,12 @@ import { ServerClient as PostmarkClient } from "postmark";
 // Relative imports: this route is transitively type-checked from the root
 // tsconfig via packages/web/test/, which has no "@/" alias.
 import { serviceClient } from "../../../../lib/supabase-server";
-import { isSubscriptionActive, verifyWebhook } from "../../../../lib/stripe";
+import {
+  cancelSubscription,
+  isSubscriptionActive,
+  verifyWebhook,
+} from "../../../../lib/stripe";
+import { sendAccountInviteEmail } from "../../../../lib/account-invite";
 import { HostedConfigSchema, type HostedConfig } from "@openllmrank/shared/config";
 
 // Stripe webhook handler. Post-payment provisioning lives here. Flow:
@@ -18,18 +23,20 @@ import { HostedConfigSchema, type HostedConfig } from "@openllmrank/shared/confi
 //       │ if duplicate → return 200 OK silently
 //       ▼
 //   switch (event.type) {
-//     case 'checkout.session.completed':
-//       1. metadata.lead_id  →  lookup leads row
-//       2. createUser (or fetch existing by email)
-//       3. INSERT brand
-//       4. INSERT job with status='paid' immediately
-//       5. UPDATE leads SET status='converted', job_id, converted_at
+//     case 'checkout.session.completed' (metadata.kind=monitor): crawl monitor
+//     case 'checkout.session.completed' (mode=subscription): dashboard tracking
+//     case 'checkout.session.completed' (payment): provision brand + job
+//     case subscription lifecycle events: sync billing + cadence state for
+//          dashboard subscriptions; deactivate crawl monitors on deletion
 //   }
 //
-// On error mid-flow: we've already inserted to stripe_events so a retry
-// would short-circuit. v1 trade-off: paid customers in this state need
-// manual intervention. v1.1 should add a `processed_at` column to
-// stripe_events to support retry-the-post-event-work pattern.
+// Two subscription products share this endpoint. Dashboard tracking rows
+// live in public.subscriptions; crawl monitors live in public.crawl_monitors.
+// Lifecycle events are matched against both before anything returns 404.
+//
+// Events are inserted with processed_at=null before work starts. A failed
+// handler therefore remains retryable, while a completed event short-circuits
+// duplicate Stripe delivery.
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +56,10 @@ function singleLine(value: string): string {
 async function findOrCreateAuthUser(
   supabase: ReturnType<typeof serviceClient>,
   rawEmail: string,
-): Promise<{ ok: true; userId: string } | { ok: false; detail: string }> {
+): Promise<
+  | { ok: true; userId: string; created: boolean }
+  | { ok: false; detail: string }
+> {
   // Normalize to lowercase so Alice@x.com and alice@x.com map to the same
   // auth.users row. Without this, listUsers.find compares lowercased while
   // createUser is case-sensitive, producing duplicate accounts on second
@@ -63,7 +73,9 @@ async function findOrCreateAuthUser(
       email_confirm: true,
       user_metadata: { source: "checkout" },
     });
-  if (created?.user) return { ok: true, userId: created.user.id };
+  if (created?.user) {
+    return { ok: true, userId: created.user.id, created: true };
+  }
 
   // Email exists or createUser failed — page through listUsers.
   for (let page = 1; page <= 10; page++) {
@@ -73,7 +85,7 @@ async function findOrCreateAuthUser(
     const match = list.users.find(
       (u) => u.email?.toLowerCase() === email,
     );
-    if (match) return { ok: true, userId: match.id };
+    if (match) return { ok: true, userId: match.id, created: false };
     if (list.users.length < 200) break; // last page
   }
 
@@ -109,7 +121,7 @@ async function sendOrderReceivedEmail(args: {
   try {
     const brandName = escapeHtml(args.brandName);
     const client = new PostmarkClient(token);
-    const fromAddr = process.env.POSTMARK_FROM ?? "reports@openllmrank.com";
+    const fromAddr = process.env.POSTMARK_FROM ?? "reports@openllmrank.io";
     const fromName = process.env.POSTMARK_FROM_NAME ?? "openllmrank";
     await client.sendEmail({
       From: `${fromName} <${fromAddr}>`,
@@ -129,6 +141,210 @@ async function sendOrderReceivedEmail(args: {
     // Best-effort. Don't fail the webhook over an email send.
     console.error("[order-received] postmark send failed:", (e as Error).message);
   }
+}
+
+type SubscriptionStatus = "incomplete" | "active" | "past_due" | "canceled";
+
+// Fields we read off customer.subscription.* and invoice.* objects. Stripe
+// moved two of them between API versions and the webhook endpoint's pinned
+// version is set in the Dashboard, not by our client, so both shapes are read:
+//   subscription.current_period_end  ->  subscription.items.data[0].current_period_end
+//   invoice.subscription              ->  invoice.parent.subscription_details.subscription
+type SubscriptionWebhookObject = {
+  id?: unknown;
+  object?: unknown;
+  customer?: unknown;
+  subscription?: unknown;
+  status?: unknown;
+  current_period_end?: unknown;
+  cancel_at_period_end?: unknown;
+  items?: { data?: { current_period_end?: unknown }[] | null } | null;
+  parent?: { subscription_details?: { subscription?: unknown } | null } | null;
+  metadata?: Record<string, string> | null;
+};
+
+function stripeId(value: unknown): string | null {
+  if (typeof value === "string" && value.length > 0) return value;
+  if (value && typeof value === "object" && "id" in value) {
+    const id = (value as { id?: unknown }).id;
+    return typeof id === "string" && id.length > 0 ? id : null;
+  }
+  return null;
+}
+
+/** The subscription id an event refers to. Invoice objects carry it in a
+ * nested field (and their own id is an invoice id, never a subscription id);
+ * subscription objects are the subscription. */
+function subscriptionIdOf(object: SubscriptionWebhookObject): string | null {
+  const nested =
+    stripeId(object.subscription) ??
+    stripeId(object.parent?.subscription_details?.subscription);
+  if (nested) return nested;
+  if (object.object === "invoice") return null;
+  return stripeId(object.id);
+}
+
+function currentPeriodEndOf(object: SubscriptionWebhookObject): unknown {
+  if ("current_period_end" in object) return object.current_period_end;
+  const item = object.items?.data?.[0];
+  if (item && "current_period_end" in item) return item.current_period_end;
+  return undefined;
+}
+
+function stripeDate(value: unknown): string | null | undefined {
+  if (value === null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return new Date(value * 1000).toISOString();
+  }
+  if (typeof value === "string" && value.length > 0) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+  }
+  return undefined;
+}
+
+function subscriptionStatus(value: unknown): SubscriptionStatus | null {
+  switch (value) {
+    case "active":
+    case "trialing":
+      return "active";
+    case "past_due":
+    case "unpaid":
+      return "past_due";
+    case "incomplete":
+      return "incomplete";
+    case "canceled":
+    case "incomplete_expired":
+      return "canceled";
+    default:
+      return null;
+  }
+}
+
+async function findSubscriptionForEvent(
+  supabase: ReturnType<typeof serviceClient>,
+  subscriptionId: string | null,
+  customerId: string | null,
+) {
+  const columns = "id,user_id,status,stripe_subscription_id,stripe_customer_id";
+  if (subscriptionId) {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select(columns)
+      .eq("stripe_subscription_id", subscriptionId)
+      .maybeSingle();
+    if (error) throw new Error(`subscription lookup: ${error.message}`);
+    if (data) return data;
+    // A known subscription id that is not ours must not fall through to the
+    // customer match: a re-subscribe after cancel would otherwise smear the
+    // new subscription's status onto the old row.
+    return null;
+  }
+
+  if (!customerId) return null;
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select(columns)
+    .eq("stripe_customer_id", customerId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`customer subscription lookup: ${error.message}`);
+  return data;
+}
+
+/** Crawl monitors are billed through the same Stripe account. Their invoice
+ * and update events carry no state we store (Stripe owns their billing), but
+ * they must be acknowledged, not 404ed, or Stripe retries them for 72 hours
+ * and counts the endpoint as failing. */
+async function findMonitorForEvent(
+  supabase: ReturnType<typeof serviceClient>,
+  subscriptionId: string | null,
+  customerId: string | null,
+): Promise<{ id: string } | null> {
+  if (subscriptionId) {
+    const { data, error } = await supabase
+      .from("crawl_monitors")
+      .select("id")
+      .eq("stripe_subscription_id", subscriptionId)
+      .maybeSingle();
+    if (error) throw new Error(`monitor lookup: ${error.message}`);
+    if (data) return data;
+  }
+  if (!customerId) return null;
+  const { data, error } = await supabase
+    .from("crawl_monitors")
+    .select("id")
+    .eq("stripe_customer_id", customerId)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`monitor customer lookup: ${error.message}`);
+  return data;
+}
+
+async function setBrandCadence(
+  supabase: ReturnType<typeof serviceClient>,
+  userId: string,
+  cadence: "weekly" | "paused",
+): Promise<void> {
+  const values =
+    cadence === "paused"
+      ? { cadence, next_run_at: null }
+      : { cadence, next_run_at: new Date().toISOString() };
+  let query = supabase.from("brands").update(values).eq("user_id", userId);
+  if (cadence === "weekly") query = query.is("archived_at", null);
+  const { error } = await query;
+  if (error) throw new Error(`brand cadence update: ${error.message}`);
+}
+
+async function syncSubscription(
+  supabase: ReturnType<typeof serviceClient>,
+  object: SubscriptionWebhookObject,
+  forcedStatus?: SubscriptionStatus,
+) {
+  const subscriptionId = subscriptionIdOf(object);
+  const customerId = stripeId(object.customer);
+  const existing = await findSubscriptionForEvent(
+    supabase,
+    subscriptionId,
+    customerId,
+  );
+  if (!existing) return null;
+
+  const status = forcedStatus ?? subscriptionStatus(object.status);
+  if (!status) return { existing, status: null };
+
+  const update: Record<string, unknown> = { status };
+  if (customerId) update.stripe_customer_id = customerId;
+  const currentPeriodEnd = stripeDate(currentPeriodEndOf(object));
+  if (currentPeriodEnd !== undefined) {
+    update.current_period_end = currentPeriodEnd;
+  }
+  if (typeof object.cancel_at_period_end === "boolean") {
+    update.cancel_at_period_end = object.cancel_at_period_end;
+  }
+
+  const { error } = await supabase
+    .from("subscriptions")
+    .update(update)
+    .eq("id", existing.id);
+  if (error) throw new Error(`subscription update: ${error.message}`);
+
+  // Cadence follows billing state. past_due pauses the scheduler (the
+  // dashboard stays readable); canceled is terminal. A recovery back to
+  // active resumes tracking only on a real transition, so a routine
+  // subscription.updated (e.g. cancel_at_period_end toggled) never queues
+  // an unplanned run.
+  const previous = existing.status as SubscriptionStatus;
+  if (status === "canceled" || status === "past_due") {
+    if (previous !== status) {
+      await setBrandCadence(supabase, existing.user_id, "paused");
+    }
+  } else if (status === "active" && previous !== "active") {
+    await setBrandCadence(supabase, existing.user_id, "weekly");
+  }
+
+  return { existing, status };
 }
 
 export async function POST(req: Request) {
@@ -195,53 +411,104 @@ export async function POST(req: Request) {
       .eq("id", event.id);
   };
 
-  // Monitor lifecycle: cancellation deactivates the monitor. Handled BEFORE
-  // the generic non-checkout early-return so it isn't swallowed. Deletions
-  // for unknown subscription ids are fine (out-of-order delivery — the
-  // activation path re-checks live status via isSubscriptionActive).
-  if (event.type === "customer.subscription.deleted") {
-    const sub = event.data.object as { id: string };
-    const { error: cancelErr } = await supabase
-      .from("crawl_monitors")
-      .update({ status: "canceled", canceled_at: new Date().toISOString() })
-      .eq("stripe_subscription_id", sub.id);
-    if (cancelErr) {
+  // Subscription lifecycle events arrive after Checkout and are matched by
+  // Stripe's subscription/customer IDs against both subscription products.
+  // Unknown Stripe events are still logged and acknowledged; only events we
+  // understand can mutate state.
+  if (event.type !== "checkout.session.completed") {
+    const object = event.data.object as SubscriptionWebhookObject;
+    let result: Awaited<ReturnType<typeof syncSubscription>> | undefined;
+    let monitorCanceled = false;
+
+    switch (event.type) {
+      case "customer.subscription.updated":
+        result = await syncSubscription(supabase, object);
+        break;
+      case "customer.subscription.deleted": {
+        // Crawl monitors: cancellation deactivates the monitor. Deletions for
+        // unknown ids are fine (out-of-order delivery — the activation path
+        // re-checks live status via isSubscriptionActive).
+        const subscriptionId = stripeId(object.id);
+        if (subscriptionId) {
+          const { data: canceled, error: cancelErr } = await supabase
+            .from("crawl_monitors")
+            .update({ status: "canceled", canceled_at: new Date().toISOString() })
+            .eq("stripe_subscription_id", subscriptionId)
+            .select("id");
+          if (cancelErr) {
+            return NextResponse.json(
+              { error: "DB error canceling monitor", detail: cancelErr.message },
+              { status: 500 },
+            );
+          }
+          monitorCanceled = (canceled?.length ?? 0) > 0;
+        }
+        result = await syncSubscription(supabase, object, "canceled");
+        break;
+      }
+      case "invoice.payment_failed":
+        result = await syncSubscription(supabase, object, "past_due");
+        break;
+      case "invoice.paid":
+        result = await syncSubscription(supabase, object, "active");
+        break;
+      default:
+        await markProcessed();
+        return NextResponse.json({ received: true, type: event.type });
+    }
+
+    if (!result && !monitorCanceled) {
+      const monitor = await findMonitorForEvent(
+        supabase,
+        subscriptionIdOf(object),
+        stripeId(object.customer),
+      );
+      if (monitor) {
+        await markProcessed();
+        return NextResponse.json({ received: true, type: event.type, monitor: monitor.id });
+      }
+      if (event.type === "customer.subscription.deleted") {
+        // Nothing to cancel on our side. Acknowledge rather than retry.
+        await markProcessed();
+        return NextResponse.json({ received: true, type: event.type, unknown_subscription: true });
+      }
+      // A lifecycle event can race the Checkout event. Returning non-2xx
+      // leaves processed_at null so Stripe retries instead of losing it.
       return NextResponse.json(
-        { error: "DB error canceling monitor", detail: cancelErr.message },
-        { status: 500 },
+        { error: "Subscription not found", type: event.type },
+        { status: 404 },
       );
     }
-    await markProcessed();
-    return NextResponse.json({ received: true, monitor_canceled: sub.id });
-  }
 
-  // Only checkout.session.completed produces customer data. Other events
-  // (charge.*, payment_intent.*) we receive but don't act on; logging
-  // them in stripe_events is enough.
-  if (event.type !== "checkout.session.completed") {
     await markProcessed();
-    return NextResponse.json({ received: true, type: event.type });
+    return NextResponse.json({
+      received: true,
+      type: event.type,
+      status: result?.status ?? null,
+      ...(monitorCanceled ? { monitor_canceled: stripeId(object.id) } : {}),
+    });
   }
 
   const session = event.data.object as {
     id: string;
+    mode?: string;
     payment_intent?: string | null;
-    customer?: string | null;
-    subscription?: string | null;
+    customer?: unknown;
+    subscription?: unknown;
     customer_email?: string | null;
     customer_details?: { email?: string | null } | null;
     metadata?: Record<string, string> | null;
   };
 
-  // ── Monitor subscriptions branch BEFORE the report/lead path: monitor
-  // sessions carry kind=monitor and no lead_id (review finding — without
-  // this branch every monitor purchase 400s below).
+  // ── Crawl monitor subscriptions BEFORE either report path: monitor
+  // sessions carry kind=monitor, mode=subscription, and no lead_id or
+  // user_id, so they must be claimed first.
   if (session.metadata?.kind === "monitor") {
     const domain = session.metadata.domain;
     const origin = session.metadata.origin;
     const email = (session.customer_details?.email ?? session.customer_email ?? "").toLowerCase();
-    const customerId = session.customer;
-    const subscriptionId = session.subscription;
+    const customerId = stripeId(session.customer);
+    const subscriptionId = stripeId(session.subscription);
     if (!domain || !origin || !email || !customerId || !subscriptionId) {
       return NextResponse.json(
         { error: "Monitor session missing required fields" },
@@ -271,6 +538,131 @@ export async function POST(req: Request) {
     }
     await markProcessed();
     return NextResponse.json({ received: true, monitor_created: subscriptionId });
+  }
+
+  if (session.mode === "subscription") {
+    const userId = session.metadata?.user_id;
+    const subscriptionId = stripeId(session.subscription);
+    const customerId = stripeId(session.customer);
+    if (!userId || !subscriptionId || !customerId) {
+      return NextResponse.json(
+        { error: "Subscription checkout is missing user, subscription, or customer metadata" },
+        { status: 400 },
+      );
+    }
+
+    const { data: sameSubscription, error: sameSubscriptionError } = await supabase
+      .from("subscriptions")
+      .select("id,user_id,stripe_subscription_id")
+      .eq("stripe_subscription_id", subscriptionId)
+      .maybeSingle();
+    if (sameSubscriptionError) {
+      return NextResponse.json(
+        { error: "Could not check subscription", detail: sameSubscriptionError.message },
+        { status: 500 },
+      );
+    }
+    if (sameSubscription && sameSubscription.user_id !== userId) {
+      return NextResponse.json(
+        { error: "Subscription belongs to a different account" },
+        { status: 409 },
+      );
+    }
+
+    const { data: liveSubscription, error: liveSubscriptionError } = await supabase
+      .from("subscriptions")
+      .select("id,user_id,stripe_subscription_id")
+      .eq("user_id", userId)
+      .in("status", ["incomplete", "active", "past_due"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (liveSubscriptionError) {
+      return NextResponse.json(
+        { error: "Could not check live subscription", detail: liveSubscriptionError.message },
+        { status: 500 },
+      );
+    }
+
+    // Two separate completed Checkout sessions may race each other. Keep the
+    // first live subscription and cancel the second in Stripe so the customer
+    // is not billed twice; the partial unique index enforces one live row in
+    // Postgres. If the cancel call fails, the event stays unprocessed so
+    // Stripe retries it rather than leaving a stray paid subscription.
+    if (
+      liveSubscription &&
+      liveSubscription.stripe_subscription_id !== subscriptionId
+    ) {
+      await cancelSubscription(subscriptionId);
+      await markProcessed();
+      return NextResponse.json({
+        received: true,
+        duplicate_subscription: true,
+        subscription_id: liveSubscription.stripe_subscription_id,
+      });
+    }
+
+    let subscriptionRowId = sameSubscription?.id ?? null;
+    if (sameSubscription) {
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({
+          status: "active",
+          stripe_customer_id: customerId,
+        })
+        .eq("id", sameSubscription.id);
+      if (error) {
+        return NextResponse.json(
+          { error: "Could not activate subscription", detail: error.message },
+          { status: 500 },
+        );
+      }
+    } else {
+      const { data: inserted, error } = await supabase
+        .from("subscriptions")
+        .insert({
+          user_id: userId,
+          stripe_subscription_id: subscriptionId,
+          stripe_customer_id: customerId,
+          status: "active",
+          cancel_at_period_end: false,
+        })
+        .select("id")
+        .single();
+      if (error || !inserted) {
+        if (error?.code === "23505") {
+          // Lost the race against a concurrent delivery of a different
+          // Checkout for the same user. Cancel this one so only one bills.
+          await cancelSubscription(subscriptionId);
+          await markProcessed();
+          return NextResponse.json({
+            received: true,
+            duplicate_subscription: true,
+          });
+        }
+        return NextResponse.json(
+          { error: "Could not create subscription", detail: error?.message },
+          { status: 500 },
+        );
+      }
+      subscriptionRowId = inserted.id;
+    }
+
+    try {
+      await setBrandCadence(supabase, userId, "weekly");
+    } catch (e) {
+      return NextResponse.json(
+        { error: "Could not start brand tracking", detail: (e as Error).message },
+        { status: 500 },
+      );
+    }
+
+    await markProcessed();
+    return NextResponse.json({
+      received: true,
+      subscription_id: subscriptionRowId,
+      user_id: userId,
+    });
   }
 
   const leadId = session.metadata?.lead_id;
@@ -385,6 +777,16 @@ export async function POST(req: Request) {
     competitorCount: config.competitors.length,
     promptCount: config.prompts.length,
   });
+
+  // Newly provisioned users have no password. Send the setup link alongside
+  // the order receipt; existing users can continue using magic-link login.
+  if (userResult.created) {
+    await sendAccountInviteEmail({
+      supabase,
+      to: lead.email,
+      brandName: config.brand.name,
+    });
+  }
 
   // 6. Mark lead converted.
   await supabase

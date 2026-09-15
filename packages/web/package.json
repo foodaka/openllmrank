@@ -8,11 +8,15 @@
     "build": "next build",
     "start": "next start --port 3000",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "seed:demo": "bun --env-file=.env.local scripts/seed-dashboard-demo.ts",
+    "verify:rls": "bun --env-file=.env.local scripts/verify-rls.ts",
+    "auth:invite-existing": "bun --env-file=.env.local scripts/send-account-invites.ts"
   },
   "dependencies": {
     "@openllmrank/crawl": "workspace:*",
     "@openllmrank/shared": "workspace:*",
+    "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.49.0",
     "@vercel/analytics": "^2.0.1",
     "next": "^15.1.0",

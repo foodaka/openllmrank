@@ -1,4 +1,4 @@
-// Worker entry point. Four loops run concurrently:
+// Worker entry point. Five loops run concurrently:
 //
 //   1. Main job loop   — claim PAID jobs, run CLI, write results, mark complete/failed.
 //   2. Refunder loop   — pick up failed jobs with refund_status='pending', call Stripe.
@@ -6,6 +6,8 @@
 //   4. Crawl loop      — claim FREE crawl checks (own table: crawl_checks) and run
 //                        the @openllmrank/crawl engine. Structurally separate from
 //                        the paid queue so free work can never delay paid jobs.
+//   5. Scheduler loop  — turn due brands (active subscription, next_run_at passed)
+//                        into paid jobs with origin='scheduled'. See scheduler.ts.
 //
 // SIGTERM / SIGINT: stop accepting new jobs, finish the current one if any,
 // stop the outboxes, close the DB connection, exit cleanly.
@@ -18,10 +20,17 @@ import { writeRunToPostgres } from "./result-writer";
 import { startRefunderLoop } from "./refunder";
 import { startEmailRetryLoop } from "./email-retry";
 import { startCrawlLoop } from "./crawl-loop";
+import { startSchedulerLoop } from "./scheduler";
 import { alert } from "./alerts";
 
 let shuttingDown = false;
 let activeJobId: string | null = null;
+
+function failureAlertMessage(origin: Job["origin"], reason: string): string {
+  return origin === "one_shot"
+    ? `${reason} (refund queued)`
+    : `${reason} (no refund required)`;
+}
 
 async function processOneJob(job: Job): Promise<void> {
   activeJobId = job.id;
@@ -59,7 +68,7 @@ async function processOneJob(job: Job): Promise<void> {
       error_code: result.code,
       error_message: result.message,
     });
-    await alert("warn", "job failed (refund queued)", {
+    await alert("warn", failureAlertMessage(job.origin, "job failed"), {
       job_id: job.id,
       code: result.code,
       message: result.message,
@@ -76,6 +85,8 @@ async function processOneJob(job: Job): Promise<void> {
       user_id: job.user_id,
       brand_id: job.brand_id,
       cli_run_id: result.run_id,
+      brand_name: job.config_jsonb.brand.name,
+      competitor_names: job.config_jsonb.competitors.map((competitor) => competitor.name),
     });
   } catch (e) {
     result.cleanup();
@@ -96,24 +107,30 @@ async function processOneJob(job: Job): Promise<void> {
   // 3. Zero-success guard. If the CLI exited 0 but every provider call
   //    failed individually (e.g., the CLI's retry loop exhausted on rate
   //    limits, or all providers returned auth errors), result.ok is true
-  //    but result.succeeded is 0. Don't ship a no-data report — refund
-  //    instead. (P1 from /codex review on 2026-05-19.)
+  //    but result.succeeded is 0. Don't ship a no-data report — mark the job
+  //    failed. One-shot jobs are refunded; subscription runs are not.
   if (result.succeeded === 0) {
     result.cleanup();
     const detail =
       result.failed > 0
         ? `CLI completed with 0 successful calls and ${result.failed} provider failures`
         : "CLI completed with no successful calls (empty run)";
-    console.error(`[worker] job=${job.id} ${detail} — refunding`);
+    console.error(
+      `[worker] job=${job.id} ${detail} — ${job.origin === "one_shot" ? "refunding" : "no refund required"}`,
+    );
     await markFailed(sql, job.id, {
       error_code: "ZERO_SUCCESS",
       error_message: detail,
     });
-    await alert("warn", "job had zero successful calls (refund queued)", {
-      job_id: job.id,
-      failed: result.failed,
-      cost_usd_total: result.cost_usd_total,
-    });
+    await alert(
+      "warn",
+      failureAlertMessage(job.origin, "job had zero successful calls"),
+      {
+        job_id: job.id,
+        failed: result.failed,
+        cost_usd_total: result.cost_usd_total,
+      },
+    );
     activeJobId = null;
     return;
   }
@@ -188,6 +205,7 @@ async function shutdown(signal: string): Promise<void> {
   refunder.stop();
   emailRetry.stop();
   crawl.stop();
+  scheduler.stop();
   // An in-flight crawl is safe to abandon: its lease expires and the row is
   // reclaimed on the next boot, same as an interrupted paid job.
   await closeDb();
@@ -204,6 +222,7 @@ console.log(`[worker] poll interval: ${env.pollIntervalMs}ms`);
 const refunder = startRefunderLoop();
 const emailRetry = startEmailRetryLoop();
 const crawl = startCrawlLoop();
+const scheduler = startSchedulerLoop();
 
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 process.on("SIGINT", () => void shutdown("SIGINT"));

@@ -151,11 +151,23 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:3000"
+site_url = "http://localhost:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+#
+# These must be EXACT and must include the /auth/callback path. The default was
+# ["https://127.0.0.1:3000"] — https for an http dev server, no callback path,
+# and 127.0.0.1 only. The result: signInWithOtp's emailRedirectTo was silently
+# ignored, magic links landed on the homepage instead of /auth/callback, the
+# PKCE code was never exchanged, and sign-in failed with no error shown.
+# `bun run dev:web` serves on localhost, so both hostnames are listed.
+additional_redirect_urls = [
+  "http://localhost:3000",
+  "http://localhost:3000/auth/callback",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3000/auth/callback",
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.

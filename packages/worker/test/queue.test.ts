@@ -60,9 +60,9 @@ beforeEach(async () => {
   await sql`delete from auth.users where email like 'queue-test-%@example.com'`;
 
   const u = (await sql`
-    insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at)
+    insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, confirmation_token, recovery_token, email_change, email_change_token_new, email_change_token_current, phone_change, phone_change_token, reauthentication_token)
     values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-            'queue-test-a@example.com', '$2a$10$fake', now())
+            'queue-test-a@example.com', '$2a$10$fake', now(), now(), now(), '', '', '', '', '', '', '', '')
     returning id
   `) as unknown as Array<{ id: string }>;
   userA = u[0]!.id;
@@ -166,7 +166,7 @@ describePg("markCompleted / markFailed", () => {
     expect(Math.abs(rows[0]!.cost_usd_total - 1.234)).toBeLessThan(0.0001);
   });
 
-  testPg("markFailed sets refund_status=pending for the refunder to pick up", async () => {
+  testPg("markFailed keeps one-shot failures refundable", async () => {
     const ins = (await sql`
       insert into public.jobs (user_id, brand_id, status, config_jsonb, amount_cents, email_to,
                                stripe_checkout_session_id, claimed_at)
@@ -194,5 +194,49 @@ describePg("markCompleted / markFailed", () => {
     expect(rows[0]!.refund_status).toBe("pending");
     expect(rows[0]!.error_code).toBe("PROVIDER_AUTH");
     expect(rows[0]!.error_message).toBe("OpenAI returned 401");
+  });
+
+  testPg("markFailed does not queue a refund for scheduled failures", async () => {
+    const ins = (await sql`
+      insert into public.jobs (user_id, brand_id, status, origin, config_jsonb, amount_cents, email_to,
+                               claimed_at)
+      values (${userA}, ${brandA}, 'running', 'scheduled', ${JSON.stringify(sampleConfig)}::jsonb, 0,
+              'queue-test@example.com', now())
+      returning id
+    `) as unknown as Array<{ id: string }>;
+    const jobId = ins[0]!.id;
+
+    await markFailed(sql, jobId, {
+      error_code: "PROVIDER_AUTH",
+      error_message: "OpenAI returned 401",
+    });
+
+    const rows = (await sql`
+      select status, refund_status from public.jobs where id = ${jobId}
+    `) as unknown as Array<{ status: string; refund_status: string }>;
+    expect(rows[0]!.status).toBe("failed");
+    expect(rows[0]!.refund_status).toBe("not_required");
+  });
+
+  testPg("markFailed does not queue a refund for manual failures", async () => {
+    const ins = (await sql`
+      insert into public.jobs (user_id, brand_id, status, origin, config_jsonb, amount_cents, email_to,
+                               claimed_at)
+      values (${userA}, ${brandA}, 'running', 'manual', ${JSON.stringify(sampleConfig)}::jsonb, 0,
+              'queue-test@example.com', now())
+      returning id
+    `) as unknown as Array<{ id: string }>;
+    const jobId = ins[0]!.id;
+
+    await markFailed(sql, jobId, {
+      error_code: "PROVIDER_AUTH",
+      error_message: "OpenAI returned 401",
+    });
+
+    const rows = (await sql`
+      select status, refund_status from public.jobs where id = ${jobId}
+    `) as unknown as Array<{ status: string; refund_status: string }>;
+    expect(rows[0]!.status).toBe("failed");
+    expect(rows[0]!.refund_status).toBe("not_required");
   });
 });
