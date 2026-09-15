@@ -9,21 +9,62 @@ import { HOSTED_CAPS } from "@openllmrank/shared/config";
 const MIN_PROMPTS = 1;
 const MAX_PROMPTS = HOSTED_CAPS.max_prompts;
 
-function buildStarterPrompts(
-  category: string,
+// The six buyer-intent angles a report is most useful across. The first three
+// are pre-filled; the rest become placeholders on any row the buyer adds, so
+// the guidance is visible at the moment they're typing rather than only above
+// the form.
+type Intent = { label: string; example: (ctx: IntentContext) => string };
+type IntentContext = { brand: string; category: string; competitor: string };
+
+const INTENTS: Intent[] = [
+  {
+    label: "Use case",
+    example: ({ category }) => `What is the best ${category} for a growing business?`,
+  },
+  {
+    label: "Alternatives",
+    example: ({ competitor }) => `Compare the top alternatives to ${competitor}.`,
+  },
+  {
+    label: "Pricing",
+    example: ({ brand }) => `How much does ${brand} cost?`,
+  },
+  {
+    label: "Fit",
+    example: ({ brand }) => `Who is ${brand} best for?`,
+  },
+  {
+    label: "Risk",
+    example: ({ brand }) => `What are the risks of choosing ${brand} as a vendor?`,
+  },
+  {
+    label: "Company size",
+    example: ({ brand }) => `Would you recommend ${brand} for a 20-person company?`,
+  },
+];
+
+const STARTER_COUNT = 3;
+
+function buildIntentContext(
+  brand: string,
+  category: string | undefined,
   competitor: string | undefined,
-): string[] {
-  const c = competitor ?? "the category leader";
-  return [
-    `What are the best ${category}?`,
-    `Which ${category} are best for a growing business?`,
-    `What are the best alternatives to ${c}?`,
-  ];
+): IntentContext {
+  return {
+    brand,
+    category: category ?? "tools in this category",
+    competitor: competitor ?? "the category leader",
+  };
+}
+
+function buildStarterPrompts(ctx: IntentContext): string[] {
+  return INTENTS.slice(0, STARTER_COUNT).map((i) => i.example(ctx));
 }
 
 export default function WizardPromptsPage() {
   const router = useRouter();
   const [prompts, setPrompts] = useState<string[]>([]);
+  const [intentCtx, setIntentCtx] = useState<IntentContext | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
@@ -37,13 +78,16 @@ export default function WizardPromptsPage() {
       router.replace("/wizard/competitors");
       return;
     }
+    const ctx = buildIntentContext(
+      s.brand.name,
+      s.brand.category,
+      s.competitors[0]?.name,
+    );
+    setIntentCtx(ctx);
     if (s.prompts.length > 0) {
       setPrompts(s.prompts);
     } else {
-      setPrompts(buildStarterPrompts(
-        s.brand.category ?? "tools in this category",
-        s.competitors[0]?.name,
-      ));
+      setPrompts(buildStarterPrompts(ctx));
     }
     setHydrated(true);
   }, [router]);
@@ -82,9 +126,12 @@ export default function WizardPromptsPage() {
     router.push("/wizard/review");
   }
 
-  if (!hydrated) return null;
+  if (!hydrated || !intentCtx) return null;
 
   const nonEmptyCount = prompts.filter((p) => p.trim()).length;
+  const ctx = intentCtx;
+  const placeholderFor = (idx: number) =>
+    INTENTS[idx % INTENTS.length]!.example(ctx);
 
   return (
     <WizardShell
@@ -97,9 +144,24 @@ export default function WizardPromptsPage() {
     >
       <p className="muted-intro">
         We&rsquo;ve drafted three prompts based on your brand and competitors.
-        Edit any of them, or add up to {MAX_PROMPTS - 3} more. The closer
-        they match what your buyers actually type, the sharper the report.
+        Edit any of them, or add up to {MAX_PROMPTS - STARTER_COUNT} more. The
+        closer they match what your buyers actually type, the sharper the
+        report.
       </p>
+
+      <section className="intent-guide" aria-labelledby="intent-guide-label">
+        <span className="kicker" id="intent-guide-label">
+          Angles worth covering
+        </span>
+        <dl>
+          {INTENTS.map((intent) => (
+            <div className="intent-row" key={intent.label}>
+              <dt>{intent.label}</dt>
+              <dd>{intent.example(ctx)}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       <div className="prompts-list">
         {prompts.map((p, idx) => (
@@ -113,7 +175,7 @@ export default function WizardPromptsPage() {
                 value={p}
                 onChange={(e) => setAt(idx, e.target.value)}
                 rows={2}
-                placeholder="e.g. What is the best CRM for B2B SaaS?"
+                placeholder={placeholderFor(idx)}
               />
               {prompts.length > 1 && (
                 <button
@@ -148,6 +210,39 @@ export default function WizardPromptsPage() {
 
       <style>{`
         .muted-intro { color: var(--muted); font-size: 17px; margin-bottom: 24px; }
+        .intent-guide {
+          background: var(--soft);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-md);
+          padding: 20px 24px 24px;
+          margin-bottom: 28px;
+        }
+        .intent-guide dl { margin: 12px 0 0; }
+        .intent-row {
+          display: grid;
+          grid-template-columns: 116px 1fr;
+          gap: 16px;
+          padding: 8px 0;
+          border-top: 1px solid var(--line);
+        }
+        .intent-row:first-child { border-top: none; }
+        .intent-row dt {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--muted);
+          padding-top: 2px;
+        }
+        .intent-row dd {
+          margin: 0;
+          font-family: var(--font-display);
+          font-style: italic;
+          font-size: 16px;
+          line-height: 1.4;
+          color: var(--ink);
+        }
+        @media (max-width: 820px) {
+          .intent-row { grid-template-columns: 1fr; gap: 4px; }
+        }
         .prompts-list { display: flex; flex-direction: column; gap: 8px; }
         .prompt-row { margin: 8px 0; }
         .prompt-input-row { display: flex; gap: 12px; align-items: flex-start; }
