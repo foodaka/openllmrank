@@ -25,11 +25,13 @@ export type SubscriptionSessionInput = {
   amountCents: number;
   currency: string;
   productName: string;
-  userId: string;
   email: string;
   successUrl: string;
   cancelUrl: string;
-};
+} & (
+  | { userId: string; leadId?: undefined }   // signed-in customer, from /dashboard/billing
+  | { leadId: string; userId?: undefined }   // new customer, straight from the wizard
+);
 
 export type BillingPortalSessionInput = {
   customerId: string;
@@ -136,18 +138,26 @@ export async function createSubscriptionSession(
     // would send after a completed recurring Checkout session.
     const sessionId = `cs_stub_subscription_${crypto.randomUUID()}`;
     const subscriptionId = `sub_stub_${crypto.randomUUID()}`;
-    const customerId = `cus_stub_${input.userId}`;
+    const customerId = `cus_stub_${input.userId ?? input.leadId}`;
     const stubUrl = new URL(input.successUrl);
     stubUrl.searchParams.set("session_id", sessionId);
     stubUrl.searchParams.set("stub", "1");
     stubUrl.searchParams.set("subscription", "1");
-    stubUrl.searchParams.set("user_id", input.userId);
+    if (input.userId) stubUrl.searchParams.set("user_id", input.userId);
+    if (input.leadId) {
+      stubUrl.searchParams.set("lead_id", input.leadId);
+      stubUrl.searchParams.set("plan", "tracking");
+    }
     stubUrl.searchParams.set("subscription_id", subscriptionId);
     stubUrl.searchParams.set("customer_id", customerId);
     return { id: sessionId, url: stubUrl.toString(), mode: "local_stub" };
   }
 
   const stripe = realStripe();
+  const metadata: Record<string, string> =
+    input.userId !== undefined
+      ? { user_id: input.userId }
+      : { lead_id: input.leadId, kind: "tracking" };
   // One Customer per email, shared with the crawl-monitor checkout, so the
   // billing portal reaches every subscription a person holds.
   const customerId = await findOrCreateCustomer(input.email);
@@ -162,15 +172,15 @@ export async function createSubscriptionSession(
         product_data: { name: input.productName },
       }),
     ],
-    metadata: {
-      user_id: input.userId,
-    },
-    subscription_data: {
-      metadata: {
-        user_id: input.userId,
-      },
-    },
-    success_url: input.successUrl + "?session_id={CHECKOUT_SESSION_ID}&subscription=1",
+    // The webhook provisions from user_id (existing account) or, for a
+    // wizard subscription, from lead_id + kind=tracking (account, brand with
+    // its tracking config, and the subscription all created on completion).
+    metadata,
+    subscription_data: { metadata },
+    success_url:
+      input.successUrl +
+      "?session_id={CHECKOUT_SESSION_ID}&subscription=1" +
+      (input.leadId ? "&plan=tracking" : ""),
     cancel_url: input.cancelUrl,
   });
 

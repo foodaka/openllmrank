@@ -68,7 +68,7 @@ export default function WizardPromptsPage() {
       return false;
     }
     if (cleaned.length > MAX_PROMPTS) {
-      setError(`At most ${MAX_PROMPTS} prompts ($29.99 includes up to ${MAX_PROMPTS}).`);
+      setError(`At most ${MAX_PROMPTS} prompts (every plan includes up to ${MAX_PROMPTS}).`);
       return false;
     }
     setError(null);

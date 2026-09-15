@@ -11,6 +11,30 @@ import {
 } from "@/lib/wizard-state";
 import { HostedConfigSchema } from "@openllmrank/shared/config";
 
+// Plan choice (pricing decision, 2026-09-15): the one-time report anchors
+// the subscription. Tracking costs less than the report it includes, so the
+// default selection is tracking and the report is the escape hatch for
+// someone who only wants a snapshot.
+type Plan = "tracking" | "report";
+const PLAN_COPY: Record<Plan, { price: string; label: string; button: string; points: string[] }> = {
+  tracking: {
+    price: "$29 / month",
+    label: "Track it",
+    button: "Start tracking \u2014 $29/month",
+    points: [
+      "Your first report today, then a fresh run every week",
+      "A dashboard that shows whether your visibility is moving",
+      "Add more brands any time; cancel any time",
+    ],
+  },
+  report: {
+    price: "$49 once",
+    label: "One report",
+    button: "Pay & generate report \u2014 $49",
+    points: ["One snapshot, delivered by email in about fifteen minutes"],
+  },
+};
+
 const PROVIDER_NAMES: Record<string, string> = {
   openai: "OpenAI",
   anthropic: "Anthropic",
@@ -28,6 +52,7 @@ export default function WizardReviewPage() {
   const [agreeError, setAgreeError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [plan, setPlan] = useState<Plan>("tracking");
 
   useEffect(() => {
     const s = readWizardState();
@@ -104,6 +129,7 @@ export default function WizardReviewPage() {
         body: JSON.stringify({
           config: parsed.data,
           email: email.trim(),
+          plan,
         }),
       });
       const data = (await res.json()) as
@@ -139,7 +165,7 @@ export default function WizardReviewPage() {
       heading="Ready to investigate?"
       backHref="/wizard/prompts"
       onNext={handlePay}
-      nextLabel={submitting ? "Creating checkout..." : "Pay & generate report — $29.99"}
+      nextLabel={submitting ? "Creating checkout..." : PLAN_COPY[plan].button}
       nextDisabled={submitting || !agreed}
     >
       <dl className="review-summary">
@@ -187,6 +213,40 @@ export default function WizardReviewPage() {
       </dl>
 
       <hr className="rule" />
+
+      <fieldset className="plans">
+        <legend className="plans-legend">How do you want to watch this?</legend>
+        {(Object.keys(PLAN_COPY) as Plan[]).map((key) => {
+          const copy = PLAN_COPY[key];
+          const selected = plan === key;
+          return (
+            <label key={key} className={`plan${selected ? " plan-selected" : ""}`}>
+              <input
+                type="radio"
+                name="plan"
+                value={key}
+                checked={selected}
+                onChange={() => setPlan(key)}
+              />
+              <span className="plan-body">
+                <span className="plan-head">
+                  <span className="plan-label">{copy.label}</span>
+                  <span className="plan-price">{copy.price}</span>
+                </span>
+                <ul className="plan-points">
+                  {copy.points.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
+              </span>
+            </label>
+          );
+        })}
+        <p className="plan-note">
+          Weekly runs cover up to two brands; past that the schedule is monthly.
+          Both plans query the same five providers with the same questions.
+        </p>
+      </fieldset>
 
       <div className="field">
         <label htmlFor="email">Where should we send your report?</label>
@@ -280,6 +340,39 @@ export default function WizardReviewPage() {
           color: var(--ink);
         }
         .muted { color: var(--muted); }
+        .plans {
+          border: 0;
+          padding: 0;
+          margin: 0 0 var(--space-lg);
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-sm);
+        }
+        .plans-legend {
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.11em;
+          color: var(--accent);
+          font-weight: 700;
+          margin-bottom: var(--space-md);
+        }
+        .plan {
+          display: flex;
+          gap: var(--space-md);
+          align-items: flex-start;
+          padding: var(--space-md) var(--space-md);
+          border: 1px solid var(--line);
+          border-radius: var(--radius-md);
+          cursor: pointer;
+        }
+        .plan-selected { border-color: var(--accent); background: var(--soft); }
+        .plan input[type="radio"] { margin-top: 4px; accent-color: var(--accent); flex-shrink: 0; width: 18px; height: 18px; }
+        .plan-body { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        .plan-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-md); }
+        .plan-label { font-family: var(--font-display); font-size: 22px; font-weight: 500; }
+        .plan-price { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); }
+        .plan-points { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; line-height: 1.5; }
+        .plan-note { margin: var(--space-sm) 0 0; color: var(--muted); font-size: 14px; }
         .agree-row {
           margin: 20px 0 0;
         }

@@ -6,7 +6,7 @@
 #
 # What it does on the account behind STRIPE_API_KEY:
 #   1. Products + default Prices (USD): "openllmrank tracking" $29/mo,
-#      "openllmrank AI-search visibility report" $29.99 one-time.
+#      "openllmrank AI-search visibility report" $49 one-time.
 #   2. Webhook endpoint at $SITE/api/webhook/stripe subscribed to every event
 #      the handler acts on (created if missing, events updated if present).
 #      A NEW endpoint prints its signing secret once: put it in
@@ -34,6 +34,17 @@ ensure_product() { # name unit_amount interval-or-empty -> price id
     echo "found product    $name ($pid)" >&2
   fi
   price=$(stripe products retrieve "$pid" | json "d.get('default_price') or ''")
+  # Prices are immutable: when the configured amount changes, mint a new
+  # default price and retire the old one so Checkout picks up the new amount.
+  local old_price=""
+  if [ -n "$price" ]; then
+    local current
+    current=$(stripe prices retrieve "$price" | json "d['unit_amount']")
+    if [ "$current" != "$amount" ]; then
+      echo "repricing        $name: $current -> $amount" >&2
+      old_price="$price"; price=""
+    fi
+  fi
   if [ -z "$price" ]; then
     if [ -n "$interval" ]; then
       price=$(stripe prices create -d "product=$pid" -d "currency=usd" -d "unit_amount=$amount" -d "recurring[interval]=$interval" | json "d['id']")
@@ -41,13 +52,14 @@ ensure_product() { # name unit_amount interval-or-empty -> price id
       price=$(stripe prices create -d "product=$pid" -d "currency=usd" -d "unit_amount=$amount" | json "d['id']")
     fi
     stripe products update "$pid" -d "default_price=$price" >/dev/null
+    if [ -n "$old_price" ]; then stripe prices update "$old_price" -d "active=false" >/dev/null; fi
   fi
   stripe prices retrieve "$price" | json "print('  price', d['id'], d['unit_amount'], d['currency'], (d.get('recurring') or {}).get('interval') or 'one-time') or ''" >&2
   echo "$price"
 }
 
 SUBSCRIPTION_PRICE_ID=$(ensure_product "openllmrank tracking" 2900 month)
-REPORT_PRICE_ID=$(ensure_product "openllmrank AI-search visibility report" 2999 "")
+REPORT_PRICE_ID=$(ensure_product "openllmrank AI-search visibility report" 4900 "")
 
 # --- webhook -----------------------------------------------------------------
 URL="$SITE/api/webhook/stripe"

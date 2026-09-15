@@ -88,12 +88,12 @@ export default function HomePage() {
             <p className="hero-sub">
               We run the buying questions your customers actually type through
               five grounded AI APIs, watch what they recommend,
-              and ship a $29.99 report showing where you&rsquo;re losing visibility
-              and what to do next.
+              and show you where you&rsquo;re losing visibility and what to do
+              next. Track it weekly for $29 a month, or buy one report for $49.
             </p>
             <p className="hero-actions">
               <Link href="/wizard/brand" className="btn-primary">
-                Get my report &mdash; $29.99
+                Start tracking &mdash; $29/month
               </Link>
               <a href="#sample" className="btn-text">
                 See a sample report
@@ -276,13 +276,21 @@ export default function HomePage() {
           <h2 className="section-headline">Questions worth asking.</h2>
 
           <dl className="faq">
-            <dt>What exactly do I get for $29.99?</dt>
+            <dt>What does it cost?</dt>
             <dd>
-              One AI-search visibility report, delivered by email within
-              fifteen minutes of payment. It includes citation rates per
-              prompt, a gap analysis versus your competitors, and concrete
-              content recommendations to close the gaps we found. If we
-              can&rsquo;t generate your report, we refund automatically
+              Tracking is $29 a month: your first report today, a fresh run
+              every week, and a dashboard that shows whether your citation
+              rate is moving. Weekly runs cover up to two brands; past that
+              the schedule is monthly. Cancel any time from the billing
+              portal. A single report is $49 if you only want a snapshot.
+            </dd>
+
+            <dt>What is in a report?</dt>
+            <dd>
+              Citation rates per prompt, a gap analysis versus your
+              competitors, and concrete content recommendations to close the
+              gaps we found, delivered by email within fifteen minutes. If we
+              can&rsquo;t generate it, we refund the report automatically
               within an hour.
             </dd>
 
@@ -304,11 +312,14 @@ export default function HomePage() {
               that every user will receive the same answer.
             </dd>
 
-            <dt>Will this be a one-time report, or a subscription?</dt>
+            <dt>Why track instead of buying one report?</dt>
             <dd>
-              One-time. There is no subscription and no recurring charge.
-              Purchase another report when you want a fresh snapshot, or use
-              the open-source CLI to run the same workflow on your own schedule.
+              A single run is a snapshot with sampling noise in it. The
+              question that matters is whether the pages you ship move the
+              number, and that takes a second run to answer. Tracking re-runs
+              the same questions every week and charts the answer; a one-off
+              report is there for a quick look, or use the open-source CLI to
+              run it on your own schedule.
             </dd>
 
             <dt>Is the underlying CLI open source?</dt>
@@ -339,7 +350,7 @@ export default function HomePage() {
           <h2 className="section-headline">Ready to investigate?</h2>
           <p>
             <Link href="/wizard/brand" className="btn-primary">
-              Get my report &mdash; $29.99
+              Start tracking &mdash; $29/month
             </Link>
           </p>
         </section>

@@ -347,6 +347,106 @@ async function syncSubscription(
   return { existing, status };
 }
 
+type TrackingLead = {
+  id: string;
+  email: string;
+  config: HostedConfig;
+  created: boolean;
+};
+
+/** Wizard subscription: the customer paid for tracking before having an
+ * account. Look up the lead and provision (or find) the auth user. */
+async function resolveTrackingLead(
+  supabase: ReturnType<typeof serviceClient>,
+  leadId: string,
+): Promise<{ ok: true; lead: TrackingLead; userId: string } | { ok: false; response: Response }> {
+  const { data: lead, error } = await supabase
+    .from("leads")
+    .select("id, email, config_jsonb, status")
+    .eq("id", leadId)
+    .single();
+  if (error || !lead) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "Lead not found", detail: error?.message ?? `lead_id=${leadId}` },
+        { status: 404 },
+      ),
+    };
+  }
+  const parsed = HostedConfigSchema.safeParse(lead.config_jsonb);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "Stored lead config failed validation", detail: parsed.error.issues.map((i) => i.message) },
+        { status: 500 },
+      ),
+    };
+  }
+  const user = await findOrCreateAuthUser(supabase, lead.email);
+  if (!user.ok) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Could not provision account", detail: user.detail }, { status: 500 }),
+    };
+  }
+  return {
+    ok: true,
+    userId: user.userId,
+    lead: { id: lead.id, email: lead.email, config: parsed.data, created: user.created },
+  };
+}
+
+/** Create the tracked brand for a wizard subscription. Idempotent on the
+ * lead: a retried event after a crash finds the lead converted and skips. */
+async function provisionTrackingBrand(
+  supabase: ReturnType<typeof serviceClient>,
+  userId: string,
+  lead: TrackingLead,
+): Promise<{ brandId: string | null; error?: string }> {
+  const { data: current } = await supabase
+    .from("leads")
+    .select("status")
+    .eq("id", lead.id)
+    .single();
+  if (current?.status === "converted") return { brandId: null };
+
+  const { data: brand, error } = await supabase
+    .from("brands")
+    .insert({
+      user_id: userId,
+      name: lead.config.brand.name,
+      aliases: lead.config.brand.aliases,
+      website: lead.config.brand.website ?? null,
+      category: lead.config.brand.category ?? null,
+      config_jsonb: lead.config,
+      cadence: "weekly",
+      // Due now: the worker scheduler queues the first run on its next tick,
+      // so the customer's first report arrives like a one-shot would.
+      next_run_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
+  if (error || !brand) return { brandId: null, error: error?.message ?? "brand insert failed" };
+
+  await supabase
+    .from("leads")
+    .update({ status: "converted", converted_at: new Date().toISOString() })
+    .eq("id", lead.id);
+
+  void sendOrderReceivedEmail({
+    to: lead.email,
+    brandName: lead.config.brand.name,
+    competitorCount: lead.config.competitors.length,
+    promptCount: lead.config.prompts.length,
+  });
+  if (lead.created) {
+    await sendAccountInviteEmail({ supabase, to: lead.email, brandName: lead.config.brand.name });
+  }
+  return { brandId: brand.id as string };
+}
+
 export async function POST(req: Request) {
   const rawBody = await req.text();
   const signature = req.headers.get("stripe-signature");
@@ -541,9 +641,21 @@ export async function POST(req: Request) {
   }
 
   if (session.mode === "subscription") {
-    const userId = session.metadata?.user_id;
+    let userId = session.metadata?.user_id;
     const subscriptionId = stripeId(session.subscription);
     const customerId = stripeId(session.customer);
+
+    // Wizard subscription: no account yet. Provision it from the lead first,
+    // then fall through to the same subscription bookkeeping as a signed-in
+    // customer; the brand is created once the subscription row exists.
+    let trackingLead: TrackingLead | null = null;
+    if (!userId && session.metadata?.kind === "tracking" && session.metadata.lead_id) {
+      const resolved = await resolveTrackingLead(supabase, session.metadata.lead_id);
+      if (!resolved.ok) return resolved.response;
+      userId = resolved.userId;
+      trackingLead = resolved.lead;
+    }
+
     if (!userId || !subscriptionId || !customerId) {
       return NextResponse.json(
         { error: "Subscription checkout is missing user, subscription, or customer metadata" },
@@ -594,6 +706,13 @@ export async function POST(req: Request) {
       liveSubscription.stripe_subscription_id !== subscriptionId
     ) {
       await cancelSubscription(subscriptionId);
+      if (trackingLead) {
+        // They already pay for tracking; the new brand still joins it.
+        const provisioned = await provisionTrackingBrand(supabase, userId, trackingLead);
+        if (provisioned.error) {
+          return NextResponse.json({ error: "Could not save brand", detail: provisioned.error }, { status: 500 });
+        }
+      }
       await markProcessed();
       return NextResponse.json({
         received: true,
@@ -657,11 +776,21 @@ export async function POST(req: Request) {
       );
     }
 
+    let brandId: string | null = null;
+    if (trackingLead) {
+      const provisioned = await provisionTrackingBrand(supabase, userId, trackingLead);
+      if (provisioned.error) {
+        return NextResponse.json({ error: "Could not save brand", detail: provisioned.error }, { status: 500 });
+      }
+      brandId = provisioned.brandId;
+    }
+
     await markProcessed();
     return NextResponse.json({
       received: true,
       subscription_id: subscriptionRowId,
       user_id: userId,
+      ...(brandId ? { brand_id: brandId } : {}),
     });
   }
 
