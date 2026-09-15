@@ -206,10 +206,43 @@ describePg("brand API", () => {
     expect(row.category).toBe("issue trackers");
     expect((row.config_jsonb as { prompts: string[] }).prompts).toEqual(["Only one question"]);
 
+    const paused = await edit({ ...good, cadence: "paused" });
+    expect(paused.status).toBe(200);
+    expect((await brandRow(id)).cadence).toBe("paused");
+    expect((await brandRow(id)).next_run_at).toBeNull();
+
+    const resumed = await edit({ ...good, cadence: "weekly" });
+    expect(resumed.status).toBe(200);
+    expect((await brandRow(id)).cadence).toBe("weekly");
+    expect((await brandRow(id)).next_run_at).not.toBeNull();
+
     await signIn(intruder);
     expect((await edit(good)).status).toBe(404);
     expect(
       (await del(new Request(`http://localhost/api/brands/${id}`, { method: "DELETE" }), { params: { brandId: id } })).status,
     ).toBe(404);
+  });
+
+  test("keeps one-shot brand settings read-only without an active subscription", async () => {
+    const u = await makeUser("readonly", false);
+    const { data, error } = await admin!
+      .from("brands")
+      .insert({ user_id: u.id, name: "Legacy", aliases: [] })
+      .select("id")
+      .single();
+    if (error || !data) throw error ?? new Error("no brand");
+
+    await signIn(u);
+    const response = await patch(
+      new Request(`http://localhost/api/brands/${data.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(good),
+      }),
+      { params: { brandId: data.id as string } },
+    );
+
+    expect(response.status).toBe(402);
+    expect((await brandRow(data.id as string)).config_jsonb).toBeNull();
   });
 });
