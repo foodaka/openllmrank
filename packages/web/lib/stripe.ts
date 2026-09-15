@@ -57,6 +57,17 @@ function isStubMode(): boolean {
 
 let stripeClient: Stripe | null = null;
 
+// Catalog prices. When a Price id is configured the Checkout line item
+// references it, so revenue rolls up under one Product in the Dashboard and
+// the price can change without a deploy. Without one, the amount from env
+// is charged inline (price_data), which is how the first customers paid.
+function lineItem(
+  priceId: string | undefined,
+  inline: Stripe.Checkout.SessionCreateParams.LineItem.PriceData,
+): Stripe.Checkout.SessionCreateParams.LineItem {
+  return priceId ? { quantity: 1, price: priceId } : { quantity: 1, price_data: inline };
+}
+
 function realStripe(): Stripe {
   if (stripeClient) return stripeClient;
   const key = process.env.STRIPE_SECRET_KEY;
@@ -91,14 +102,11 @@ export async function createCheckoutSession(
     mode: "payment",
     customer_email: input.email,
     line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: input.currency,
-          unit_amount: input.amountCents,
-          product_data: { name: input.productName },
-        },
-      },
+      lineItem(process.env.REPORT_PRICE_ID, {
+        currency: input.currency,
+        unit_amount: input.amountCents,
+        product_data: { name: input.productName },
+      }),
     ],
     metadata: {
       // Webhook reads lead_id to look up the full wizard config and
@@ -147,15 +155,12 @@ export async function createSubscriptionSession(
     mode: "subscription",
     customer: customerId,
     line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: input.currency,
-          unit_amount: input.amountCents,
-          recurring: { interval: "month" },
-          product_data: { name: input.productName },
-        },
-      },
+      lineItem(process.env.SUBSCRIPTION_PRICE_ID, {
+        currency: input.currency,
+        unit_amount: input.amountCents,
+        recurring: { interval: "month" },
+        product_data: { name: input.productName },
+      }),
     ],
     metadata: {
       user_id: input.userId,
