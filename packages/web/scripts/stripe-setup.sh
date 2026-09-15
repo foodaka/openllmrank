@@ -15,6 +15,10 @@
 #      card, invoice history, privacy/terms links).
 # Prints the env values to set at the end. Requires the Stripe CLI.
 set -euo pipefail
+# Without inherit_errexit, a failed `stripe` call inside $(...) is swallowed
+# and an empty result reads as "does not exist", which once created a
+# duplicate product during a DNS blip. Every lookup below must fail loudly.
+shopt -s inherit_errexit
 : "${STRIPE_API_KEY:?set STRIPE_API_KEY}"
 SITE="${SITE:-http://localhost:3000}"
 export STRIPE_API_KEY
@@ -22,7 +26,9 @@ json() { python3 -c "import json,sys; d=json.load(sys.stdin); print($1)"; }
 
 ensure_product() { # name unit_amount interval-or-empty -> price id
   local name="$1" amount="$2" interval="$3" pid price
-  pid=$(stripe products search --query "active:'true' AND name:'$name'" | json "d['data'][0]['id'] if d.get('data') else ''")
+  local search
+  search=$(stripe products search --query "active:'true' AND name:'$name'") || { echo "product search failed for $name; aborting before creating anything" >&2; exit 1; }
+  pid=$(echo "$search" | json "d['data'][0]['id'] if d.get('data') else ''")
   if [ -z "$pid" ]; then
     if [ -n "$interval" ]; then
       pid=$(stripe products create --name "$name" -d "default_price_data[currency]=usd" -d "default_price_data[unit_amount]=$amount" -d "default_price_data[recurring][interval]=$interval" -d "metadata[app]=openllmrank" | json "d['id']")
