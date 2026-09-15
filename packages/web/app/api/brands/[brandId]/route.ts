@@ -20,12 +20,14 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const { brandId } = await ctx.params;
   const { supabase, user } = await session();
   if (!user) return NextResponse.json({ error: "Sign in" }, { status: 401 });
+  const input = await readBrandInput(req);
   const result = await updateBrand({
     user: supabase,
     service: serviceClient(),
     userId: user.id,
     brandId,
-    input: await readBrandInput(req),
+    input,
+    cadence: input.cadence,
   });
   if (!result.ok) {
     return NextResponse.json(

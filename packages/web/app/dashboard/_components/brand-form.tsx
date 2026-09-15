@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import type { RunCadence } from "@openllmrank/shared/cadence";
 import type { BrandFormInput } from "@/lib/brand-writes";
 import type { BrandFormState } from "../brands/actions";
 
@@ -11,13 +12,33 @@ export function BrandForm({
   action,
   initial,
   submitLabel,
+  initialCadence,
+  activeBrandCount,
+  nextRunAt,
 }: {
   action: (prev: BrandFormState, formData: FormData) => Promise<BrandFormState>;
   initial: BrandFormInput;
   submitLabel: string;
+  initialCadence?: RunCadence;
+  activeBrandCount?: number;
+  nextRunAt?: string | null;
 }) {
   const [state, formAction, pending] = useActionState(action, {} as BrandFormState);
   const errors = state.errors ?? {};
+  const weeklyLocked = (activeBrandCount ?? 0) > 2;
+  const [cadence, setCadence] = useState<RunCadence>(
+    initialCadence === "weekly" && weeklyLocked ? "monthly" : initialCadence ?? "weekly",
+  );
+
+  function formatNextRun(iso: string | null | undefined): string | null {
+    if (!iso) return null;
+    const date = new Date(iso);
+    return Number.isNaN(date.getTime())
+      ? null
+      : date.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  }
+
+  const formattedNextRun = formatNextRun(nextRunAt);
 
   return (
     <form action={formAction} className="brand-form">
@@ -130,6 +151,58 @@ export function BrandForm({
           </span>
         )}
       </div>
+
+      {initialCadence && (
+        <fieldset className="cadence-field">
+          <legend>Schedule</legend>
+          <label className="cadence-option">
+            <input
+              type="radio"
+              name="cadence"
+              value="weekly"
+              checked={cadence === "weekly"}
+              disabled={weeklyLocked}
+              onChange={() => setCadence("weekly")}
+            />
+            <span>
+              <strong>Weekly</strong>
+              <small>
+                {weeklyLocked
+                  ? "Unavailable while you track more than two brands."
+                  : formattedNextRun
+                    ? `Next run ${formattedNextRun}.`
+                    : "Run every week."}
+              </small>
+            </span>
+          </label>
+          <label className="cadence-option">
+            <input
+              type="radio"
+              name="cadence"
+              value="monthly"
+              checked={cadence === "monthly"}
+              onChange={() => setCadence("monthly")}
+            />
+            <span>
+              <strong>Monthly</strong>
+              <small>Run once a month.</small>
+            </span>
+          </label>
+          <label className="cadence-option">
+            <input
+              type="radio"
+              name="cadence"
+              value="paused"
+              checked={cadence === "paused"}
+              onChange={() => setCadence("paused")}
+            />
+            <span>
+              <strong>Paused</strong>
+              <small>No scheduled runs. Manual re-runs still work.</small>
+            </span>
+          </label>
+        </fieldset>
+      )}
 
       <p className="form-actions">
         <button type="submit" className="btn-primary" disabled={pending}>

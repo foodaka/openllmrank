@@ -9,6 +9,7 @@ import {
   DEFAULT_WEEKLY_MAX_BRANDS,
   effectiveCadence,
   positiveIntEnv,
+  type RunCadence,
 } from "@openllmrank/shared/cadence";
 
 // Brand writes for the dashboard (E5). Two clients are involved on purpose:
@@ -31,6 +32,8 @@ export type BrandFormInput = {
 };
 
 export type BrandFormErrors = Partial<Record<keyof BrandFormInput, string>>;
+
+export type BrandCadence = RunCadence;
 
 export type ParsedBrandForm =
   | { ok: true; config: HostedConfig; website: string; category: string }
@@ -204,18 +207,47 @@ export async function updateBrand(args: {
   userId: string;
   brandId: string;
   input: BrandFormInput;
+  cadence?: BrandCadence;
 }): Promise<BrandWriteResult | { ok: false; status: 400; code: "invalid"; errors: BrandFormErrors }> {
   // RLS: a brand the caller does not own reads as absent.
   const { data: owned } = await args.user
     .from("brands")
-    .select("id,archived_at")
+    .select("id,archived_at,cadence,next_run_at")
     .eq("id", args.brandId)
     .maybeSingle();
   if (!owned || owned.archived_at) {
     return { ok: false, status: 404, code: "not_found", message: "Brand not found." };
   }
+  if (!(await hasActiveSubscription(args.user))) {
+    return {
+      ok: false,
+      status: 402,
+      code: "no_subscription",
+      message: "An active subscription is required to change brand settings.",
+    };
+  }
   const parsed = parseBrandForm(args.input);
   if (!parsed.ok) return { ok: false, status: 400, code: "invalid", errors: parsed.errors };
+
+  let schedule: { cadence: BrandCadence; next_run_at: string | null } | undefined;
+  if (args.cadence) {
+    if (args.cadence === "paused") {
+      schedule = { cadence: "paused", next_run_at: null };
+    } else {
+      const { count, error: countError } = await args.service
+        .from("brands")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", args.userId)
+        .is("archived_at", null);
+      if (countError) {
+        return { ok: false, status: 500, code: "db", message: countError.message };
+      }
+      schedule = {
+        cadence: effectiveCadence(count ?? 0, weeklyMaxBrands()),
+        next_run_at: owned.next_run_at ?? new Date().toISOString(),
+      };
+    }
+  }
 
   const { error } = await args.service
     .from("brands")
@@ -225,10 +257,12 @@ export async function updateBrand(args: {
       website: parsed.website,
       category: parsed.category,
       config_jsonb: parsed.config,
+      ...(schedule ?? {}),
     })
     .eq("id", args.brandId)
     .eq("user_id", args.userId);
   if (error) return { ok: false, status: 500, code: "db", message: error.message };
+  if (args.cadence) await recomputeAccountCadence(args.service, args.userId);
   return { ok: true, brandId: args.brandId };
 }
 

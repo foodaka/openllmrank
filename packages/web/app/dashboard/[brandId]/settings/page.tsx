@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HostedConfigSchema, type HostedConfig } from "@openllmrank/shared/config";
-import { getBrand, getRunHistory } from "@/lib/dashboard-data";
+import { getBrand, getBrands, getRunHistory, getSubscription } from "@/lib/dashboard-data";
 import { userClient } from "@/lib/supabase-server";
 import { brandFormFromConfig } from "@/lib/brand-writes";
 import { BrandForm } from "../../_components/brand-form";
@@ -25,7 +25,11 @@ export default async function BrandSettingsPage({
 }) {
   const { brandId } = await params;
   const { error } = await searchParams;
-  const brand = await getBrand(brandId);
+  const [brand, activeBrands, subscription] = await Promise.all([
+    getBrand(brandId),
+    getBrands(),
+    getSubscription(),
+  ]);
   if (!brand || brand.archived_at) notFound();
 
   const supabase = await userClient();
@@ -70,27 +74,39 @@ export default async function BrandSettingsPage({
         </p>
       )}
 
-      <BrandForm
-        action={update}
-        initial={brandFormFromConfig(brand, config)}
-        submitLabel="Save changes"
-      />
+      {subscription?.status === "active" ? (
+        <>
+          <BrandForm
+            action={update}
+            initial={brandFormFromConfig(brand, config)}
+            submitLabel="Save changes"
+            initialCadence={brand.cadence}
+            activeBrandCount={activeBrands.length}
+            nextRunAt={brand.next_run_at}
+          />
 
-      <hr className="rule" />
+          <hr className="rule" />
 
-      <span className="kicker">Archive</span>
-      <h2 className="editorial-close">Stop tracking {brand.name}.</h2>
-      <p className="sub editorial-detail">
-        Archiving stops scheduled runs for this brand. Its history stays
-        readable from the run list, and archiving may return the rest of your
-        brands to weekly runs.
-      </p>
-      <form action={archiveBrandAction}>
-        <input type="hidden" name="brand_id" value={brand.id} />
-        <button type="submit" className="btn-text btn-danger">
-          Archive this brand
-        </button>
-      </form>
+          <span className="kicker">Archive</span>
+          <h2 className="editorial-close">Stop tracking {brand.name}.</h2>
+          <p className="sub editorial-detail">
+            Archiving stops scheduled runs for this brand. Its history stays
+            readable from the run list, and archiving may return the rest of your
+            brands to weekly runs.
+          </p>
+          <form action={archiveBrandAction}>
+            <input type="hidden" name="brand_id" value={brand.id} />
+            <button type="submit" className="btn-text btn-danger">
+              Archive this brand
+            </button>
+          </form>
+        </>
+      ) : (
+        <p className="note">
+          This brand is read-only. Subscribe to keep tracking {brand.name} weekly. {" "}
+          <Link href="/dashboard/billing">See the plan</Link>
+        </p>
+      )}
 
       <p className="brand-tools">
         <Link href={`/dashboard/${brand.id}`}>Back to {brand.name}</Link>
