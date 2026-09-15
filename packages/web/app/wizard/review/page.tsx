@@ -110,13 +110,27 @@ export default function WizardReviewPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(
           addMode
-            ? { config: parsed.data }
+            ? {
+                name: parsed.data.brand.name,
+                website: parsed.data.brand.website,
+                category: parsed.data.brand.category,
+                aliases: parsed.data.brand.aliases.join(", "),
+                competitors: parsed.data.competitors
+                  .map((competitor) =>
+                    competitor.aliases.length > 0
+                      ? `${competitor.name} | ${competitor.aliases.join(", ")}`
+                      : competitor.name,
+                  )
+                  .join("\n"),
+                prompts: parsed.data.prompts.join("\n"),
+              }
             : { config: parsed.data, email: email.trim() },
         ),
       });
       const data = (await res.json()) as {
         url?: string;
         mode?: string;
+        brand_id?: string;
         brand?: { id: string };
         error?: string;
         detail?: unknown;
@@ -130,13 +144,14 @@ export default function WizardReviewPage() {
       }
 
       if (addMode) {
-        if (!data.brand?.id) {
+        const brandId = data.brand_id ?? data.brand?.id;
+        if (!brandId) {
           setSubmitError("Brand was added without a dashboard destination.");
           setSubmitting(false);
           return;
         }
         clearWizardState(mode);
-        router.push(`/dashboard/${data.brand.id}`);
+        router.push(`/dashboard/${brandId}`);
         return;
       }
 
