@@ -15,7 +15,7 @@ const GOOGLE_FONTS_HREF =
 const SITE_URL = "https://openllmrank.io";
 const SITE_NAME = "openllmrank";
 const SITE_DESCRIPTION =
-  "A repeatable AI-search visibility benchmark across five grounded AI providers, with competitor evidence and a prioritized action plan. One emailed report, $29.99.";
+  "A repeatable AI-search visibility benchmark across five grounded AI providers, with competitor evidence and a prioritized action plan. Weekly tracking across five AI engines, $49 a month.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
