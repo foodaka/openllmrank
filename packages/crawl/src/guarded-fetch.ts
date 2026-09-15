@@ -23,6 +23,8 @@ import https from "node:https";
 import { isIP } from "node:net";
 
 export type GuardedFetchOptions = {
+  /** Return redirect responses so callers can apply policy before following. */
+  followRedirects?: boolean;
   /** Max redirect hops to follow (each hop is re-validated). */
   maxRedirects?: number;
   /** Max response body bytes to read; the rest is discarded and the socket destroyed. */
@@ -486,7 +488,7 @@ export async function guardedFetch(
     }
     if (res === null) throw lastNetworkErr!;
 
-    if (res.status >= 300 && res.status < 400 && res.headers.location) {
+    if (res.status >= 300 && res.status < 400 && res.headers.location && opts.followRedirects !== false) {
       // Every hop is parsed and re-validated exactly like the first URL.
       url = parseTarget(new URL(res.headers.location, url).href, options);
       continue;
