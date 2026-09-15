@@ -183,3 +183,38 @@ export function startSchedulerLoop(): SchedulerLoopHandle {
     },
   };
 }
+
+/**
+ * A scheduled or manual run that failed on our side (provider outage, quota,
+ * result-writer) should not leave the customer waiting a week. Pull the
+ * brand's next run forward to an hour from now, at most twice in 24 hours so
+ * a persistent failure cannot burn money hourly. One-shot jobs are refunded
+ * instead and never come through here.
+ */
+export async function scheduleRetryAfterFailure(
+  sql: SQL,
+  job: { id: string; brand_id: string; origin: string },
+  now: Date = new Date(),
+): Promise<{ retryAt: string | null }> {
+  if (job.origin === "one_shot") return { retryAt: null };
+  const dayAgo = new Date(now.getTime() - 24 * 3600 * 1000).toISOString();
+  const failures = (await sql`
+    select count(*)::int as n from public.jobs
+    where brand_id = ${job.brand_id}
+      and status = 'failed'
+      and origin <> 'one_shot'
+      and failed_at >= ${dayAgo}::timestamptz
+      and id <> ${job.id}
+  `) as unknown as Array<{ n: number }>;
+  if ((failures[0]?.n ?? 0) >= 2) return { retryAt: null };
+
+  const retryAt = new Date(now.getTime() + 3600 * 1000).toISOString();
+  await sql`
+    update public.brands
+    set next_run_at = least(coalesce(next_run_at, ${retryAt}::timestamptz), ${retryAt}::timestamptz)
+    where id = ${job.brand_id}
+      and archived_at is null
+      and cadence <> 'paused'
+  `;
+  return { retryAt };
+}

@@ -13,6 +13,16 @@ export type PlanItem = {
 };
 
 export type RunOptions = {
+  /**
+   * What to do when a provider rejects its API key mid-run.
+   *   "abort" (default): stop the whole run; the CLI exits with PROVIDER_AUTH.
+   *   "skip": record every remaining call for that provider as failed and
+   *   finish with the other providers. Used by the hosted worker, where one
+   *   vendor's quota lapse must not void a paying customer's run.
+   */
+  on_auth_error?: "abort" | "skip";
+  /** Skip mode only: called once per provider that was dropped from the run. */
+  onProviderSkipped?: (provider: ProviderId, message: string) => void;
   db: Database;
   run_id: string;
   plan: PlanItem[];
@@ -137,6 +147,9 @@ export async function executeRun(opts: RunOptions): Promise<RunSummary> {
   let cost_total = 0;
   let aborted = false;
   const allBrands = [brand, ...competitors];
+  const skipOnAuth = opts.on_auth_error === "skip";
+  // Providers that rejected their key during this run (skip mode only).
+  const deadProviders = new Map<ProviderId, string>();
 
   const tasks = plan.map((item) => {
     const provider = providers.get(item.provider_id);
@@ -151,7 +164,23 @@ export async function executeRun(opts: RunOptions): Promise<RunSummary> {
       if (signal?.aborted || aborted) {
         return;
       }
-      const outcome = await executeWithRetry(provider, item, signal);
+      let outcome: Awaited<ReturnType<typeof executeWithRetry>>;
+      const dead = deadProviders.get(item.provider_id);
+      if (dead !== undefined) {
+        outcome = { ok: false, error: { kind: "auth", message: dead, raw: null } };
+      } else {
+        try {
+          outcome = await executeWithRetry(provider, item, signal);
+        } catch (err) {
+          if (skipOnAuth && err instanceof FatalAuthError) {
+            deadProviders.set(item.provider_id, err.message);
+            opts.onProviderSkipped?.(item.provider_id, err.message);
+            outcome = { ok: false, error: { kind: "auth", message: err.message, raw: null } };
+          } else {
+            throw err;
+          }
+        }
+      }
       if (outcome.ok) {
         const r = outcome.result;
         insertCall(db, {

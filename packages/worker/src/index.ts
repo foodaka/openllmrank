@@ -20,7 +20,7 @@ import { writeRunToPostgres } from "./result-writer";
 import { startRefunderLoop } from "./refunder";
 import { startEmailRetryLoop } from "./email-retry";
 import { startCrawlLoop } from "./crawl-loop";
-import { startSchedulerLoop } from "./scheduler";
+import { scheduleRetryAfterFailure, startSchedulerLoop } from "./scheduler";
 import { alert } from "./alerts";
 
 let shuttingDown = false;
@@ -30,6 +30,19 @@ function failureAlertMessage(origin: Job["origin"], reason: string): string {
   return origin === "one_shot"
     ? `${reason} (refund queued)`
     : `${reason} (no refund required)`;
+}
+
+/** Subscription runs get an automatic retry within the hour (bounded). */
+async function retryLater(job: Job): Promise<void> {
+  try {
+    const { retryAt } = await scheduleRetryAfterFailure(db(), job);
+    if (retryAt) console.log(`[worker] job=${job.id} brand=${job.brand_id} retry scheduled for ${retryAt}`);
+  } catch (e) {
+    await alert("warn", "could not schedule retry after failure", {
+      job_id: job.id,
+      message: (e as Error).message,
+    });
+  }
 }
 
 async function processOneJob(job: Job): Promise<void> {
@@ -73,6 +86,7 @@ async function processOneJob(job: Job): Promise<void> {
       code: result.code,
       message: result.message,
     });
+    await retryLater(job);
     activeJobId = null;
     return;
   }
@@ -100,6 +114,7 @@ async function processOneJob(job: Job): Promise<void> {
       job_id: job.id,
       error: msg,
     });
+    await retryLater(job);
     activeJobId = null;
     return;
   }
@@ -131,6 +146,7 @@ async function processOneJob(job: Job): Promise<void> {
         cost_usd_total: result.cost_usd_total,
       },
     );
+    await retryLater(job);
     activeJobId = null;
     return;
   }

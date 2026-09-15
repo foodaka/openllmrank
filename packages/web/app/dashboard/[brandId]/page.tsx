@@ -70,6 +70,18 @@ export default async function BrandDashboard({
   ]);
   const latest = metrics.at(-1);
   const inFlight = history.some((job) => job.status === "paid" || job.status === "running");
+  // First-run states, because the page a customer lands on after paying must
+  // never say "nothing is happening" while something is:
+  //   queued/running  -> on its way (page refreshes)
+  //   due within 2min -> starting (the scheduler ticks every minute)
+  //   last job failed -> we know, we retry, nothing to do on their end
+  const dueSoon =
+    !inFlight &&
+    brand.cadence !== "paused" &&
+    brand.next_run_at !== null &&
+    new Date(brand.next_run_at).getTime() <= Date.now() + 2 * 60_000;
+  const latestJob = history[0];
+  const lastFailed = !inFlight && latestJob?.status === "failed";
   const providerCount = latest
     ? Object.keys(latest.per_provider_jsonb).length
     : null;
@@ -104,23 +116,29 @@ export default async function BrandDashboard({
   );
 
   if (!latest) {
+    const headline = inFlight || dueSoon
+      ? "Your first run is on its way."
+      : lastFailed
+        ? "Your first run hit a problem on our side."
+        : "No runs yet.";
+    const body = inFlight
+      ? "We are querying five grounded AI providers with your questions right now. Reports take 10 to 15 minutes and land in your inbox; this page updates itself."
+      : dueSoon
+        ? "It starts within the next minute. Reports take 10 to 15 minutes and land in your inbox; this page updates itself."
+        : lastFailed
+          ? `A provider on our side failed during the run${brand.next_run_at ? `, and we will retry automatically at ${longDate(brand.next_run_at)}` : ""}. You have not been charged for it and there is nothing to do on your end; reply to your receipt email if you want a hand.`
+          : subscription?.status === "active"
+            ? "The next scheduled run will start shortly. You can also start one now."
+            : "Runs start when a subscription is active.";
     return (
       <>
         <span className="kicker">{brand.name}</span>
-        <h1 className="standfirst">
-          {inFlight ? "Your first run is on its way." : "No runs yet."}
-        </h1>
-        <p className="sub">
-          {inFlight
-            ? "We are querying grounded AI providers with your questions. Reports take 10 to 15 minutes. This page updates itself."
-            : subscription?.status === "active"
-              ? "The next scheduled run will start shortly. You can also start one now."
-              : "Runs start when a subscription is active."}
-        </p>
+        <h1 className="standfirst">{headline}</h1>
+        <p className="sub">{body}</p>
         {flashes}
-        {quota && <RerunControl brandId={brand.id} quota={quota} inFlight={inFlight} />}
+        {quota && !dueSoon && <RerunControl brandId={brand.id} quota={quota} inFlight={inFlight} />}
         {settingsLink}
-        {inFlight && <meta httpEquiv="refresh" content="30" />}
+        {(inFlight || dueSoon) && <meta httpEquiv="refresh" content="30" />}
       </>
     );
   }

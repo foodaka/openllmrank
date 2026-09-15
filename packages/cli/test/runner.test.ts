@@ -169,6 +169,50 @@ describe("executeRun", () => {
     expect(threw).toBe(true);
   });
 
+  test("skip mode: a provider that rejects its key is dropped and the run finishes with the others", async () => {
+    const db = memDb();
+    const run_id = "r1";
+    startRun(db, run_id, "h");
+    const plan = [...buildPlan("x", 3, "openai", db), ...buildPlan("x", 3, "anthropic", db)];
+    let openaiCalls = 0;
+    const broken: Provider = {
+      id: "openai",
+      async query() {
+        openaiCalls += 1;
+        const err: ProviderError = { kind: "auth", message: "quota exceeded", raw: null };
+        throw err;
+      },
+    };
+    const healthy = new StubProvider(async () => ({
+      response_text: "Acme is great",
+      search_results: [],
+      tokens_in: 1,
+      tokens_out: 1,
+      cost_usd: 0.001,
+      latency_ms: 5,
+    }));
+    healthy.id = "anthropic";
+    const skipped: string[] = [];
+    const summary = await executeRun({
+      db,
+      run_id,
+      plan,
+      providers: new Map<ProviderId, Provider>([["openai", broken], ["anthropic", healthy]]),
+      brand: { name: "Acme", aliases: [] },
+      competitors: [],
+      concurrency_per_provider: 1,
+      on_auth_error: "skip",
+      onProviderSkipped: (id, msg) => skipped.push(`${id}:${msg}`),
+    });
+    expect(summary.aborted).toBe(false);
+    expect(summary.succeeded).toBe(3);
+    expect(summary.failed).toBe(3);
+    expect(openaiCalls).toBe(1); // the provider is not retried after it rejects the key
+    expect(skipped).toEqual(["openai:quota exceeded"]);
+    const rows = db.query("select error_code, count(*) as n from calls where run_id = ? group by error_code order by error_code").all(run_id) as { error_code: string | null; n: number }[];
+    expect(rows).toEqual([{ error_code: null, n: 3 }, { error_code: "auth", n: 3 }]);
+  });
+
   test("bad_request fails immediately without retries", async () => {
     const db = memDb();
     const run_id = "r1";
