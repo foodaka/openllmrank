@@ -128,6 +128,21 @@ In https://dashboard.stripe.com/test/webhooks (must be TEST mode toggle on, top-
 5. Paste this into Vercel's `STRIPE_WEBHOOK_SECRET` env var (overwriting the placeholder from 1.2)
 6. Click **Redeploy** in Vercel so the new env var takes effect.
 
+### 1.5a One-shot Stripe setup script
+
+`packages/web/scripts/stripe-setup.sh` does 1.5 and 1.6 idempotently for the
+account behind `STRIPE_API_KEY`: creates the two openllmrank Products with
+their default Prices ($29/mo tracking, $29.99 report), subscribes the
+`/api/webhook/stripe` endpoint to every event the handler acts on (creating
+it if missing), and configures the Customer Portal. It prints the
+`SUBSCRIPTION_PRICE_ID` / `REPORT_PRICE_ID` values to set on Vercel.
+
+```bash
+# live, using the key already on Railway (never echoed):
+STRIPE_API_KEY=$(cd packages/worker && railway variables --json | python3 -c "import json,sys; print(json.load(sys.stdin)['STRIPE_SECRET_KEY'])") \
+  SITE=https://openllmrank.io packages/web/scripts/stripe-setup.sh
+```
+
 ### 1.6 Stripe Customer Portal
 
 `/dashboard/billing` → "Manage billing in Stripe" opens a Billing Portal
