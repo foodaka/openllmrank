@@ -181,6 +181,23 @@ describePg("scheduleDueRuns", () => {
     }
   });
 
+  test("the first run keeps three samples; every run after a completed one uses two", async () => {
+    await insertSubscription("active");
+    const brandId = await insertBrand({ name: "Depth" });
+    const first = await scheduleDueRuns(sql, { weeklyMaxBrands: 2, rerunSamples: 2 });
+    const firstJob = first.scheduled.find((s) => s.brand_id === brandId)!;
+    const rows = (await sql`select config_jsonb from public.jobs where id = ${firstJob.job_id}`) as unknown as Array<{ config_jsonb: { samples_per_prompt: number } }>;
+    expect(rows[0]!.config_jsonb.samples_per_prompt).toBe(3);
+
+    await sql`update public.jobs set status = 'completed' where id = ${firstJob.job_id}`;
+    await sql`update public.brands set next_run_at = now() - interval '1 minute' where id = ${brandId}`;
+    const second = await scheduleDueRuns(sql, { weeklyMaxBrands: 2, rerunSamples: 2 });
+    const secondJob = second.scheduled.find((s) => s.brand_id === brandId)!;
+    const rows2 = (await sql`select config_jsonb from public.jobs where id = ${secondJob.job_id}`) as unknown as Array<{ config_jsonb: { samples_per_prompt: number; prompts: string[] } }>;
+    expect(rows2[0]!.config_jsonb.samples_per_prompt).toBe(2);
+    expect(rows2[0]!.config_jsonb.prompts).toEqual(config.prompts);
+  });
+
   test("invalid config is skipped, pushed a day out, and reported", async () => {
     await insertSubscription("active");
     const brandId = await insertBrand({ name: "Broken", config: null });
