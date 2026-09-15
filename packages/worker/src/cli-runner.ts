@@ -136,6 +136,9 @@ export async function runCliJob(args: {
       "run",
       "--config-from-stdin",
       "--output-json",
+      // One vendor's quota lapse must not void a paying customer's run; the
+      // zero-success guard in index.ts still fails a run nobody answered.
+      "--skip-failed-providers",
       "--db",
       sqlitePath,
     ],

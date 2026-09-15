@@ -3,7 +3,7 @@
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { SQL } from "bun";
-import { scheduleDueRuns } from "../src/scheduler";
+import { scheduleDueRuns, scheduleRetryAfterFailure } from "../src/scheduler";
 
 const PG_HOST = process.env.SUPABASE_TEST_HOST ?? "127.0.0.1";
 const PG_PORT = process.env.SUPABASE_TEST_PORT ?? "54332";
@@ -192,5 +192,48 @@ describePg("scheduleDueRuns", () => {
     const row = await brand(brandId);
     const next = new Date(row.next_run_at!).getTime();
     expect(Math.abs(next - (now.getTime() + 24 * 3600 * 1000))).toBeLessThan(5000);
+  });
+});
+
+describePg("scheduleRetryAfterFailure", () => {
+  async function failedJob(brandId: string, origin = "scheduled"): Promise<string> {
+    const rows = (await sql`
+      insert into public.jobs (user_id, brand_id, status, origin, config_jsonb, amount_cents, email_to, failed_at, error_code)
+      values (${userId}, ${brandId}, 'failed', ${origin}::job_origin, ${config}, 0, ${EMAIL}, now(), 'PROVIDER_AUTH')
+      returning id
+    `) as unknown as Array<{ id: string }>;
+    return rows[0]!.id;
+  }
+
+  test("a failed scheduled run is retried within the hour instead of next week", async () => {
+    await insertSubscription("active");
+    const nextWeek = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    const brandId = await insertBrand({ name: "Retry", nextRunAt: nextWeek });
+    const jobId = await failedJob(brandId);
+    const now = new Date();
+    const { retryAt } = await scheduleRetryAfterFailure(sql, { id: jobId, brand_id: brandId, origin: "scheduled" }, now);
+    expect(retryAt).not.toBeNull();
+    const row = await brand(brandId);
+    expect(Math.abs(new Date(row.next_run_at!).getTime() - (now.getTime() + 3600_000))).toBeLessThan(5000);
+  });
+
+  test("stops retrying after two failures in a day, and never touches one-shot jobs or paused brands", async () => {
+    await insertSubscription("active");
+    const nextWeek = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    const brandId = await insertBrand({ name: "Flaky", nextRunAt: nextWeek });
+    await failedJob(brandId);
+    await failedJob(brandId);
+    const third = await failedJob(brandId);
+    expect((await scheduleRetryAfterFailure(sql, { id: third, brand_id: brandId, origin: "scheduled" })).retryAt).toBeNull();
+    expect(new Date((await brand(brandId)).next_run_at!).getTime()).toBe(new Date(nextWeek).getTime());
+
+    const oneShot = await insertBrand({ name: "OneShot", nextRunAt: nextWeek });
+    const osJob = await failedJob(oneShot, "one_shot");
+    expect((await scheduleRetryAfterFailure(sql, { id: osJob, brand_id: oneShot, origin: "one_shot" })).retryAt).toBeNull();
+
+    const paused = await insertBrand({ name: "Paused", cadence: "paused", nextRunAt: null });
+    const pJob = await failedJob(paused);
+    await scheduleRetryAfterFailure(sql, { id: pJob, brand_id: paused, origin: "manual" });
+    expect((await brand(paused)).next_run_at).toBeNull();
   });
 });

@@ -136,6 +136,9 @@ export const runCmd = defineCommand({
     resume: { type: "boolean", default: false },
     "retry-failed": { type: "boolean", default: false },
     "output-json": { type: "boolean", default: false },
+    // Hosted worker: finish the run without a provider whose key is rejected
+    // instead of aborting. The report discloses the reduced coverage.
+    "skip-failed-providers": { type: "boolean", default: false },
   },
   async run({ args }) {
     const jsonMode = args["output-json"] as boolean;
@@ -334,6 +337,10 @@ export const runCmd = defineCommand({
           competitors: cfg.competitors,
           concurrency_per_provider: concurrency,
           signal: ctrl.signal,
+          on_auth_error: args["skip-failed-providers"] ? "skip" : "abort",
+          onProviderSkipped: (provider, message) => {
+            human(`Skipping ${provider} for the rest of this run: ${message}`);
+          },
           onProgress: (done, _total, status) => {
             if (status === "ok") ok += 1;
             else if (status) fail += 1;

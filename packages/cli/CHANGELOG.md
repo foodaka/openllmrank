@@ -2,6 +2,12 @@
 
 All notable changes to openllmrank are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `openllmrank run --skip-failed-providers`. When a provider rejects its API key mid-run (bad key, exhausted quota), drop that provider for the rest of the run and finish with the others instead of aborting. Its remaining calls are recorded with `error_code: "auth"` and the report's coverage disclosure reflects the gap. Off by default; the hosted worker sets it so one vendor's outage cannot void a customer's run.
+
 ## [0.3.0] - 2026-07-13
 
 ### Added
