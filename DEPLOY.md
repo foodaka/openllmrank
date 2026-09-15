@@ -72,7 +72,7 @@ STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_test_...   # set after step 1.4 below
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 
-PRICE_CENTS=2999
+PRICE_CENTS=4900
 PRODUCT_NAME=openllmrank AI-search visibility report
 NEXT_PUBLIC_SITE_ORIGIN=https://openllmrank.io        # REQUIRED: magic-link, invite, and Stripe return URLs
 

@@ -4,9 +4,15 @@ import {
   HostedConfigSchema,
   HOSTED_REPORT_PROVIDERS,
 } from "@openllmrank/shared/config";
-import { serviceClient } from "@/lib/supabase-server";
-import { createCheckoutSession, isLocalStub } from "@/lib/stripe";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+// Relative imports: this route is imported by packages/web/test, which is
+// type-checked from the root tsconfig without the "@/" alias.
+import { serviceClient } from "../../../lib/supabase-server";
+import {
+  createCheckoutSession,
+  createSubscriptionSession,
+  isLocalStub,
+} from "../../../lib/stripe";
+import { checkRateLimit, getClientIp } from "../../../lib/rate-limit";
 
 // POST /api/checkout
 //
@@ -15,6 +21,12 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 // users, brands, or jobs are created here. All paid-customer mutations
 // happen in the webhook handler on `checkout.session.completed`.
 //
+// Two plans share this entry point:
+//   report    one-time payment; the webhook creates a brand + one job
+//   tracking  $29/mo subscription; the webhook creates the account, the
+//             brand with its tracking config, and the subscription, and the
+//             worker scheduler runs the first report within a minute
+//
 // Why: wizard abandons were creating zombie auth.users + brands + jobs
 // rows. The lead table captures the abandon-as-lead signal while leaving
 // the paid-customer schema clean.
@@ -22,7 +34,11 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 const BodySchema = z.object({
   config: HostedConfigSchema,
   email: z.string().email(),
+  plan: z.enum(["report", "tracking"]).default("report"),
 });
+
+export const DEFAULT_REPORT_PRICE_CENTS = 4900;
+export const DEFAULT_SUBSCRIPTION_PRICE_CENTS = 2900;
 
 // Per-IP rate limit: 5 checkout attempts per minute. Without this, anyone
 // with curl can flood the leads table and burn Stripe API quota (real
@@ -71,7 +87,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { email } = parsed.data;
+  const { email, plan } = parsed.data;
   // The provider lineup is a server-owned product decision. Do not trust
   // browser storage to choose which providers a paid report receives.
   const config = {
@@ -91,7 +107,7 @@ export async function POST(req: Request) {
       competitor_count: config.competitors.length,
       prompt_count: config.prompts.length,
       config_jsonb: config,
-      source: "wizard",
+      source: plan === "tracking" ? "wizard-tracking" : "wizard",
       status: "started",
     })
     .select("id")
@@ -103,7 +119,6 @@ export async function POST(req: Request) {
     );
   }
 
-  const amountCents = Number.parseInt(process.env.PRICE_CENTS ?? "2999", 10);
   const origin =
     process.env.NEXT_PUBLIC_SITE_ORIGIN ?? new URL(req.url).origin;
 
@@ -112,15 +127,32 @@ export async function POST(req: Request) {
   //    paid-customer schema.
   let session;
   try {
-    session = await createCheckoutSession({
-      amountCents,
-      currency: "usd",
-      productName: process.env.PRODUCT_NAME ?? "openllmrank report",
-      leadId: lead.id,
-      email,
-      successUrl: `${origin}/checkout/success`,
-      cancelUrl: `${origin}/checkout/cancel`,
-    });
+    session =
+      plan === "tracking"
+        ? await createSubscriptionSession({
+            amountCents: Number.parseInt(
+              process.env.SUBSCRIPTION_PRICE_CENTS ?? String(DEFAULT_SUBSCRIPTION_PRICE_CENTS),
+              10,
+            ),
+            currency: "usd",
+            productName: process.env.SUBSCRIPTION_PRODUCT_NAME ?? "openllmrank tracking",
+            leadId: lead.id,
+            email,
+            successUrl: `${origin}/checkout/success`,
+            cancelUrl: `${origin}/checkout/cancel`,
+          })
+        : await createCheckoutSession({
+            amountCents: Number.parseInt(
+              process.env.PRICE_CENTS ?? String(DEFAULT_REPORT_PRICE_CENTS),
+              10,
+            ),
+            currency: "usd",
+            productName: process.env.PRODUCT_NAME ?? "openllmrank report",
+            leadId: lead.id,
+            email,
+            successUrl: `${origin}/checkout/success`,
+            cancelUrl: `${origin}/checkout/cancel`,
+          });
   } catch (e) {
     // Stripe API failure. Lead row stays so we can retry later.
     return NextResponse.json(
@@ -139,6 +171,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     url: session.url,
     mode: session.mode,
+    plan,
     stub: isLocalStub(),
   });
 }
