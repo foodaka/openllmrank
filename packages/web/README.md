@@ -152,3 +152,25 @@ packages/web/
 
 Private package, part of the openllmrank monorepo. The CLI it sits on top of
 (`packages/cli`) is MIT-licensed and on npm.
+
+## AI-assisted wizard setup
+
+Signed-in users can choose **Suggest from website** on the brand step. The app
+reads the public page and drafts a brand name, category, and buyer questions.
+Users review the draft before applying it; existing brand fields are preserved,
+and applying a draft explicitly replaces saved questions. All questions remain
+editable in step 3. Drafts are saved in this browser's local storage, survive a
+refresh, and are not synced to the account. Click Next to save later edits.
+Manual setup is always available.
+
+Set `OPENAI_API_KEY` in the **web server** environment to enable generation.
+`WIZARD_SUGGEST_MODEL` optionally overrides the default `gpt-4o-mini`; the model
+must support Chat Completions with strict JSON-schema output. Never use a
+`NEXT_PUBLIC_` variable for the API key. No fake suggestions are returned when
+credentials are missing.
+
+`POST /api/wizard/suggest` verifies Supabase authentication before fetching or
+generating, uses the shared SSRF-guarded fetcher, checks robots.txt, bounds page
+size and model output, and validates all suggestions. The existing in-memory
+limiter allows five drafts per user per ten minutes per server instance. This
+is best-effort protection, not a durable cross-instance spending quota.

@@ -103,7 +103,7 @@ export function renderHtmlReport(args: HtmlReportArgs): string {
 <style>
 :root{--paper:#fbf8f0;--ink:#241f19;--muted:#756c60;--line:#e3d8c6;--soft:#f2eadc;--accent:#376b5b;--accent-2:#b86b2b;--win:#476f53;--loss:#9f3a21}
 *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;line-height:1.48}.wrap{max-width:1120px;margin:0 auto;padding:48px 28px 36px}header{display:grid;grid-template-columns:1.3fr .7fr;gap:28px;border-bottom:1px solid var(--line);padding-bottom:30px}.kicker{font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--accent);font-weight:700}.brand{font-family:"Fraunces",Georgia,"Times New Roman",serif;font-size:54px;line-height:.98;margin:10px 0 16px;font-weight:500}.sub{color:var(--muted);max-width:670px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:12px}.meta div,.panel{background:rgba(255,255,255,.38);border:1px solid var(--line);border-radius:7px}.meta div{padding:13px}.label{font-size:12px;color:var(--muted);display:block}.value{font-weight:700}.info-wrap{position:relative;display:inline-block;width:15px;height:15px;margin-left:5px;vertical-align:middle;line-height:0}.info{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:inline-flex;width:44px;height:44px;background:transparent;color:var(--muted);align-items:center;justify-content:center;cursor:help;padding:0;border:0;border-radius:50%;transition:color .12s}.info svg{width:15px;height:15px;display:block}.info:hover,.info:focus-visible{color:var(--accent)}.info-tip{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 8px);background:var(--ink);color:#fbf8f0;font:400 12px/1.42 "DM Sans",sans-serif;padding:9px 11px;border-radius:5px;width:240px;text-align:left;letter-spacing:0;text-transform:none;opacity:0;pointer-events:none;transition:opacity .12s;z-index:10;white-space:normal}.info-tip::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink)}.info-wrap[data-align="right"] .info-tip{left:auto;right:-6px;transform:none}.info-wrap[data-align="right"] .info-tip::after{left:auto;right:10px;transform:none}.info-wrap:hover .info-tip,.info-wrap:focus-within .info-tip{opacity:1}.hero{display:grid;grid-template-columns:.9fr 1.1fr;gap:26px;padding:34px 0}.score{border-left:6px solid var(--accent);padding:4px 0 6px 24px}.score strong{font-family:"Fraunces",Georgia,"Times New Roman",serif;font-size:96px;line-height:.88;font-weight:500}.trend{display:inline-flex;gap:7px;align-items:center;margin-top:12px;color:var(--muted)}.trend b{color:var(--accent)}.panel{padding:22px}.panel h2,.section h2{font-family:"Fraunces",Georgia,"Times New Roman",serif;font-weight:500;font-size:28px;margin:0 0 16px}.section{padding:28px 0;border-top:1px solid var(--line)}table{width:100%;border-collapse:collapse;font-size:14px}th{text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--line);padding:11px 10px}td{padding:13px 10px;border-bottom:1px solid var(--line);vertical-align:top}.provider{font-weight:700;text-transform:capitalize}.prompt{max-width:430px}.rate{font-variant-numeric:tabular-nums}.bar{height:9px;background:var(--soft);border-radius:999px;overflow:hidden;min-width:92px}.bar span{display:block;height:100%;border-radius:999px}.gapcell{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center}.response{margin-top:10px;color:var(--muted);font-size:13px;background:#fffaf1;border:1px solid var(--line);border-radius:6px;padding:12px;max-width:720px}.mark-brand{background:#dbe7de;color:#183f33;border-radius:3px;padding:0 2px}.mark-competitor{background:#f0dcc6;color:#6f351c;border-radius:3px;padding:0 2px}.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}.chart-row{display:grid;grid-template-columns:110px 1fr 46px;gap:12px;align-items:center;margin:12px 0}.chart-track{height:12px;background:var(--soft);border-radius:999px;overflow:hidden}.chart-track span{display:block;height:100%;background:var(--accent);border-radius:999px}.select{border:1px solid var(--line);background:#fffaf1;border-radius:6px;padding:8px 10px;color:var(--ink);margin-bottom:10px}.spark{width:100%;height:42px}.spark path{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.muted{color:var(--muted)}footer{display:flex;justify-content:space-between;gap:20px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:22px}a{color:var(--accent);text-decoration:none}a:focus-visible,.info:focus-visible,.select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}@media (max-width:820px){.wrap{padding:32px 18px}header,.hero,.two{grid-template-columns:1fr}.brand{font-size:42px}.score strong{font-size:76px}.meta{grid-template-columns:1fr}table{font-size:13px}.prompt{max-width:none}footer{display:block}}
-.response{line-height:1.58;padding:14px;max-height:360px;overflow:auto}
+.response{line-height:1.58;padding:14px}
 .response p{margin:0 0 10px}
 .response p:last-child{margin-bottom:0}
 .response ol{margin:0 0 10px 20px;padding:0}
@@ -111,11 +111,30 @@ export function renderHtmlReport(args: HtmlReportArgs): string {
 .response strong,.response-heading{color:var(--ink)}
 .response-heading{font-weight:700}
 .coverage-warning{margin:0 0 28px;padding:14px 16px;border-left:4px solid var(--accent-2);background:var(--soft);color:var(--ink)}.actions{display:grid}.action{display:grid;grid-template-columns:120px minmax(0,1fr);column-gap:24px;padding:20px 0;border-top:1px solid var(--line)}.action:last-child{border-bottom:1px solid var(--line)}.action-rank{grid-row:1/span 4;color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}.action>:not(.action-rank){grid-column:2}.action h3{font-family:"Fraunces",Georgia,"Times New Roman",serif;font-size:24px;line-height:1.15;margin:0 0 10px;font-weight:500}.action p{font-size:16px;line-height:1.55;margin:0 0 10px}.methodology{display:grid;grid-template-columns:1fr 1fr;gap:22px}.methodology p{margin:0 0 12px}.methodology ul{margin:0;padding-left:18px}.methodology li{margin:0 0 7px}@media (max-width:820px){.action{grid-template-columns:1fr;gap:8px}.action-rank{grid-row:auto}.action>:not(.action-rank){grid-column:1}.methodology{grid-template-columns:1fr}}
+
+.evidence-filters:not([hidden]){display:flex;gap:16px;align-items:end;padding:0 0 24px}.evidence-filters label{display:grid;gap:8px;font-size:14px;font-weight:500}.evidence-filters label:first-child{flex:1}.evidence-filters input,.evidence-filters select{width:100%;min-height:44px;font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:10px 12px}.evidence-filters input:focus-visible,.evidence-filters select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.evidence-filters p{font-size:14px;color:var(--muted);white-space:nowrap;margin:0 0 12px}.evidence-empty{padding:24px 0;color:var(--muted)}[hidden]{display:none!important}@media(max-width:820px){.evidence-filters:not([hidden]){flex-wrap:wrap}.evidence-filters label:first-child{flex-basis:100%}.evidence-filters label:nth-child(2){flex:1}}
+/* Evidence reads at page width, with one scroll surface and native disclosure. */
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+.report-nav{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:0 0 24px;margin-bottom:36px;border-bottom:1px solid var(--line)}
+.report-wordmark{font:500 22px "Fraunces",Georgia,serif;white-space:nowrap}.report-wordmark span{font:400 14px "DM Sans",sans-serif;color:var(--muted)}
+.report-nav>div{display:flex;gap:24px;flex-wrap:wrap}.report-nav a{display:inline-flex;align-items:center;min-height:44px;font-size:14px}.report-nav .report-wordmark{font-size:22px;gap:8px}
+.brand{overflow-wrap:anywhere}.meta{align-content:start}.meta div{background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:12px 0}.label{font-size:14px}.value{font-size:20px;font-variant-numeric:tabular-nums}.score{border-left:0;padding-left:0}.score strong{display:block;margin-top:16px}.hero>.panel{background:transparent;border:0;border-radius:0;padding:0 0 0 28px;border-left:1px solid var(--line)}
+.section{padding:36px 0}.section-intro{max-width:720px;color:var(--muted);font-size:16px;margin:-4px 0 24px}.section h2{scroll-margin-top:24px}.evidence-columns,.evidence-summary{display:grid;grid-template-columns:minmax(0,1fr) 120px 164px 104px;gap:24px;align-items:start}
+.evidence-columns{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:12px 20px;border-bottom:1px solid var(--line)}
+.evidence-row{border-bottom:1px solid var(--line)}.evidence-summary{padding:24px 20px;list-style:none;transition:background 120ms ease}.evidence-summary::-webkit-details-marker{display:none}details>.evidence-summary{cursor:pointer}details>.evidence-summary:hover,details[open]>.evidence-summary{background:var(--soft)}.evidence-summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.evidence-question{display:grid;gap:8px;min-width:0}.provider{font-size:12px;color:var(--accent);letter-spacing:.04em;text-transform:none}.question-text{font-size:16px;font-weight:500;line-height:1.5;overflow-wrap:anywhere}.evidence-toggle{display:flex;align-items:center;gap:8px;color:var(--accent);font-size:14px;min-height:24px}.disclosure-arrow{font-size:18px}.when-open,details[open] .when-closed{display:none}details[open] .when-open{display:inline}details[open] .disclosure-arrow{transform:rotate(180deg)}
+.evidence-metric{display:grid;gap:8px;font-size:14px;padding-top:25px;overflow-wrap:anywhere}.evidence-metric strong{font-size:20px;font-weight:500}.evidence-metric .competitor-rate{font-size:16px;color:var(--muted)}.rate small{font-size:13px;color:var(--muted);font-weight:400}.metric-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.evidence-metric .bar{min-width:0;width:100%;height:6px}
+.evidence-body{padding:28px 32px 32px;background:rgba(255,255,255,.38);border-top:1px solid var(--line)}.response-meta{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:24px}.response-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px}.response{margin:0;max-width:76ch;max-height:none;overflow:visible;padding:0;background:none;border:0;border-radius:0;color:var(--ink);font-size:16px;line-height:1.75;overflow-wrap:anywhere}.response p{margin:0 0 16px}.response ol,.response ul{margin:0 0 20px;padding-left:24px}.response li{padding-left:4px;margin-bottom:12px}.response a{text-decoration:underline;text-underline-offset:3px}.response a:visited{color:var(--accent-2)}.response-heading{font-family:"Fraunces",Georgia,serif;font-size:23px;line-height:1.3;padding-top:12px}.response-note{margin:24px 0 0;padding-top:16px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.comparison-label{display:block;color:var(--muted);font-size:14px;margin-bottom:8px}.select{font:inherit;min-height:44px}.chart-key{display:inline-block;width:8px;height:8px;border-radius:50%;margin:0 6px 0 14px;background:var(--accent-2)}.chart-key.own{margin-left:0;background:var(--accent)}footer{font-size:14px}.chart-row{grid-template-columns:minmax(80px,110px) minmax(0,1fr) 46px}
+@media(max-width:820px){.report-nav{display:block;margin-bottom:24px}.report-nav>div{gap:8px 20px;margin-top:8px}.report-wordmark span{font-size:13px}.hero>.panel{padding:20px 0 0;border-left:0;border-top:1px solid var(--line)}.meta{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.meta .value{font-size:16px}.meta .label{font-size:12px}.evidence-columns{display:none}.evidence-summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 12px;padding:24px 0}.evidence-question{grid-column:1/-1}.evidence-metric{padding-top:0;font-size:14px}.metric-label{position:static;width:auto;height:auto;overflow:visible;clip-path:none;font-size:12px;color:var(--muted)}.evidence-metric strong{font-size:20px}.evidence-body{padding:24px 16px}.response-meta{display:grid;gap:12px}.response{font-size:16px}.response-heading{font-size:22px}.evidence-row[open]>.evidence-summary{padding-left:12px;padding-right:12px}.section{padding:28px 0}.two>.panel{min-width:0;padding:20px 16px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+@media print{.report-nav{display:none}.evidence-body{display:block!important}details::details-content{content-visibility:visible!important}.response{max-height:none}.evidence-summary{break-inside:avoid}.evidence-toggle{display:none}}
 </style>
 </head>
 <body>
 <main class="wrap">
-<header>
+<nav class="report-nav" aria-label="Report navigation"><a class="report-wordmark" href="#top">openllmrank<span> / Visibility report</span></a><div><a href="#actions">Actions</a><a href="#gaps">Gap analysis</a><a href="#providers">Providers</a><a href="#methodology">Methodology</a></div></nav>
+<header id="top">
 <div>
 <div class="kicker">Grounded LLM visibility</div>
 <h1 class="brand">${escapeHtml(args.brand_name)}</h1>
@@ -124,7 +143,7 @@ export function renderHtmlReport(args: HtmlReportArgs): string {
 <div class="meta">
 <div><span class="label">Runs ${infoTip("One run is a full sweep across all prompts × providers × samples. Typically run weekly.")}</span><span class="value">${args.runs.length}</span></div>
 <div><span class="label">Coverage ${infoTip("Successful calls divided by planned calls. Partial provider failures are disclosed here rather than silently omitted.", "right")}</span><span class="value">${formatPercent(coverage)} (${successfulSamples}/${expectedSamples})</span></div>
-<div><span class="label">Providers ${infoTip("Distinct AI models queried (e.g. OpenAI, Anthropic).")}</span><span class="value">${new Set(brandRateRows.map((r) => r.provider)).size}</span></div>
+<div><span class="label">Providers ${infoTip("Distinct AI models queried (e.g. OpenAI, Anthropic).", "right")}</span><span class="value">${new Set(brandRateRows.map((r) => r.provider)).size}</span></div>
 </div>
 </header>
 ${failedSamples > 0 ? `<div class="coverage-warning"><strong>Partial data:</strong> ${failedSamples} of ${expectedSamples} planned calls failed. Scores use the ${successfulSamples} successful calls only, so compare this report cautiously.</div>` : ""}
@@ -136,24 +155,26 @@ ${failedSamples > 0 ? `<div class="coverage-warning"><strong>Partial data:</stro
 </div>
 <div class="panel">
 <h2>Signal</h2>
-<p class="muted">${noData ? "No successful calls in this window yet. Run openllmrank run first." : `${escapeHtml(args.brand_name)} appears in ${formatPercent(visibility)} of prompt-provider pairs at least once. The tables below separate prompts where competitors lead from prompts where your brand is tied or ahead.`}</p>
+<p class="muted">${noData ? "No successful calls in this window yet. Run openllmrank run first." : `${escapeHtml(args.brand_name)} appears in ${formatPercent(visibility)} of prompt-provider pairs at least once. Explore the questions below to see where competitors lead and where your brand is tied or ahead.`}</p>
 </div>
 </section>
 <section class="section">
-<h2>Priority actions</h2>
+<h2 id="actions">Priority actions</h2>
 ${renderPriorityActions(losing, args)}
 </section>
 <section class="section">
-<h2>Gap analysis</h2>
+<h2 id="gaps">Gap analysis</h2>
+<p class="section-intro">Where competitors are cited more often. Open a question to read the evidence. Gaps are shown in percentage points (pp).</p>
 ${renderGapTable(losing, args, "No losing rows in this window.")}
 </section>
 <section class="section">
-<h2>Where you're winning</h2>
+<h2 id="wins">Where you're winning</h2>
+<p class="section-intro">Questions where your brand is tied or ahead.</p>
 ${renderGapTable(winning, args, "No winning or tied rows yet.")}
 </section>
 <section class="section${history.length > 1 ? " two" : ""}">
 <div class="panel">
-<h2>Provider breakdown</h2>
+<h2 id="providers">Provider breakdown</h2>
 ${providerChart}
 </div>
 ${history.length > 1 ? `<div class="panel">
@@ -162,7 +183,7 @@ ${historyChart}
 </div>` : ""}
 </section>
 <section class="section">
-<h2>Methodology &amp; limits</h2>
+<h2 id="methodology">Methodology &amp; limits</h2>
 ${renderMethodology(args, successfulSamples, expectedSamples)}
 </section>
 <footer>
@@ -170,22 +191,31 @@ ${renderMethodology(args, successfulSamples, expectedSamples)}
 </footer>
 </main>
 <script>
+document.querySelectorAll('[data-evidence-list]').forEach(function(list){var controls=list.querySelector('[data-evidence-filters]');if(!controls)return;controls.hidden=false;var search=controls.querySelector('input');var provider=controls.querySelector('select');var rows=Array.from(list.querySelectorAll('.evidence-row'));function filter(){var query=search.value.trim().toLowerCase();var visible=0;rows.forEach(function(row){var summary=row.querySelector('summary')||row;var matches=(!provider.value||row.dataset.provider===provider.value)&&summary.textContent.toLowerCase().includes(query);row.hidden=!matches;if(matches)visible++;});controls.querySelector('[data-evidence-count]').textContent=visible+' of '+rows.length+' questions';list.querySelector('[data-evidence-empty]').hidden=visible!==0;}search.addEventListener('input',filter);provider.addEventListener('change',filter);});
 (function(){var select=document.querySelector("[data-competitor-select]");if(!select)return;function sync(){var v=select.value;document.querySelectorAll("[data-competitor]").forEach(function(el){el.style.display=el.getAttribute("data-competitor")===v?"":"none";});}select.addEventListener("change",sync);sync();})();
 </script>
 </body>
 </html>`;
 }
 
+function providerLabel(provider: string): string {
+  return ({ openai: "OpenAI", anthropic: "Anthropic", gemini: "Google Gemini", google: "Google Gemini", perplexity: "Perplexity", xai: "xAI Grok" } as Record<string, string>)[provider] ?? provider;
+}
+
 function renderGapTable(rows: GapRow[], args: HtmlReportArgs, empty: string): string {
   if (rows.length === 0) return `<p class="muted">${escapeHtml(empty)}</p>`;
-  return `<table><thead><tr><th>Provider</th><th>Prompt</th><th>Your rate ${infoTip("Percent of samples for this prompt + provider that cited your brand.")}</th><th>Top competitor ${infoTip("The competitor cited most often for this prompt + provider, with their citation rate.")}</th><th>Gap ${infoTip("Top competitor's rate minus yours. Larger gap = bigger opportunity to close.", "right")}</th></tr></thead><tbody>${rows
+  const filterId = `filter-${encodeURIComponent(rows[0]!.prompt_id)}`;
+  const providers = [...new Set(rows.map(row => row.provider))];
+  const filters = rows.length > 5 ? `<div class="evidence-filters" data-evidence-filters hidden><label for="${filterId}">Find a question<input id="${filterId}" type="search" placeholder="Search questions or competitors" data-evidence-search></label><label for="${filterId}-provider">Provider<select id="${filterId}-provider" data-evidence-provider><option value="">All providers</option>${providers.map(provider => `<option value="${escapeHtml(provider)}">${escapeHtml(providerLabel(provider))}</option>`).join("")}</select></label><p data-evidence-count role="status">${rows.length} questions</p></div>` : "";
+  return `<div class="evidence-list" data-evidence-list>${filters}<div class="evidence-columns" aria-hidden="true"><span>Provider / buyer question</span><span>Your citation rate</span><span>Top competitor</span><span>Gap</span></div>${rows
     .map((g) => {
       const best = g.competitors[0];
       const response = findRecentResponse(args.calls, args.rates, g);
       const width = Math.max(0, Math.min(100, g.gap_score * 100));
-        return `<tr><td class="provider">${escapeHtml(g.provider)}</td><td class="prompt">${escapeHtml(g.prompt_text)}${response ? `<details><summary class="muted">Most recent response</summary><div class="response">${renderResponseHtml(response, args.brand_name, best?.name)}</div></details>` : ""}</td><td class="rate">${formatPercent(g.brand_rate)}</td><td>${best ? `${escapeHtml(best.name)} <span class="rate">${formatPercent(best.rate)}</span>` : "&mdash;"}</td><td><div class="gapcell"><span class="rate">${formatPercent(Math.max(0, g.gap_score))}</span><div class="bar"><span style="width:${round(width)}%;background:${gapColor(g.gap_score)}"></span></div></div></td></tr>`;
-    })
-    .join("")}</tbody></table>`;
+      const metrics = `<span class="evidence-question"><span class="provider">${escapeHtml(providerLabel(g.provider))}</span><span class="question-text">${escapeHtml(g.prompt_text)}</span><span class="evidence-toggle">${response ? '<span class="when-closed">Read AI response</span><span class="when-open">Hide AI response</span><span class="disclosure-arrow" aria-hidden="true">↓</span>' : 'No response available'}</span></span><span class="evidence-metric"><span class="metric-label">Your citation rate</span><strong class="rate">${formatPercent(g.brand_rate)}</strong></span><span class="evidence-metric"><span class="metric-label">Top competitor</span><span>${best ? escapeHtml(best.name) : "—"}</span>${best ? `<strong class="rate competitor-rate">${formatPercent(best.rate)}</strong>` : ""}</span><span class="evidence-metric"><span class="metric-label">Gap</span><strong class="rate">${Math.round(Math.max(0, g.gap_score) * 100)}<small> pp</small></strong><span class="bar" aria-hidden="true"><span style="width:${round(width)}%;background:${gapColor(g.gap_score)}"></span></span></span>`;
+      if (!response) return `<div class="evidence-row evidence-summary" data-provider="${escapeHtml(g.provider)}">${metrics}</div>`;
+      return `<details class="evidence-row" data-provider="${escapeHtml(g.provider)}"><summary class="evidence-summary">${metrics}</summary><div class="evidence-body"><div class="response-meta"><span class="kicker">Most recent response · ${escapeHtml(providerLabel(g.provider))}</span><span class="response-legend"><span class="mark-brand">${escapeHtml(args.brand_name)}</span>${best ? `<span class="mark-competitor">${escapeHtml(best.name)}</span>` : ""}</span></div><div class="response">${renderResponseHtml(response, args.brand_name, best?.name)}</div><p class="response-note">One response is shown. Citation rates above include all successful samples in this reporting window.</p></div></details>`;
+    }).join("")}<p class="evidence-empty" data-evidence-empty hidden>No matching questions. Try a different search or choose all providers.</p></div>`;
 }
 
 function renderPriorityActions(rows: GapRow[], args: HtmlReportArgs): string {
@@ -203,7 +233,7 @@ function renderPriorityActions(rows: GapRow[], args: HtmlReportArgs): string {
     const evidence = source
       ? `<p><a href="${escapeHtml(source)}" target="_blank" rel="noopener noreferrer">Inspect a source cited for ${escapeHtml(competitor!.name)} →</a></p>`
       : `<p class="muted">No competitor source URL was captured for this prompt; start with the model response below.</p>`;
-    return `<article class="action"><span class="action-rank">Priority ${index + 1} · ${escapeHtml(gap.provider)}</span><h3>Close a ${formatPercent(gap.gap_score)} gap</h3><p><strong>Buyer question:</strong> ${escapeHtml(gap.prompt_text)}</p><p>${escapeHtml(competitor?.name ?? "A competitor")} leads at ${formatPercent(competitor?.rate ?? 0)}. Publish or strengthen a decision page${escapeHtml(target)} that answers this exact question in the opening paragraph, compares the buyer criteria in a scannable table, and backs claims with dated first-party evidence.</p>${evidence}</article>`;
+    return `<article class="action"><span class="action-rank">Priority ${index + 1} · ${escapeHtml(providerLabel(gap.provider))}</span><h3>Close a ${Math.round(gap.gap_score * 100)}-point gap</h3><p><strong>Buyer question:</strong> ${escapeHtml(gap.prompt_text)}</p><p>${escapeHtml(competitor?.name ?? "A competitor")} leads at ${formatPercent(competitor?.rate ?? 0)}. Publish or strengthen a decision page${escapeHtml(target)} that answers this exact question in the opening paragraph, compares the buyer criteria in a scannable table, and backs claims with dated first-party evidence.</p>${evidence}</article>`;
   }).join("")}</div>`;
 }
 
@@ -268,13 +298,13 @@ function renderProviderChart(rates: CitationRate[], brand: string, competitors: 
       .map((provider) => {
         const brandRate = averageRate(rates, provider, brand);
         const compRate = competitor ? averageRate(rates, provider, competitor) : 0;
-        return `<div class="chart-row"><strong>${escapeHtml(provider)}</strong><div><div class="chart-track"><span style="width:${round(brandRate * 100)}%"></span></div><div class="chart-track" style="margin-top:5px"><span style="width:${round(compRate * 100)}%;background:var(--accent-2)"></span></div></div><span class="rate">${formatPercent(brandRate)}</span></div>`;
+        return `<div class="chart-row"><strong>${escapeHtml(providerLabel(provider))}</strong><div><div class="chart-track"><span style="width:${round(brandRate * 100)}%"></span></div><div class="chart-track" style="margin-top:5px"><span style="width:${round(compRate * 100)}%;background:var(--accent-2)"></span></div></div><span class="rate">${formatPercent(brandRate)}</span></div>`;
       })
       .join("");
     return `<div data-competitor="${escapeHtml(competitor)}" style="${index === 0 ? "" : "display:none"}">${rows}</div>`;
   });
-  const select = competitors.length > 1 ? `<select class="select" data-competitor-select>${options}</select>` : "";
-  return `${select}<p class="muted">Top bar is ${escapeHtml(brand)}; lower bar is selected competitor.</p>${groups.join("")}`;
+  const select = competitors.length > 1 ? `<label class="comparison-label" for="competitor-select">Compare with</label><select id="competitor-select" class="select" data-competitor-select>${options}</select>` : "";
+  return `${select}<p class="muted"><span class="chart-key own"></span>${escapeHtml(brand)} <span class="chart-key other"></span>${competitors.length > 1 ? "Selected competitor" : escapeHtml(competitors[0] ?? "No competitor")}</p>${groups.join("")}`;
 }
 
 function renderHistory(history: HistoryPoint[], brands: string[]): string {
@@ -380,10 +410,12 @@ function renderResponseHtml(text: string, brand: string, competitor?: string): s
   const lines = normalized.split("\n");
   const out: string[] = [];
   let listItems: string[] = [];
+  let listTag = "ol";
+  let listStart = 1;
 
   function flushList(): void {
     if (listItems.length === 0) return;
-    out.push(`<ol>${listItems.map((item) => `<li>${formatResponseInline(item, brand, competitor)}</li>`).join("")}</ol>`);
+    out.push(`<${listTag}${listTag === "ol" && listStart !== 1 ? ` start="${listStart}"` : ""}>${listItems.map((item) => `<li>${formatResponseInline(item, brand, competitor)}</li>`).join("")}</${listTag}>`);
     listItems = [];
   }
 
@@ -393,15 +425,19 @@ function renderResponseHtml(text: string, brand: string, competitor?: string): s
       flushList();
       continue;
     }
-    const heading = /^#{2,3}\s+(.+)$/.exec(line);
+    const heading = /^#{1,6}\s+(.+)$/.exec(line);
     if (heading) {
       flushList();
       out.push(`<p class="response-heading">${formatResponseInline(heading[1]!, brand, competitor)}</p>`);
       continue;
     }
-    const item = /^\d+\.\s+(.+)$/.exec(line);
+    const item = /^(\d+\.|[-*+])\s+(.+)$/.exec(line);
     if (item) {
-      listItems.push(item[1]!);
+      const tag = /^\d/.test(item[1]!) ? "ol" : "ul";
+      if (tag !== listTag) flushList();
+      listTag = tag;
+      if (listItems.length === 0) listStart = tag === "ol" ? Number.parseInt(item[1]!, 10) : 1;
+      listItems.push(item[2]!);
       continue;
     }
     flushList();
@@ -413,11 +449,22 @@ function renderResponseHtml(text: string, brand: string, competitor?: string): s
 }
 
 function formatResponseInline(text: string, brand: string, competitor?: string): string {
-  return highlightText(
-    escapeHtml(text).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>"),
-    brand,
-    competitor,
+  // Parse links before escaping/highlighting: model text must never become HTML,
+  // and brand names must never be substituted inside link attributes.
+  const pattern = /\[([^\]\n]+)\]\((https?:\/\/(?:[^\s()]|\([^\s()]*\))+)\)/g;
+  const formatText = (value: string) => highlightText(
+    escapeHtml(value).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>"), brand, competitor,
   );
+  let result = "";
+  let offset = 0;
+  for (const match of text.matchAll(pattern)) {
+    result += formatText(text.slice(offset, match.index));
+    result += safeHttpUrl(match[2]!)
+      ? `<a href="${escapeHtml(match[2]!)}" target="_blank" rel="noopener noreferrer">${formatText(match[1]!)}</a>`
+      : formatText(match[0]);
+    offset = match.index! + match[0].length;
+  }
+  return result + formatText(text.slice(offset));
 }
 
 function highlightText(escapedHtml: string, brand: string, competitor?: string): string {

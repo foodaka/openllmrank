@@ -67,6 +67,10 @@ NEXT_PUBLIC_SUPABASE_URL=https://yarcmnipzvpiroegeygx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<from Supabase Settings → API → anon public key>
 SUPABASE_SERVICE_ROLE_KEY=<from Supabase Settings → API → service_role secret>
 
+# AI-assisted wizard for signed-in users (optional; manual setup still works)
+OPENAI_API_KEY=<server-only OpenAI API key>
+WIZARD_SUGGEST_MODEL=gpt-4o-mini                      # optional model override
+
 STRIPE_MODE=test
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_test_...   # set after step 1.4 below
@@ -88,6 +92,11 @@ POSTMARK_SERVER_TOKEN=<same as Railway>
 POSTMARK_FROM=reports@openllmrank.io
 POSTMARK_FROM_NAME=openllmrank
 ```
+
+The wizard generates suggestions on Vercel, so a key set only on Railway does
+not enable it. AI requests incur provider charges even with `STRIPE_MODE=test`.
+See [AI-assisted wizard setup](packages/web/README.md#ai-assisted-wizard-setup)
+for model requirements and request limits.
 
 ### 1.2a Hosted Supabase auth (Authentication → URL Configuration)
 

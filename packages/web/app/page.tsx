@@ -393,6 +393,9 @@ export default function HomePage() {
           gap: 24px;
         }
         .site-nav-links a {
+          display: inline-flex;
+          align-items: center;
+          min-height: 44px;
           font-size: 14px;
           color: var(--ink);
         }
@@ -587,14 +590,14 @@ export default function HomePage() {
             gap: 32px;
             padding-top: 32px;
           }
-          .hero-headline { font-size: 44px; }
+          .hero-headline { font-size: clamp(36px, 8vw, 44px); text-wrap: balance; }
           .hero-actions { flex-direction: column; align-items: flex-start; }
           .report-providers ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .btn-primary { width: 100%; text-align: center; }
-          /* Section anchors collapse on mobile, but Sign in must survive —
-             it is the only way a paying customer reaches their dashboard. */
-          .site-nav-links li { display: none; }
-          .site-nav-links li:last-child { display: block; }
+          .site-nav { display: block; padding: 20px 16px 0; }
+          .site-nav-links { flex-wrap: wrap; gap: 0 20px; margin-top: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+          .site-nav-links a { font-size: 14px; }
+          .site-nav-links li:last-child { margin-left: auto; }
           .section-headline { font-size: 32px; }
           .steps { grid-template-columns: 1fr; gap: 32px; }
           .home-posts { grid-template-columns: 1fr; gap: 0; }

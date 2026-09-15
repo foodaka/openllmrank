@@ -196,6 +196,13 @@ describe("guardedFetch against a live fixture", () => {
     expect(res.body).toBe("hello");
   });
 
+  test("can return a redirect without following its target", async () => {
+    const res = await guardedFetch(`${base}/redirect-ftp`, { ...testOpts, followRedirects: false });
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toStartWith("ftp:");
+    expect(res.finalUrl).toBe(`${base}/redirect-ftp`);
+  });
+
   test("follows redirects and reports the final URL", async () => {
     const res = await guardedFetch(`${base}/redirect`, testOpts);
     expect(res.status).toBe(200);

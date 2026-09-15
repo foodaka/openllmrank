@@ -96,9 +96,13 @@ export default function WizardPromptsPage() {
       nextDisabled={nonEmptyCount < MIN_PROMPTS || nonEmptyCount > MAX_PROMPTS}
     >
       <p className="muted-intro">
-        We&rsquo;ve drafted three prompts based on your brand and competitors.
-        Edit any of them, or add up to {MAX_PROMPTS - 3} more. The closer
+        Review your starting questions below.
+        Edit any of them, or add your own, up to {MAX_PROMPTS} in total. The closer
         they match what your buyers actually type, the sharper the report.
+      </p>
+
+      <p className="draft-save-note">
+        Click Next to save your edits in this browser. Drafts aren&rsquo;t synced to your account.
       </p>
 
       <div className="prompts-list">
@@ -148,6 +152,7 @@ export default function WizardPromptsPage() {
 
       <style>{`
         .muted-intro { color: var(--muted); font-size: 17px; margin-bottom: 24px; }
+        .draft-save-note { color: var(--muted); font-size: 14px; margin: -8px 0 24px; }
         .prompts-list { display: flex; flex-direction: column; gap: 8px; }
         .prompt-row { margin: 8px 0; }
         .prompt-input-row { display: flex; gap: 12px; align-items: flex-start; }
