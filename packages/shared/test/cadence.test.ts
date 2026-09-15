@@ -4,8 +4,8 @@ import { effectiveCadence, nextRunAfter, positiveIntEnv } from "../src/cadence";
 describe("effectiveCadence", () => {
   test("weekly at or below the threshold, monthly above it", () => {
     expect(effectiveCadence(0)).toBe("weekly");
-    expect(effectiveCadence(2)).toBe("weekly");
-    expect(effectiveCadence(3)).toBe("monthly");
+    expect(effectiveCadence(3)).toBe("weekly");
+    expect(effectiveCadence(4)).toBe("monthly");
     expect(effectiveCadence(3, 5)).toBe("weekly");
     expect(effectiveCadence(6, 5)).toBe("monthly");
   });

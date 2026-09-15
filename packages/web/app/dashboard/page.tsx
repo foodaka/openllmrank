@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { weeklyMaxBrands } from "@/lib/brand-writes";
 import {
   getBrands,
   getLatestMetricsByBrand,
@@ -37,7 +38,8 @@ export default async function DashboardIndex() {
 
   if (brands.length === 1) redirect(`/dashboard/${brands[0]!.id}`);
 
-  const throttled = brands.length > 2 && brands.every((b) => b.cadence === "monthly");
+  const maxWeekly = weeklyMaxBrands();
+  const throttled = brands.length > maxWeekly && brands.every((b) => b.cadence === "monthly");
 
   return (
     <>
@@ -93,8 +95,9 @@ export default async function DashboardIndex() {
 
       {throttled && (
         <p className="note">
-          You are tracking more than two brands, so runs are scheduled monthly
-          rather than weekly. Cadence returns to weekly at two brands or fewer.
+          You are tracking more than {maxWeekly} brands, so runs are scheduled
+          monthly rather than weekly. Cadence returns to weekly at {maxWeekly}{" "}
+          brands or fewer.
         </p>
       )}
 

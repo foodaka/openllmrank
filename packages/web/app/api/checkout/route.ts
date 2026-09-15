@@ -23,7 +23,7 @@ import { checkRateLimit, getClientIp } from "../../../lib/rate-limit";
 //
 // Two plans share this entry point:
 //   report    one-time payment; the webhook creates a brand + one job
-//   tracking  $29/mo subscription; the webhook creates the account, the
+//   tracking  $49/mo subscription; the webhook creates the account, the
 //             brand with its tracking config, and the subscription, and the
 //             worker scheduler runs the first report within a minute
 //
@@ -37,8 +37,8 @@ const BodySchema = z.object({
   plan: z.enum(["report", "tracking"]).default("report"),
 });
 
-export const DEFAULT_REPORT_PRICE_CENTS = 4900;
-export const DEFAULT_SUBSCRIPTION_PRICE_CENTS = 2900;
+export const DEFAULT_REPORT_PRICE_CENTS = 7900;
+export const DEFAULT_SUBSCRIPTION_PRICE_CENTS = 4900;
 
 // Per-IP rate limit: 5 checkout attempts per minute. Without this, anyone
 // with curl can flood the leads table and burn Stripe API quota (real

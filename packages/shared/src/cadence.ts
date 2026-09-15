@@ -2,14 +2,15 @@
 // and the worker scheduler, so both sides compute the same answer.
 //
 // D9: subscribers get weekly runs plus a small manual re-run allowance.
-// D12: unlimited brands, but break-even at $29/mo is two brands, so past
-// WEEKLY_MAX_BRANDS active brands the whole account drops to monthly. Every
+// D12: unlimited brands, but a weekly run costs ~$14/brand/month against
+// $49/mo, so past WEEKLY_MAX_BRANDS active brands the whole account drops
+// to monthly. Every
 // brand stays tracked and visible; only the cadence changes.
 
 export type RunCadence = "weekly" | "monthly" | "paused";
 export type ActiveCadence = Exclude<RunCadence, "paused">;
 
-export const DEFAULT_WEEKLY_MAX_BRANDS = 2;
+export const DEFAULT_WEEKLY_MAX_BRANDS = 3;
 export const DEFAULT_MANUAL_RERUNS_PER_MONTH = 2;
 
 /** Cadence an account runs at, given how many non-archived brands it tracks. */

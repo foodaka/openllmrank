@@ -306,10 +306,10 @@ export default function DiscoveredNotIndexedPost() {
             The crawl check tells you whether engines can reach your pages.
             The openllmrank report tells you whether ChatGPT, Claude, Gemini,
             Perplexity, and Grok actually cite your brand &mdash; and who they
-            cite instead. $29.99, delivered in about fifteen minutes.
+            cite instead. $49 a month, first report in about fifteen minutes.
           </p>
           <Link href="/wizard/brand" className="btn-primary">
-            Get my report &mdash; $29.99
+            Start tracking &mdash; $49/month
           </Link>
         </div>
 

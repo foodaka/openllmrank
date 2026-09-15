@@ -52,7 +52,7 @@ export async function POST(req: Request) {
   try {
     session = await createSubscriptionSession({
       amountCents: Number.parseInt(
-        process.env.SUBSCRIPTION_PRICE_CENTS ?? "2900",
+        process.env.SUBSCRIPTION_PRICE_CENTS ?? "4900",
         10,
       ),
       currency: "usd",

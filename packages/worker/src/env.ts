@@ -113,7 +113,7 @@ function build(): EnvShape {
     // claim latency is invisible to the customer.
     schedulerPollMs: int("SCHEDULER_POLL_MS", 60_000),
     // D12 margin guard: past this many active brands an account runs monthly.
-    schedulerWeeklyMaxBrands: int("SCHEDULER_WEEKLY_MAX_BRANDS", 2),
+    schedulerWeeklyMaxBrands: int("SCHEDULER_WEEKLY_MAX_BRANDS", 3),
     // Stripe no-code customer-portal login link (dashboard → Settings →
     // Billing → Customer portal). Empty in dev → emails fall back to mailto.
     monitorPortalUrl: optional("STRIPE_PORTAL_URL"),

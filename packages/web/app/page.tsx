@@ -89,11 +89,11 @@ export default function HomePage() {
               We run the buying questions your customers actually type through
               five grounded AI APIs, watch what they recommend,
               and show you where you&rsquo;re losing visibility and what to do
-              next. Track it weekly for $29 a month, or buy one report for $49.
+              next. Track it weekly for $49 a month, or buy one report for $79.
             </p>
             <p className="hero-actions">
               <Link href="/wizard/brand" className="btn-primary">
-                Start tracking &mdash; $29/month
+                Start tracking &mdash; $49/month
               </Link>
               <a href="#sample" className="btn-text">
                 See a sample report
@@ -278,11 +278,12 @@ export default function HomePage() {
           <dl className="faq">
             <dt>What does it cost?</dt>
             <dd>
-              Tracking is $29 a month: your first report today, a fresh run
-              every week, and a dashboard that shows whether your citation
-              rate is moving. Weekly runs cover up to two brands; past that
-              the schedule is monthly. Cancel any time from the billing
-              portal. A single report is $49 if you only want a snapshot.
+              Tracking is $49 a month: your first report today, a fresh run
+              every week across all five engines including Claude, Gemini,
+              and Grok, and a dashboard that shows whether your citation rate
+              is moving. Weekly runs cover up to three brands; past that the
+              schedule is monthly. Cancel any time from the billing portal. A
+              single report is $79 if you only want a snapshot.
             </dd>
 
             <dt>What is in a report?</dt>
@@ -350,7 +351,7 @@ export default function HomePage() {
           <h2 className="section-headline">Ready to investigate?</h2>
           <p>
             <Link href="/wizard/brand" className="btn-primary">
-              Start tracking &mdash; $29/month
+              Start tracking &mdash; $49/month
             </Link>
           </p>
         </section>
