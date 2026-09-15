@@ -83,13 +83,12 @@ export default function HomePage() {
           <div className="hero-text">
             <span className="kicker">AI-search visibility report</span>
             <h1 className="hero-headline">
-              When buyers ask AI, does your brand make the shortlist?
+              When buyers ask AI,<br />does your brand<br /><em>make the shortlist?</em>
             </h1>
             <p className="hero-sub">
-              We run the buying questions your customers actually type through
-              five grounded AI APIs, watch what they recommend,
-              and show you where you&rsquo;re losing visibility and what to do
-              next. Track it weekly for $49 a month, or buy one report for $79.
+              See where your brand gets cited, who shows up instead, and
+              what to improve next. One clear report, backed by responses
+              and sources from five AI providers.
             </p>
             <p className="hero-actions">
               <Link href="/wizard/brand" className="btn-primary">
@@ -99,6 +98,9 @@ export default function HomePage() {
                 See a sample report
               </a>
             </p>
+            <p className="hero-plan-note">Track weekly for $49/month. Or get one report for $79.</p>
+          </div>
+
             <div className="report-providers" aria-label="Providers included in every report">
               <span className="kicker">Included in every report</span>
               <ul>
@@ -124,33 +126,28 @@ export default function HomePage() {
                 </li>
               </ul>
             </div>
-          </div>
 
           <aside className="hero-sample" aria-label="Sample report data">
-            <span className="kicker sample-kicker">sample</span>
+            <div className="sample-masthead">
+              <span className="kicker">Inside your report</span>
+              <span className="sample-badge">Illustrative sample</span>
+            </div>
             <p className="sample-question">
-              &ldquo;What&rsquo;s the best CRM for B2B SaaS?&rdquo;
+              &ldquo;What&rsquo;s the best CRM<br />for B2B SaaS?&rdquo;
             </p>
-            <div className="rate-row">
-              <span className="label">Your brand</span>
-              <div className="bar">
-                <span style={{ width: "12%" }} />
-              </div>
-              <span className="value">12%</span>
+            <div className="sample-score">
+              <div><strong>12<span>%</span></strong><span className="sample-caption">Your brand&rsquo;s citation rate</span></div>
+              <p><b>55 percentage points</b><br />behind the leading competitor</p>
             </div>
-            <div className="rate-row">
-              <span className="label">Competitor A</span>
-              <div className="bar alt">
-                <span style={{ width: "67%" }} />
-              </div>
-              <span className="value">67%</span>
+            <div className="sample-rankings" aria-label="Illustrative citation rates">
+              <div className="sample-ranking own"><span>Your brand</span><div className="sample-track"><span style={{ width: "12%" }} /></div><strong>12%</strong></div>
+              <div className="sample-ranking"><span>Competitor A</span><div className="sample-track"><span style={{ width: "67%" }} /></div><strong>67%</strong></div>
+              <div className="sample-ranking"><span>Competitor B</span><div className="sample-track"><span style={{ width: "41%" }} /></div><strong>41%</strong></div>
             </div>
-            <div className="rate-row">
-              <span className="label">Competitor B</span>
-              <div className="bar alt">
-                <span style={{ width: "41%" }} />
-              </div>
-              <span className="value">41%</span>
+            <div className="sample-takeaway">
+              <span className="kicker">From insight to action</span>
+              <p>Find the questions you&rsquo;re missing.<br />See the evidence. Know what to fix.</p>
+              <Link href="/sample-report.html">Explore a sample report <span aria-hidden="true">↗</span></Link>
             </div>
           </aside>
         </section>
@@ -410,81 +407,45 @@ export default function HomePage() {
 
         .hero {
           display: grid;
-          grid-template-columns: 1.2fr 0.9fr;
-          gap: 48px;
+          grid-template-columns: 1.16fr 1fr;
+          column-gap: 64px;
+          row-gap: 48px;
           padding-top: 64px;
-          padding-bottom: 64px;
+          padding-bottom: 48px;
           align-items: center;
         }
-        .hero-headline {
-          font-size: 64px;
-          line-height: 0.98;
-          margin: 12px 0 20px;
-        }
-        .hero-sub {
-          font-size: 18px;
-          color: var(--muted);
-          max-width: 620px;
-          margin-bottom: 28px;
-        }
-        .hero-actions {
-          display: flex;
-          gap: 16px;
-          align-items: center;
-        }
-        .report-providers {
-          margin-top: 32px;
-          padding-top: 20px;
-          border-top: 1px solid var(--line);
-          max-width: 620px;
-        }
-        .report-providers ul {
-          list-style: none;
-          margin: 12px 0 0;
-          padding: 0;
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 8px 24px;
-        }
-        .report-providers li {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          min-width: 0;
-          min-height: 36px;
-        }
-        .provider-logo {
-          display: block;
-          width: 22px;
-          height: 22px;
-          flex: 0 0 22px;
-        }
-        .report-providers strong {
-          font-family: var(--font-display);
-          font-size: 20px;
-          font-weight: 500;
-        }
-        .hero-sample {
-          background: var(--soft);
-          border: 1px solid var(--line);
-          border-radius: var(--radius-md);
-          padding: 28px;
-        }
-        .sample-kicker {
-          background: var(--paper);
-          border: 1px solid var(--line);
-          padding: 4px 8px;
-          border-radius: var(--radius-pill);
-          display: inline-block;
-          margin-bottom: 16px;
-          font-size: 10px;
-        }
-        .sample-question {
-          font-family: var(--font-display);
-          font-size: 20px;
-          margin-bottom: 16px;
-          color: var(--ink);
-        }
+        .hero-text { grid-column: 1; grid-row: 1; }
+        .hero-headline { font-size: clamp(44px, 4.8vw, 64px); line-height: 1.02; letter-spacing: -.025em; margin: 20px 0 24px; }
+        .hero-headline em { color: var(--accent); font-weight: 500; }
+        .hero-sub { font-size: 18px; color: var(--muted); max-width: 480px; margin-bottom: 28px; line-height: 1.6; }
+        .hero-actions { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .hero-plan-note { color: var(--muted); font-size: 14px; margin: 16px 0 0; }
+        .report-providers { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; gap: 40px; padding: 28px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+        .report-providers > .kicker { max-width: 130px; flex-shrink: 0; line-height: 1.6; }
+        .report-providers ul { flex: 1; list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+        .report-providers li { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+        .provider-logo { display: block; width: 20px; height: 20px; flex: 0 0 20px; }
+        .report-providers strong { font-family: var(--font-display); font-size: 18px; font-weight: 500; }
+        .hero-sample { grid-column: 2; grid-row: 1; background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: 3px; padding: 28px; box-shadow: 8px 8px 0 var(--soft); }
+        .sample-masthead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .sample-badge { color: var(--muted); font-size: 12px; }
+        .sample-question { font-family: var(--font-display); font-size: 28px; line-height: 1.2; margin: 24px 0; color: var(--ink); }
+        .sample-score { display: flex; align-items: flex-end; gap: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+        .sample-score strong { display: block; font-family: var(--font-display); font-size: 68px; line-height: 1; font-weight: 500; letter-spacing: -.04em; color: var(--accent); }
+        .sample-score strong span { font-size: 36px; margin-left: 4px; }
+        .sample-caption { display: block; color: var(--muted); font-size: 13px; margin-top: 8px; }
+        .sample-score p { font-size: 13px; color: var(--muted); margin: 0 0 2px; line-height: 1.5; }
+        .sample-score b { font-weight: 500; color: var(--loss); }
+        .sample-rankings { display: grid; gap: 16px; padding: 24px 0; }
+        .sample-ranking { display: grid; grid-template-columns: 108px 1fr 34px; gap: 12px; align-items: center; font-size: 14px; color: var(--muted); }
+        .sample-ranking strong { color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; font-weight: 500; }
+        .sample-ranking.own > span { color: var(--accent); font-weight: 500; }
+        .sample-track { height: 7px; border-radius: 2px; background: var(--soft); overflow: hidden; }
+        .sample-track span { display: block; height: 100%; background: var(--accent-2); border-radius: 2px; }
+        .sample-ranking.own .sample-track span { background: var(--accent); }
+        .sample-takeaway { border-top: 1px solid var(--line); padding-top: 20px; }
+        .sample-takeaway p { font-size: 16px; line-height: 1.5; margin: 8px 0; }
+        .sample-takeaway a { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; font-size: 14px; font-weight: 500; }
 
         .section-headline {
           font-size: 44px;
@@ -590,7 +551,16 @@ export default function HomePage() {
             gap: 32px;
             padding-top: 32px;
           }
-          .hero-headline { font-size: clamp(36px, 8vw, 44px); text-wrap: balance; }
+          .hero-headline { font-size: clamp(36px, 8vw, 52px); }
+          .hero-text, .hero-sample, .report-providers { grid-column: 1; grid-row: auto; }
+          .hero-sample { order: 2; padding: 24px; margin-right: 8px; }
+          .hero-text { order: 1; }
+          .report-providers { order: 3; display: block; padding: 24px 0; }
+          .report-providers > .kicker { max-width: none; }
+          .report-providers ul { display: grid; margin-top: 16px; gap: 12px 20px; }
+          .sample-score { gap: 16px; }
+          .sample-question { font-size: 26px; }
+          .sample-ranking { grid-template-columns: 100px 1fr 34px; gap: 8px; }
           .hero-actions { flex-direction: column; align-items: flex-start; }
           .report-providers ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .btn-primary { width: 100%; text-align: center; }
