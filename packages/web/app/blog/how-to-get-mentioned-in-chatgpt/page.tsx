@@ -223,7 +223,7 @@ export default function HowToGetMentionedInChatgptPost() {
           to fix first.
         </p>
         <Link href="/wizard/brand" className="btn-primary">
-          Get my report &mdash; $29.99
+          Start tracking &mdash; $49/month
         </Link>
       </div>
 
@@ -287,11 +287,11 @@ export default function HowToGetMentionedInChatgptPost() {
           <h3>Find out what ChatGPT says about your brand</h3>
           <p>
             One emailed report, five grounded providers, your citation rate
-            versus competitors, and what to do about it. $29.99, delivered in
-            about fifteen minutes.
+            versus competitors, and what to do about it. $49 a month, first
+            report in about fifteen minutes.
           </p>
           <Link href="/wizard/brand" className="btn-primary">
-            Get my report &mdash; $29.99
+            Start tracking &mdash; $49/month
           </Link>
         </div>
 

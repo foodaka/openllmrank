@@ -90,7 +90,7 @@ export default async function OGImage() {
             }}
           >
             Privacy-friendly, open-source analytics for AI search visibility.
-            One emailed report, $29.99.
+            Weekly tracking across five AI engines, $49 a month.
           </div>
         </div>
 

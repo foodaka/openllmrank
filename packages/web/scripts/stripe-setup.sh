@@ -5,8 +5,8 @@
 #   STRIPE_API_KEY=sk_live_... SITE=https://openllmrank.io packages/web/scripts/stripe-setup.sh
 #
 # What it does on the account behind STRIPE_API_KEY:
-#   1. Products + default Prices (USD): "openllmrank tracking" $29/mo,
-#      "openllmrank AI-search visibility report" $49 one-time.
+#   1. Products + default Prices (USD): "openllmrank tracking" $49/mo,
+#      "openllmrank AI-search visibility report" $79 one-time.
 #   2. Webhook endpoint at $SITE/api/webhook/stripe subscribed to every event
 #      the handler acts on (created if missing, events updated if present).
 #      A NEW endpoint prints its signing secret once: put it in
@@ -58,8 +58,8 @@ ensure_product() { # name unit_amount interval-or-empty -> price id
   echo "$price"
 }
 
-SUBSCRIPTION_PRICE_ID=$(ensure_product "openllmrank tracking" 2900 month)
-REPORT_PRICE_ID=$(ensure_product "openllmrank AI-search visibility report" 4900 "")
+SUBSCRIPTION_PRICE_ID=$(ensure_product "openllmrank tracking" 4900 month)
+REPORT_PRICE_ID=$(ensure_product "openllmrank AI-search visibility report" 7900 "")
 
 # --- webhook -----------------------------------------------------------------
 URL="$SITE/api/webhook/stripe"

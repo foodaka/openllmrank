@@ -183,7 +183,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How much did this study cost to run?",
-    a: "About six dollars in API calls. The entire benchmark — 150 grounded queries across five providers — was produced with the open-source openllmrank CLI for $6.01. That's the same workflow the hosted $29.99 report runs for a single brand and its competitors.",
+    a: "About six dollars in API calls. The entire benchmark — 150 grounded queries across five providers — was produced with the open-source openllmrank CLI for $6.01. That's the same workflow the hosted tracker runs every week for a single brand and its competitors.",
   },
 ];
 
@@ -379,7 +379,7 @@ export default function StateOfAiSearchPost() {
           the evidence and a plan to close the gaps.
         </p>
         <Link href="/wizard/brand" className="btn-primary">
-          Get my report &mdash; $29.99
+          Start tracking &mdash; $49/month
         </Link>
       </div>
 
@@ -491,11 +491,11 @@ export default function StateOfAiSearchPost() {
           <h3>Find out what AI says about your brand</h3>
           <p>
             One emailed report, five grounded providers, your citation rate
-            versus competitors, and what to do about it. $29.99, delivered in
-            about fifteen minutes.
+            versus competitors, and what to do about it. $49 a month, first
+            report in about fifteen minutes.
           </p>
           <Link href="/wizard/brand" className="btn-primary">
-            Get my report &mdash; $29.99
+            Start tracking &mdash; $49/month
           </Link>
         </div>
 

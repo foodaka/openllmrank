@@ -45,10 +45,10 @@ export default function TermsPage() {
 
           <h2>2. Price and payment</h2>
           <p>
-            The tracking subscription costs <strong>USD 29 per
+            The tracking subscription costs <strong>USD 49 per
             month</strong> and includes your first report, unlimited brands,
-            weekly tracking on up to two, monthly beyond that. One-time
-            reports cost <strong>USD 49</strong> per report. Subscription
+            weekly tracking on up to three, monthly beyond that. One-time
+            reports cost <strong>USD 79</strong> per report. Subscription
             payments renew monthly until canceled through the Stripe Billing
             Portal. Prices are exclusive of any applicable taxes, which we
             will add at checkout where required.
@@ -174,7 +174,7 @@ export default function TermsPage() {
             TOTAL LIABILITY ARISING OUT OF OR RELATING TO THE SERVICE
             IS LIMITED TO THE AMOUNT YOU PAID US IN THE TWELVE MONTHS
             PRECEDING THE EVENT GIVING RISE TO THE LIABILITY, OR USD
-            49, WHICHEVER IS GREATER. WE ARE NOT LIABLE FOR
+            79, WHICHEVER IS GREATER. WE ARE NOT LIABLE FOR
             INDIRECT, INCIDENTAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES.
           </p>
 

@@ -18,19 +18,20 @@ import { HostedConfigSchema } from "@openllmrank/shared/config";
 type Plan = "tracking" | "report";
 const PLAN_COPY: Record<Plan, { price: string; label: string; button: string; points: string[] }> = {
   tracking: {
-    price: "$29 / month",
+    price: "$49 / month",
     label: "Track it",
-    button: "Start tracking \u2014 $29/month",
+    button: "Start tracking \u2014 $49/month",
     points: [
       "Your first report today, then a fresh run every week",
-      "A dashboard that shows whether your visibility is moving",
-      "Add more brands any time; cancel any time",
+      "Five engines at no extra cost: OpenAI, Anthropic Claude, Google Gemini, Perplexity, xAI Grok",
+      "Three samples per question, so you see the trend rather than the noise",
+      "A dashboard that shows whether your visibility is moving; cancel any time",
     ],
   },
   report: {
-    price: "$49 once",
+    price: "$79 once",
     label: "One report",
-    button: "Pay & generate report \u2014 $49",
+    button: "Pay & generate report \u2014 $79",
     points: ["One snapshot, delivered by email in about fifteen minutes"],
   },
 };
@@ -243,7 +244,7 @@ export default function WizardReviewPage() {
           );
         })}
         <p className="plan-note">
-          Weekly runs cover up to two brands; past that the schedule is monthly.
+          Weekly runs cover up to three brands; past that the schedule is monthly.
           Both plans query the same five providers with the same questions.
         </p>
       </fieldset>

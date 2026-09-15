@@ -234,7 +234,7 @@ export default function WhichSourcesPost() {
           which pages are putting your competitors on the shortlist.
         </p>
         <Link href="/wizard/brand" className="btn-primary">
-          Get my report &mdash; $29.99
+          Start tracking &mdash; $49/month
         </Link>
       </div>
 
@@ -285,11 +285,11 @@ export default function WhichSourcesPost() {
           <h3>Find out what AI says about your brand</h3>
           <p>
             One emailed report, five grounded providers, your citation rate
-            versus competitors, and the sources behind every answer. $29.99,
-            delivered in about fifteen minutes.
+            versus competitors, and the sources behind every answer. $49 a
+            month, first report in about fifteen minutes.
           </p>
           <Link href="/wizard/brand" className="btn-primary">
-            Get my report &mdash; $29.99
+            Start tracking &mdash; $49/month
           </Link>
         </div>
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getBrands, getSubscription, longDate } from "@/lib/dashboard-data";
+import { weeklyMaxBrands } from "@/lib/brand-writes";
 
 // Billing (E6). Read-only by design: Stripe is the source of truth and the
 // Billing Portal owns cancel / update-card / invoice history. Rebuilding
@@ -29,19 +30,20 @@ export default async function BillingPage() {
             : "You bought a one-time report. A subscription re-runs it on a schedule so you can see whether your changes moved anything."}
         </p>
         <p className="sub">
-          <strong>$29 a month.</strong> Unlimited brands, weekly tracking on up
-          to two, monthly beyond that, plus two manual re-runs a month.
+          <strong>$49 a month.</strong> Unlimited brands, weekly tracking on up
+          to three, monthly beyond that, plus two manual re-runs a month.
         </p>
         <form action="/api/billing/checkout" method="post">
           <button className="btn-primary" type="submit">
-            {canceled ? "Restart tracking — $29/month" : "Subscribe — $29/month"}
+            {canceled ? "Restart tracking — $49/month" : "Subscribe — $49/month"}
           </button>
         </form>
       </>
     );
   }
 
-  const throttled = brands.length > 2;
+  const maxWeekly = weeklyMaxBrands();
+  const throttled = brands.length > maxWeekly;
 
   return (
     <>
@@ -51,8 +53,8 @@ export default async function BillingPage() {
       </h1>
 
       <p className="sub">
-        <strong>$29 per month.</strong> Unlimited brands, weekly tracking on up
-        to two, monthly beyond that. {brands.length} brand
+        <strong>$49 per month.</strong> Unlimited brands, weekly tracking on up
+        to three, monthly beyond that. {brands.length} brand
         {brands.length === 1 ? "" : "s"} tracked.
         {subscription.current_period_end
           ? subscription.cancel_at_period_end
@@ -63,8 +65,8 @@ export default async function BillingPage() {
 
       <p className="note">
         {throttled
-          ? `Weekly runs cover up to two brands. You track ${brands.length}, so runs are scheduled monthly. Drop to two brands or fewer and weekly resumes automatically.`
-          : "Your brands run weekly. Add a third brand and runs move to monthly."}
+          ? `Weekly runs cover up to ${maxWeekly} brands. You track ${brands.length}, so runs are scheduled monthly. Drop to ${maxWeekly} brands or fewer and weekly resumes automatically.`
+          : `Your brands run weekly. Past ${maxWeekly} brands, runs move to monthly.`}
       </p>
 
       {subscription.status === "past_due" && (

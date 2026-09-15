@@ -20,8 +20,8 @@ export default async function NewBrandPage() {
           {first ? "Tracking a brand needs a subscription." : "Tracking more brands needs a subscription."}
         </h1>
         <p className="sub">
-          $29 a month covers as many brands as you want to track, with weekly
-          runs on up to two and monthly beyond that.
+          $49 a month covers as many brands as you want to track, with weekly
+          runs on up to three and monthly beyond that.
         </p>
         <Link href="/dashboard/billing" className="btn-primary">
           See the plan

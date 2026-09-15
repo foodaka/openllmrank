@@ -34,7 +34,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How much do AI visibility tools cost?",
-    a: "It ranges widely. Enterprise platforms like Profound, Athena HQ, and Brand Radar are subscription products generally aimed at larger teams, typically priced in the hundreds to thousands of dollars per month. openllmrank takes a different model: a one-time $29.99 report, plus a free open-source CLI you can self-host for the cost of your own API calls. Pricing on all platforms changes, so confirm current numbers with each vendor.",
+    a: "It ranges widely. Enterprise platforms like Profound, Athena HQ, and Brand Radar are subscription products generally aimed at larger teams, typically priced in the hundreds to thousands of dollars per month. openllmrank takes a different model: $49 a month for weekly tracking across all five engines (or a one-time $79 report), plus a free open-source CLI you can self-host for the cost of your own API calls. Pricing on all platforms changes, so confirm current numbers with each vendor.",
   },
   {
     q: "What should I look for in an AI visibility tool?",
@@ -42,11 +42,11 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Do I need a paid tool, or can I check ChatGPT myself?",
-    a: "You can check manually, but a single query is a sample size of one — AI answers vary run to run, so one check is misleading. To see a real trend you need to run each prompt repeatedly across multiple models and parse every answer, which is tedious by hand. A tool automates that. openllmrank's open-source CLI lets you do it yourself for free; the hosted report does it for you for $29.99.",
+    a: "You can check manually, but a single query is a sample size of one — AI answers vary run to run, so one check is misleading. To see a real trend you need to run each prompt repeatedly across multiple models and parse every answer, which is tedious by hand. A tool automates that. openllmrank's open-source CLI lets you do it yourself for free; the hosted service does it for you from $49 a month.",
   },
   {
     q: "Is openllmrank really open source?",
-    a: "Yes. The full openllmrank CLI is MIT-licensed on npm. Bring your own OpenAI, Anthropic, Gemini, Perplexity, or xAI key and you can self-host the entire workflow for the cost of a few API calls. The hosted $29.99 report exists for marketing and growth leads who don't want to run a CLI.",
+    a: "Yes. The full openllmrank CLI is MIT-licensed on npm. Bring your own OpenAI, Anthropic, Gemini, Perplexity, or xAI key and you can self-host the entire workflow for the cost of a few API calls. The hosted tracker exists for marketing and growth leads who don't want to run a CLI.",
   },
 ];
 
@@ -198,8 +198,8 @@ export default function BestAiVisibilityToolsPost() {
         Our tool, so treat this as informed rather than neutral. openllmrank is
         built for a different buyer than the enterprise platforms: the marketing
         or growth lead who wants a clear, honest answer to &ldquo;does AI
-        recommend us?&rdquo; without a subscription or a sales call. You get a
-        one-time <strong>$29.99</strong> report that runs your prompts multiple
+        recommend us?&rdquo; without a sales call or an enterprise contract. You get a
+        <strong>$49 a month</strong> tracker (or a one-time $79 report) that runs your prompts multiple
         times across five grounded providers &mdash; OpenAI, Anthropic, Google
         Gemini, Perplexity, and xAI &mdash; extracts every brand citation, and
         ships an editorial report with competitor benchmarking, the underlying
@@ -248,7 +248,7 @@ export default function BestAiVisibilityToolsPost() {
               <td>
                 <strong>openllmrank</strong>
               </td>
-              <td>One-time $29.99 report + open-source CLI</td>
+              <td>$49/mo tracking or one-time $79 report + open-source CLI</td>
               <td>Growth/marketing leads wanting a fast, evidence-backed read</td>
               <td>Periodic snapshot, not continuous monitoring</td>
             </tr>
@@ -271,14 +271,14 @@ export default function BestAiVisibilityToolsPost() {
 
       <div className="post-cta">
         <span className="kicker">Try the fast path</span>
-        <h3>See your AI visibility for $29.99</h3>
+        <h3>See your AI visibility for $49 a month</h3>
         <p>
           Five grounded providers, your prompts run multiple times, citation rate
           versus competitors, and a prioritized action plan &mdash; delivered by
           email in about fifteen minutes. No subscription, no sales call.
         </p>
         <Link href="/wizard/brand" className="btn-primary">
-          Get my report &mdash; $29.99
+          Start tracking &mdash; $49/month
         </Link>
       </div>
 
@@ -328,11 +328,11 @@ export default function BestAiVisibilityToolsPost() {
           <h3>Find out what AI says about your brand</h3>
           <p>
             One emailed report, five grounded providers, your citation rate
-            versus competitors, and what to do about it. $29.99, delivered in
-            about fifteen minutes.
+            versus competitors, and what to do about it. $49 a month, first
+            report in about fifteen minutes.
           </p>
           <Link href="/wizard/brand" className="btn-primary">
-            Get my report &mdash; $29.99
+            Start tracking &mdash; $49/month
           </Link>
         </div>
 

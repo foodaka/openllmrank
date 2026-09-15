@@ -10,9 +10,8 @@
  *   Cal.com   8 weekly runs, flat with a dip     -> a "down" standfirst
  *   Resend    1 run only                         -> the single-run state
  *
- * Three brands also puts the account OVER SCHEDULER_WEEKLY_MAX_BRANDS (2),
- * so the D12 cadence throttle is visible in the UI: all brands sit at
- * 'monthly', not 'weekly'.
+ * Three brands sits at SCHEDULER_WEEKLY_MAX_BRANDS (3), so every brand runs
+ * weekly; add a fourth to see the D12 monthly throttle in the UI.
  *
  * Refuses to run against anything but 127.0.0.1 / localhost.
  *
@@ -139,7 +138,7 @@ async function main() {
   await db.from("brands").delete().eq("user_id", userId);
   await db.from("subscriptions").delete().eq("user_id", userId);
 
-  // Active $29/mo subscription (D8).
+  // Active $49/mo subscription (D8).
   const periodEnd = new Date(Date.now() + 18 * 24 * 60 * 60 * 1000);
   const { error: subErr } = await db.from("subscriptions").insert({
     user_id: userId,
@@ -152,9 +151,9 @@ async function main() {
   if (subErr) throw new Error(`subscription: ${subErr.message}`);
   console.log(`  sub    active, renews ${periodEnd.toISOString().slice(0, 10)}`);
 
-  // 3 brands > SCHEDULER_WEEKLY_MAX_BRANDS (2), so D12 throttles everyone
-  // to monthly. The dashboard says so out loud rather than hiding it.
-  const cadence = BRANDS.length > 2 ? "monthly" : "weekly";
+  // D12: past SCHEDULER_WEEKLY_MAX_BRANDS (3) everyone drops to monthly.
+  // The dashboard says so out loud rather than hiding it.
+  const cadence = BRANDS.length > 3 ? "monthly" : "weekly";
 
   for (const [bIdx, spec] of BRANDS.entries()) {
     const runCount = spec.curve.length;
@@ -203,7 +202,7 @@ async function main() {
       const ranAt = new Date(lastRunAt.getTime() - weeksAgo * WEEK_MS);
       const finishedAt = new Date(ranAt.getTime() + 12 * 60 * 1000);
 
-      // Run 0 is the original $29.99 purchase; the rest are subscription runs.
+      // Run 0 is the original one-off purchase; the rest are subscription runs.
       // One manual re-run mid-history so the origin badge has something to show.
       const origin =
         rIdx === 0 ? "one_shot" : rIdx === Math.floor(runCount / 2) ? "manual" : "scheduled";
@@ -315,7 +314,7 @@ async function main() {
   console.log(`  password  ${DEMO_PASSWORD}`);
   if (cadence === "monthly") {
     console.log(
-      `\nNote: ${BRANDS.length} brands exceeds SCHEDULER_WEEKLY_MAX_BRANDS=2,`,
+      `\nNote: ${BRANDS.length} brands exceeds SCHEDULER_WEEKLY_MAX_BRANDS=3,`,
     );
     console.log(`so the D12 throttle put every brand on monthly. The UI says so.`);
   }

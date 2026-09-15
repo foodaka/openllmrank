@@ -72,12 +72,12 @@ STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_test_...   # set after step 1.4 below
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 
-PRICE_CENTS=4900
+PRICE_CENTS=7900
 PRODUCT_NAME=openllmrank AI-search visibility report
 NEXT_PUBLIC_SITE_ORIGIN=https://openllmrank.io        # REQUIRED: magic-link, invite, and Stripe return URLs
 
 # Dashboard + subscriptions (login-dashboard epic)
-SUBSCRIPTION_PRICE_CENTS=2900
+SUBSCRIPTION_PRICE_CENTS=4900
 SUBSCRIPTION_PRODUCT_NAME=openllmrank tracking
 MANUAL_RERUNS_PER_MONTH=2
 REPORT_LINK_SECRET=<openssl rand -hex 32>             # REQUIRED; identical on Railway
@@ -132,7 +132,7 @@ In https://dashboard.stripe.com/test/webhooks (must be TEST mode toggle on, top-
 
 `packages/web/scripts/stripe-setup.sh` does 1.5 and 1.6 idempotently for the
 account behind `STRIPE_API_KEY`: creates the two openllmrank Products with
-their default Prices ($29/mo tracking, $29.99 report), subscribes the
+their default Prices ($49/mo tracking, $79 report), subscribes the
 `/api/webhook/stripe` endpoint to every event the handler acts on (creating
 it if missing), and configures the Customer Portal. It prints the
 `SUBSCRIPTION_PRICE_ID` / `REPORT_PRICE_ID` values to set on Vercel.
@@ -201,7 +201,7 @@ REPORT_LINK_SECRET=<same value as Vercel>  # signs /reports/<id>?t= links in ema
 
 # Scheduler (subscription runs)
 SCHEDULER_POLL_MS=60000
-SCHEDULER_WEEKLY_MAX_BRANDS=2           # D12 margin guard; accounts above this run monthly
+SCHEDULER_WEEKLY_MAX_BRANDS=3           # D12 margin guard; accounts above this run monthly
 
 WORKER_ID=railway-prod-1
 WORKER_POLL_INTERVAL_MS=5000
@@ -273,7 +273,7 @@ Redeploy from Vercel after env change.
 ## Step 4 — Smoke test the live URL
 
 1. Visit `https://app.openllmrank.com`
-2. Click **Get my report — $29.99**
+2. Click **Start tracking — $49/month** (or pick One report, $79, on the review step)
 3. Fill the wizard: real brand name, 1-2 competitors, 1-3 prompts, your real email
 4. Click **Pay & generate report** — redirected to `checkout.stripe.com` (test mode)
 5. Pay with test card `4242 4242 4242 4242`, any future expiry, any CVC
