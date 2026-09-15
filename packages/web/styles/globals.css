@@ -99,8 +99,9 @@ a:hover { border-bottom-color: var(--accent); }
 }
 .field label {
   display: block;
-  font-size: 14px;
-  color: var(--muted);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
   margin-bottom: var(--space-sm);
 }
 .field input[type="text"],

@@ -22,10 +22,10 @@ const PLAN_COPY: Record<Plan, { price: string; label: string; button: string; po
     label: "Track it",
     button: "Start tracking \u2014 $49/month",
     points: [
-      "Your first report today, then a fresh run every week",
-      "Five engines at no extra cost: OpenAI, Anthropic Claude, Google Gemini, Perplexity, xAI Grok",
-      "Three samples per question, so you see the trend rather than the noise",
-      "A dashboard that shows whether your visibility is moving; cancel any time",
+      "First report today, then weekly runs",
+      "All five engines included at no extra cost",
+      "Three samples per question for more reliable trends",
+      "Visibility dashboard; cancel any time",
     ],
   },
   report: {
@@ -38,7 +38,7 @@ const PLAN_COPY: Record<Plan, { price: string; label: string; button: string; po
 
 const PROVIDER_NAMES: Record<string, string> = {
   openai: "OpenAI",
-  anthropic: "Anthropic",
+  anthropic: "Anthropic Claude",
   google: "Google Gemini",
   perplexity: "Perplexity",
   xai: "xAI Grok",
@@ -172,9 +172,12 @@ export default function WizardReviewPage() {
       <dl className="review-summary">
         <div>
           <dt>Brand</dt>
-          <dd>
-            {state.brand.name}
-            {state.brand.category && <span className="muted"> · {state.brand.category}</span>}
+          <dd className="review-editable">
+            <span>
+              {state.brand.name}
+              {state.brand.category && <span className="muted"> · {state.brand.category}</span>}
+            </span>
+            <Link href="/wizard/brand" className="review-edit" aria-label="Edit brand">Edit</Link>
           </dd>
         </div>
         {state.brand.website && (
@@ -185,15 +188,19 @@ export default function WizardReviewPage() {
         )}
         <div>
           <dt>Competitors</dt>
-          <dd>
-            {state.competitors.map((c) => c.name).join(", ")}{" "}
-            <span className="muted">({state.competitors.length})</span>
+          <dd className="review-editable">
+            <span>
+              {state.competitors.map((c) => c.name).join(", ")}{" "}
+              <span className="muted">({state.competitors.length})</span>
+            </span>
+            <Link href="/wizard/competitors" className="review-edit" aria-label="Edit competitors">Edit</Link>
           </dd>
         </div>
         <div>
           <dt>Prompts</dt>
-          <dd>
-            {promptCount} {promptCount === 1 ? "prompt" : "prompts"}
+          <dd className="review-editable">
+            <span>{promptCount} {promptCount === 1 ? "prompt" : "prompts"}</span>
+            <Link href="/wizard/prompts" className="review-edit" aria-label="Edit prompts">Edit</Link>
           </dd>
         </div>
         <div>
@@ -201,7 +208,7 @@ export default function WizardReviewPage() {
           <dd>
             {state.providers
               .map((provider) => PROVIDER_NAMES[provider.id] ?? provider.id)
-              .join(" and ")}
+              .join(", ")}
           </dd>
         </div>
         <div>
@@ -213,7 +220,7 @@ export default function WizardReviewPage() {
         </div>
       </dl>
 
-      <hr className="rule" />
+      <hr className="rule review-rule" />
 
       <fieldset className="plans">
         <legend className="plans-legend">How do you want to watch this?</legend>
@@ -323,9 +330,9 @@ export default function WizardReviewPage() {
         }
         .review-summary > div {
           display: grid;
-          grid-template-columns: 160px 1fr;
-          gap: 24px;
-          padding: 16px 0;
+          grid-template-columns: 136px minmax(0, 1fr);
+          gap: 16px;
+          padding: 12px 0;
           border-bottom: 1px solid var(--line);
         }
         .review-summary dt {
@@ -339,7 +346,22 @@ export default function WizardReviewPage() {
           margin: 0;
           font-size: 17px;
           color: var(--ink);
+          overflow-wrap: anywhere;
         }
+        .review-editable { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-md); }
+        .review-edit {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 44px;
+          min-height: 44px;
+          flex-shrink: 0;
+          margin: -8px 0;
+          font-size: 14px;
+          text-decoration: underline;
+          text-underline-offset: 3px;
+        }
+        .review-rule { margin: var(--space-lg) 0; }
         .muted { color: var(--muted); }
         .plans {
           border: 0;
@@ -368,8 +390,8 @@ export default function WizardReviewPage() {
         }
         .plan-selected { border-color: var(--accent); background: var(--soft); }
         .plan input[type="radio"] { margin-top: 4px; accent-color: var(--accent); flex-shrink: 0; width: 18px; height: 18px; }
-        .plan-body { display: flex; flex-direction: column; gap: 6px; flex: 1; }
-        .plan-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-md); }
+        .plan-body { display: flex; flex-direction: column; gap: var(--space-sm); flex: 1; min-width: 0; }
+        .plan-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--space-xs) var(--space-md); }
         .plan-label { font-family: var(--font-display); font-size: 22px; font-weight: 500; }
         .plan-price { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); }
         .plan-points { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; line-height: 1.5; }
@@ -398,12 +420,9 @@ export default function WizardReviewPage() {
           color: var(--accent);
         }
         .trust-note {
-          background: var(--soft);
-          border: 1px solid var(--line);
-          border-left: 3px solid var(--accent);
-          padding: 16px 20px;
+          border-top: 1px solid var(--line);
+          padding: var(--space-md) 0 0;
           margin: 24px 0 0;
-          border-radius: var(--radius-md);
         }
         .trust-note p { margin: 0; color: var(--muted); font-size: 15px; }
         .trust-note strong { color: var(--ink); }

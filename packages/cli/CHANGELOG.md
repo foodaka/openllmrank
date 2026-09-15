@@ -8,6 +8,11 @@ All notable changes to openllmrank are documented here. The format is based on [
 
 - `openllmrank run --skip-failed-providers`. When a provider rejects its API key mid-run (bad key, exhausted quota), drop that provider for the rest of the run and finish with the others instead of aborting. Its remaining calls are recorded with `error_code: "auth"` and the report's coverage disclosure reflects the gap. Off by default; the hosted worker sets it so one vendor's outage cannot void a customer's run.
 
+### Changed
+
+- Read full AI responses beneath each report question without cramped table cells or nested scrolling. Filter questions by provider or search text, and follow safely rendered source links.
+- Reports show clearer provider names, percentage-point gaps, and responsive evidence layouts.
+
 ## [0.3.0] - 2026-07-13
 
 ### Added
