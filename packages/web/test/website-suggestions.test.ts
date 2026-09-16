@@ -3,7 +3,7 @@ import { guardedFetch, GuardedFetchError } from "@openllmrank/crawl";
 import { normalizeWebsite, suggestFromWebsite, SuggestionError, WebsiteSuggestionsSchema } from "../lib/website-suggestions";
 import { handleWizardSuggest } from "../lib/wizard-suggest-handler";
 
-const draft = { name: "Acme", category: "privacy-first analytics", prompts: ["What analytics tools work without cookies?", "Which analytics tools are best for small teams?", "How can I measure conversions without collecting personal data?"] };
+const draft = { name: "Acme", category: "privacy-first analytics", prompts: ["What analytics tools work without cookies?", "Which analytics tools are best for small teams?", "How can I measure conversions without collecting personal data?"], competitors: ["Plausible", "Fathom"] };
 const page = { status: 200, finalUrl: "https://acme.com/", body: "<html><title>Acme</title><main>" + "Privacy-first analytics for growing businesses. Track conversions without cookies. ".repeat(10) + "</main></html>", headers: { "content-type": "text/html" }, truncated: false };
 const request = (body: unknown = { website: "acme.com" }, headers = {}) => new Request("https://openllmrank.io/api/wizard/suggest", { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
 const deps = () => ({ userId: async () => crypto.randomUUID(), configured: () => true, suggest: async () => draft });
@@ -45,6 +45,13 @@ describe("website suggestions", () => {
     let content = '';
     expect(await suggestFromWebsite('https://acme.com/', { fetchPage, complete: async text => { content = text; return draft; } })).toEqual(draft);
     expect(JSON.parse(content).title).toBe('Acme'); expect(content.length).toBeLessThan(9000);
+  });
+  test("competitor suggestions are cleaned without failing the draft", async () => {
+    const competitors = [" Plausible ", "plausible", "", "Acme", "x".repeat(121), "Fathom", "Matomo", "Simple Analytics", "Umami", "Pirsch"];
+    const result = await suggestFromWebsite('https://acme.com/', { fetchPage, complete: async () => ({ ...draft, competitors }) });
+    expect(result.competitors).toEqual(["Plausible", "Fathom", "Matomo", "Simple Analytics", "Umami"]);
+    const { competitors: _omit, ...withoutCompetitors } = draft;
+    expect((await suggestFromWebsite('https://acme.com/', { fetchPage, complete: async () => withoutCompetitors })).competitors).toEqual([]);
   });
   test("robots refusal prevents page fetch and model call", async () => {
     let calls = 0;

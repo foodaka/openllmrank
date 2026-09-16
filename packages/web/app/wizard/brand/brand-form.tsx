@@ -104,7 +104,10 @@ export default function WizardBrandForm({ authenticated }: { authenticated: bool
       {authenticated && <WebsiteAssist website={website} hasQuestions={hasQuestions} onApply={(draft) => {
         const nextName = name.trim() || draft.name;
         const nextCategory = category.trim() || draft.category;
+        // Competitors already picked in step 2 win over the draft.
+        const saved = readWizardState().competitors;
         writeWizardState({
+          competitors: saved.length > 0 ? saved : draft.competitors.map((c) => ({ name: c, aliases: [] })),
           brand: {
             name: nextName,
             category: nextCategory,

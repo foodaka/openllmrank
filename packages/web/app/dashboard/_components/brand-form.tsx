@@ -9,8 +9,9 @@ import { WebsiteAssist } from "../../_components/website-assist";
 // One form for add and edit. Plain text fields, one competitor or question
 // per line: no chips, no drag handles. A customer pastes a list and moves on.
 //
-// The fields a website draft can fill (website, name, category, questions)
-// are controlled so the draft can write into them; the rest stay uncontrolled.
+// The fields a website draft can fill (website, name, category, competitors,
+// questions) are controlled so the draft can write into them; aliases stays
+// uncontrolled.
 
 export function BrandForm({
   action,
@@ -30,12 +31,14 @@ export function BrandForm({
   const [website, setWebsite] = useState(initial.website);
   const [name, setName] = useState(initial.name);
   const [category, setCategory] = useState(initial.category);
+  const [competitors, setCompetitors] = useState(initial.competitors);
   const [prompts, setPrompts] = useState(initial.prompts);
 
   function applyDraft(draft: WebsiteSuggestions) {
     // Keep anything the customer already typed; questions are replaced.
     if (!name.trim()) setName(draft.name);
     if (!category.trim()) setCategory(draft.category);
+    if (!competitors.trim()) setCompetitors(draft.competitors.join("\n"));
     setPrompts(draft.prompts.join("\n"));
   }
 
@@ -67,7 +70,7 @@ export function BrandForm({
           website={website}
           hasQuestions={prompts.trim().length > 0}
           onApply={applyDraft}
-          appliedNote="Draft applied. Check your brand and questions below, then add your competitors."
+          appliedNote="Draft applied. Check your brand, competitors, and questions below before you save."
           editNote="You can edit every question below before you save."
           replaceNote="Using this draft will replace the questions you've entered."
         />
@@ -129,7 +132,8 @@ export function BrandForm({
           id="brand-competitors"
           name="competitors"
           rows={5}
-          defaultValue={initial.competitors}
+          value={competitors}
+          onChange={(e) => setCompetitors(e.target.value)}
           placeholder={"Jira\nAsana | Asana.com\nMonday.com"}
           required
           aria-invalid={errors.competitors ? true : undefined}

@@ -10,7 +10,7 @@ export function WebsiteAssist({
   website,
   onApply,
   hasQuestions,
-  appliedNote = "Draft saved in this browser. Review your brand below and your questions in step 3.",
+  appliedNote = "Draft saved in this browser. Review your brand below, competitors in step 2, and questions in step 3.",
   editNote = "You can edit every question in step 3.",
   replaceNote = "Using this draft will replace your saved questions.",
 }: {
@@ -80,7 +80,11 @@ export function WebsiteAssist({
       <dl><div><dt>Brand</dt><dd>{draft.name}</dd></div><div><dt>Category</dt><dd>{draft.category}</dd></div></dl>
       <h3>Questions buyers might ask</h3>
       <ol>{draft.prompts.map((prompt, i) => <li key={i}>{prompt}</li>)}</ol>
-      <p className="assist-note">AI suggestions, based on your page—not measured search activity. Your existing brand details will be kept. {hasQuestions ? replaceNote : editNote}</p>
+      <h3>Likely competitors</h3>
+      {draft.competitors.length > 0
+        ? <ul>{draft.competitors.map((c, i) => <li key={i}>{c}</li>)}</ul>
+        : <p className="assist-note">We couldn’t name competitors with confidence. Add the ones you know.</p>}
+      <p className="assist-note">AI suggestions, based on your page—not measured search activity. Competitors come from the model’s general knowledge, so check they’re current. Your existing brand details will be kept. {hasQuestions ? replaceNote : editNote}</p>
       <div className="assist-actions">
         <button type="button" className="btn-primary" onClick={() => { onApply(draft); setDraft(null); setApplied(true); }}>Use this draft</button>
         <button type="button" className="btn-text" onClick={() => setDraft(null)}>Dismiss</button>
@@ -102,7 +106,7 @@ export function WebsiteAssist({
       .assist-draft dt { color: var(--muted); font-size: 14px; }
       .assist-draft dd { margin: 2px 0 0; font-weight: 500; }
       .assist-draft h3 { font-size: 16px; margin: 0 0 8px; }
-      .assist-draft ol { padding-left: 24px; margin: 0 0 20px; }
+      .assist-draft ol, .assist-draft ul { padding-left: 24px; margin: 0 0 20px; }
       .assist-draft li { padding: 8px 0 8px 4px; line-height: 1.5; }
       .assist-actions { display: flex; align-items: center; gap: 24px; margin-top: 20px; }
       .assist-actions button { min-height: 44px; }
