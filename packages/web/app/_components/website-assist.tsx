@@ -3,10 +3,23 @@
 import { useEffect, useRef, useState } from "react";
 import type { WebsiteSuggestions } from "@/lib/website-suggestions";
 
-export function WebsiteAssist({ website, onApply, hasQuestions }: {
+// Shared by the signup wizard and the dashboard add-brand form. The copy
+// defaults describe the wizard, where the draft lives in localStorage and the
+// questions are edited in step 3; the dashboard passes its own.
+export function WebsiteAssist({
+  website,
+  onApply,
+  hasQuestions,
+  appliedNote = "Draft saved in this browser. Review your brand below and your questions in step 3.",
+  editNote = "You can edit every question in step 3.",
+  replaceNote = "Using this draft will replace your saved questions.",
+}: {
   website: string;
   onApply: (draft: WebsiteSuggestions) => void;
   hasQuestions: boolean;
+  appliedNote?: string;
+  editNote?: string;
+  replaceNote?: string;
 }) {
   const [draft, setDraft] = useState<WebsiteSuggestions | null>(null);
   const [pending, setPending] = useState(false);
@@ -59,7 +72,7 @@ export function WebsiteAssist({ website, onApply, hasQuestions }: {
     <p className="assist-note">We’ll read your public page and suggest your category and questions buyers might ask. You decide what to use.</p>
     <div role="status" aria-live="polite">
       {pending && <p className="assist-status">Reading your website and drafting buyer questions. This may take a moment.</p>}
-      {applied && <p className="assist-status">Draft saved in this browser. Review your brand below and your questions in step 3.</p>}
+      {applied && <p className="assist-status">{appliedNote}</p>}
     </div>
     {error && <p className="field-error" role="alert">{error}</p>}
     {draft && <div className="assist-draft">
@@ -67,7 +80,7 @@ export function WebsiteAssist({ website, onApply, hasQuestions }: {
       <dl><div><dt>Brand</dt><dd>{draft.name}</dd></div><div><dt>Category</dt><dd>{draft.category}</dd></div></dl>
       <h3>Questions buyers might ask</h3>
       <ol>{draft.prompts.map((prompt, i) => <li key={i}>{prompt}</li>)}</ol>
-      <p className="assist-note">AI suggestions, based on your page—not measured search activity. Your existing brand details will be kept.{hasQuestions ? " Using this draft will replace your saved questions." : " You can edit every question in step 3."}</p>
+      <p className="assist-note">AI suggestions, based on your page—not measured search activity. Your existing brand details will be kept. {hasQuestions ? replaceNote : editNote}</p>
       <div className="assist-actions">
         <button type="button" className="btn-primary" onClick={() => { onApply(draft); setDraft(null); setApplied(true); }}>Use this draft</button>
         <button type="button" className="btn-text" onClick={() => setDraft(null)}>Dismiss</button>

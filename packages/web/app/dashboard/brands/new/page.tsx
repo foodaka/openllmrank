@@ -42,6 +42,7 @@ export default async function NewBrandPage() {
         action={createBrandAction}
         initial={{ name: "", website: "", category: "", aliases: "", competitors: "", prompts: "" }}
         submitLabel="Start tracking"
+        websiteAssist
       />
       <p className="brand-tools">
         <Link href="/dashboard">Back to dashboard</Link>
