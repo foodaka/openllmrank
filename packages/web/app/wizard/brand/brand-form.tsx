@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { WebsiteAssist } from "./website-assist";
+import { WebsiteAssist } from "../../_components/website-assist";
 import { WizardShell } from "../wizard-shell";
 import { readWizardState, writeWizardState } from "@/lib/wizard-state";
 
