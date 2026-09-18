@@ -78,7 +78,8 @@ export function renderHtmlReport(args: HtmlReportArgs): string {
   const history = computeHistory(args);
   const trend = computeVisibilityTrend(args);
   const losing = args.gaps.filter((g) => g.gap_score > 0);
-  const winning = args.gaps.filter((g) => g.gap_score <= 0);
+  const winning = args.gaps.filter((g) => g.gap_score <= 0 && g.brand_rate > 0);
+  const unseen = args.gaps.filter((g) => g.brand_rate === 0 && g.gap_score <= 0);
   const topCompetitors = topCompetitorNames(args.rates, args.competitor_names);
   const successfulSamples = args.calls.filter((call) => call.error_code === null).length;
   const failedSamples = args.failed_calls ?? args.calls.filter((call) => call.error_code !== null).length;
@@ -164,14 +165,15 @@ ${renderPriorityActions(losing, args)}
 </section>
 <section class="section">
 <h2 id="gaps">Gap analysis</h2>
-<p class="section-intro">Where competitors are cited more often. Open a question to read the evidence. Gaps are shown in percentage points (pp).</p>
+<p class="section-intro">Where competitors appear more often. A 33-point gap means, for example, a competitor appears in 100% of responses and your brand in 67%. Open a question to read the evidence.</p>
 ${renderGapTable(losing, args, "No losing rows in this window.")}
 </section>
 <section class="section">
-<h2 id="wins">Where you're winning</h2>
-<p class="section-intro">Questions where your brand is tied or ahead.</p>
-${renderGapTable(winning, args, "No winning or tied rows yet.")}
+<h2 id="wins">Where you match or lead</h2>
+<p class="section-intro">Questions where your brand appears at least as often as every tracked competitor.</p>
+${renderGapTable(winning, args, "No matching or leading results in this window.")}
 </section>
+${unseen.length ? `<section class="section"><h2 id="unseen">No tracked brands found</h2><p class="section-intro">Neither your brand nor a tracked competitor appeared in these samples. These are not wins; open a response to see what the AI discussed instead.</p>${renderGapTable(unseen, args, "")}</section>` : ""}
 <section class="section${history.length > 1 ? " two" : ""}">
 <div class="panel">
 <h2 id="providers">Provider breakdown</h2>
@@ -207,12 +209,15 @@ function renderGapTable(rows: GapRow[], args: HtmlReportArgs, empty: string): st
   const filterId = `filter-${encodeURIComponent(rows[0]!.prompt_id)}`;
   const providers = [...new Set(rows.map(row => row.provider))];
   const filters = rows.length > 5 ? `<div class="evidence-filters" data-evidence-filters hidden><label for="${filterId}">Find a question<input id="${filterId}" type="search" placeholder="Search questions or competitors" data-evidence-search></label><label for="${filterId}-provider">Provider<select id="${filterId}-provider" data-evidence-provider><option value="">All providers</option>${providers.map(provider => `<option value="${escapeHtml(provider)}">${escapeHtml(providerLabel(provider))}</option>`).join("")}</select></label><p data-evidence-count role="status">${rows.length} questions</p></div>` : "";
-  return `<div class="evidence-list" data-evidence-list>${filters}<div class="evidence-columns" aria-hidden="true"><span>Provider / buyer question</span><span>Your citation rate</span><span>Top competitor</span><span>Gap</span></div>${rows
+  return `<div class="evidence-list" data-evidence-list>${filters}<div class="evidence-columns" aria-hidden="true"><span>Provider / buyer question</span><span>Your citation rate</span><span>Top competitor</span><span>Comparison</span></div>${rows
     .map((g) => {
       const best = g.competitors[0];
       const response = findRecentResponse(args.calls, args.rates, g);
-      const width = Math.max(0, Math.min(100, g.gap_score * 100));
-      const metrics = `<span class="evidence-question"><span class="provider">${escapeHtml(providerLabel(g.provider))}</span><span class="question-text">${escapeHtml(g.prompt_text)}</span><span class="evidence-toggle">${response ? '<span class="when-closed">Read AI response</span><span class="when-open">Hide AI response</span><span class="disclosure-arrow" aria-hidden="true">↓</span>' : 'No response available'}</span></span><span class="evidence-metric"><span class="metric-label">Your citation rate</span><strong class="rate">${formatPercent(g.brand_rate)}</strong></span><span class="evidence-metric"><span class="metric-label">Top competitor</span><span>${best ? escapeHtml(best.name) : "—"}</span>${best ? `<strong class="rate competitor-rate">${formatPercent(best.rate)}</strong>` : ""}</span><span class="evidence-metric"><span class="metric-label">Gap</span><strong class="rate">${Math.round(Math.max(0, g.gap_score) * 100)}<small> pp</small></strong><span class="bar" aria-hidden="true"><span style="width:${round(width)}%;background:${gapColor(g.gap_score)}"></span></span></span>`;
+      const width = Math.min(100, Math.abs(g.gap_score) * 100);
+      const points = Math.round(Math.abs(g.gap_score) * 100);
+      const comparison = g.gap_score > 0 ? `${points}-point gap` : g.gap_score < 0 ? `${points}-point lead` : g.brand_rate > 0 ? "Tied" : "No mentions";
+      const explanation = g.gap_score === 0 ? (g.brand_rate > 0 ? "Your citation rate matches the top tracked competitor." : "Neither your brand nor a tracked competitor was detected.") : `${formatPercent(Math.max(g.brand_rate, best?.rate ?? 0))} minus ${formatPercent(Math.min(g.brand_rate, best?.rate ?? 0))}. Difference in percentage points, calculated before rounding.`;
+      const metrics = `<span class="evidence-question"><span class="provider">${escapeHtml(providerLabel(g.provider))}</span><span class="question-text">${escapeHtml(g.prompt_text)}</span><span class="evidence-toggle">${response ? '<span class="when-closed">Read AI response</span><span class="when-open">Hide AI response</span><span class="disclosure-arrow" aria-hidden="true">↓</span>' : 'No response available'}</span></span><span class="evidence-metric"><span class="metric-label">Your citation rate</span><strong class="rate">${formatPercent(g.brand_rate)}</strong></span><span class="evidence-metric"><span class="metric-label">Top competitor</span><span>${best ? escapeHtml(best.name) : "—"}</span>${best ? `<strong class="rate competitor-rate">${formatPercent(best.rate)}</strong>` : ""}</span><span class="evidence-metric"><span class="metric-label">Comparison</span><strong class="rate" style="font-size:14px" title="${escapeHtml(explanation)}">${comparison}</strong>${g.gap_score !== 0 ? `<span class="bar" aria-hidden="true"><span style="width:${round(width)}%;background:${gapColor(g.gap_score)}"></span></span>` : ""}</span>`;
       if (!response) return `<div class="evidence-row evidence-summary" data-provider="${escapeHtml(g.provider)}">${metrics}</div>`;
       return `<details class="evidence-row" data-provider="${escapeHtml(g.provider)}"><summary class="evidence-summary">${metrics}</summary><div class="evidence-body"><div class="response-meta"><span class="kicker">Most recent response · ${escapeHtml(providerLabel(g.provider))}</span><span class="response-legend"><span class="mark-brand">${escapeHtml(args.brand_name)}</span>${best ? `<span class="mark-competitor">${escapeHtml(best.name)}</span>` : ""}</span></div><div class="response">${renderResponseHtml(response, args.brand_name, best?.name)}</div><p class="response-note">One response is shown. Citation rates above include all successful samples in this reporting window.</p></div></details>`;
     }).join("")}<p class="evidence-empty" data-evidence-empty hidden>No matching questions. Try a different search or choose all providers.</p></div>`;
