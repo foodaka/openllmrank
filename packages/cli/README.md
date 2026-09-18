@@ -96,7 +96,7 @@ openllmrank report --html
 openllmrank report --html --output weekly-ai-visibility.html
 ```
 
-It includes the AI visibility score, coverage and partial-failure disclosure, prioritized actions with captured source evidence, the losing gap table with expandable raw responses, winning prompts, provider breakdowns, run-history sparklines, and methodology limits. See [examples/sample-report.html](./examples/sample-report.html).
+It includes the AI visibility score, coverage and partial-failure disclosure, prioritized actions with captured source evidence, the losing gap table with expandable raw responses, questions where your brand matches or leads competitors, a separate section for samples with no tracked brands, provider breakdowns, run-history sparklines, and methodology limits. See [examples/sample-report.html](./examples/sample-report.html).
 
 ![Sample openllmrank HTML report](./examples/sample-report-screenshot.png)
 
