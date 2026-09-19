@@ -11,8 +11,10 @@ import type { serviceClient } from "./supabase-server";
 //   MCP connector    a PaymentIntent confirmed with a Shared Payment Token
 //
 // Nothing here talks to Stripe. The caller proves payment and passes the
-// Stripe ids, which double as the duplicate-delivery backstop (both columns
-// are unique on public.jobs).
+// Stripe ids and the lead id. All three are unique on public.jobs, so a
+// payment cannot become two jobs and an order cannot be fulfilled twice:
+// the loser of any race gets { duplicate: true } and must refund if its
+// payment is not the one that produced the existing job.
 
 type ServiceClient = ReturnType<typeof serviceClient>;
 
@@ -133,6 +135,8 @@ export type ProvisionPaidReportInput = {
   amountCents: number;
   /** Surface that took the order: 'web' | 'mcp'. Stored on jobs.source. */
   source: string;
+  /** The order being paid. jobs.lead_id is unique: one order, one job. */
+  leadId: string;
   stripeCheckoutSessionId?: string | null;
   stripePaymentIntentId?: string | null;
 };
@@ -183,12 +187,17 @@ export async function provisionPaidReport(
       currency: "usd",
       email_to: input.email,
       source: input.source,
+      lead_id: input.leadId,
       stripe_checkout_session_id: input.stripeCheckoutSessionId ?? null,
       stripe_payment_intent_id: input.stripePaymentIntentId ?? null,
     })
     .select("id")
     .single();
   if (jobErr || !job) {
+    // No job, so the brand we just inserted would sit empty in the dashboard.
+    await supabase.from("brands").delete().eq("id", brand.id);
+    // 23505: this order (lead_id) or this payment (Stripe ids) already has a
+    // job. The caller works out which, and refunds a second payment.
     if (jobErr?.code === "23505") return { ok: false, duplicate: true };
     return { ok: false, error: "Could not create job", detail: jobErr?.message };
   }

@@ -13,6 +13,8 @@ export type CheckoutSessionInput = {
   email: string;
   successUrl: string;
   cancelUrl: string;
+  /** Charge amountCents even when REPORT_PRICE_ID is set (the amount was already quoted). */
+  exactAmount?: boolean;
 };
 
 export type CheckoutSessionResult = {
@@ -104,7 +106,7 @@ export async function createCheckoutSession(
     mode: "payment",
     customer_email: input.email,
     line_items: [
-      lineItem(process.env.REPORT_PRICE_ID, {
+      lineItem(input.exactAmount ? undefined : process.env.REPORT_PRICE_ID, {
         currency: input.currency,
         unit_amount: input.amountCents,
         product_data: { name: input.productName },
@@ -339,6 +341,11 @@ export async function chargeSharedPaymentToken(
   }
 
   if (isStubMode()) {
+    // Same belt-and-suspenders as verifyWebhook: a deployment that somehow
+    // runs in stub mode must not hand out paid jobs for a made-up token.
+    if (process.env.NODE_ENV === "production") {
+      return { ok: false, code: "payment_unavailable", message: "Payments are not configured." };
+    }
     // Local stub: spt_stub_<anything> pays, anything else declines. The
     // intent id is derived from the token so a retry maps to the same job.
     if (!input.token.startsWith(STUB_TOKEN_PREFIX)) {
@@ -369,7 +376,10 @@ export async function chargeSharedPaymentToken(
     }
     // requires_action / processing: an agent cannot complete a challenge and
     // we do not start paid work on unsettled money. Release the intent.
-    await stripe.paymentIntents.cancel(intent.id).catch(() => undefined);
+    await stripe.paymentIntents.cancel(intent.id).catch((e) => {
+      // If it settles later there is money with no job: make it findable.
+      console.error("[stripe] could not cancel unsettled intent", intent.id, (e as Error).message);
+    });
     return { ok: false, code: "payment_declined", message: `Payment was not completed (status: ${intent.status}).` };
   } catch (e) {
     const err = e as { type?: string; message?: string };
@@ -382,6 +392,18 @@ export async function chargeSharedPaymentToken(
     }
     console.error("[stripe] shared payment token charge failed:", err.message);
     return { ok: false, code: "payment_unavailable", message: "Payment could not be processed right now." };
+  }
+}
+
+// An agent order carries a Checkout link as a fallback. Once the order is
+// paid another way the link must stop taking money.
+export async function expireCheckoutSession(sessionId: string): Promise<void> {
+  if (isStubMode() || !sessionId.startsWith("cs_")) return;
+  try {
+    await realStripe().checkout.sessions.expire(sessionId);
+  } catch (e) {
+    // Already expired or completed. A completed one is refunded by the webhook.
+    console.warn("[stripe] could not expire checkout session", sessionId, (e as Error).message);
   }
 }
 

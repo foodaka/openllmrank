@@ -245,10 +245,128 @@ describePg("MCP agent flow", () => {
     expect(wrong.data.error.code).toBe("ACCESS_DENIED");
   });
 
+  test("a second payment for the same order is refunded, not turned into a second job", async () => {
+    const { payForOrder, defaultAgentDeps } = await import("../lib/agent-tools");
+    const refunds: string[] = [];
+    const deps = {
+      ...defaultAgentDeps("https://openllmrank.test"),
+      // A fresh token on a retry: Stripe would charge it as a new payment.
+      charge: async () => ({ ok: true as const, paymentIntentId: `pi_second_${Date.now()}` }),
+      refund: async (pi: string) => (refunds.push(pi), true),
+    };
+    // Simulate the race: the order looks unpaid to the pre-charge check.
+    await sql`update public.jobs set lead_id = null where id = ${paid.report_id}`;
+    const racing = payForOrder(
+      { order_id: order.order_id, access_token: order.access_token, payment_token: "spt_stub_retry" },
+      { ...deps, charge: async (input) => {
+          await sql`update public.jobs set lead_id = ${order.order_id} where id = ${paid.report_id}`;
+          return deps.charge();
+        } },
+    );
+    const res = await racing;
+    expect(res.report_id).toBe(paid.report_id);
+    expect(res.already_paid).toBe(true);
+    expect(refunds).toHaveLength(1);
+    expect(refunds[0]).toStartWith("pi_second_");
+    const [{ count }] = await sql`
+      select count(*)::int as count from public.jobs where email_to = ${EMAIL}`;
+    expect(count).toBe(1);
+  });
+
+  test("paying the Checkout link after a token payment is refunded by the webhook", async () => {
+    const { POST: webhook } = await import("../app/api/webhook/stripe/route");
+    const event = (id: string, paymentIntent: string) =>
+      webhook(
+        new Request("https://openllmrank.test/api/webhook/stripe", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-stub-event": "1" },
+          body: JSON.stringify({
+            id,
+            type: "checkout.session.completed",
+            data: {
+              object: {
+                id: `cs_stub_${order.order_id}`,
+                mode: "payment",
+                payment_intent: paymentIntent,
+                amount_total: 7900,
+                metadata: { lead_id: order.order_id },
+              },
+            },
+          }),
+        }),
+      ).then((r) => r.json() as Promise<Record<string, unknown>>);
+
+    const second = await event(`evt_mcp_second_${Date.now()}`, "pi_stub_checkout_after_token");
+    expect(second.refunded_second_payment).toBe(true);
+
+    const [{ count }] = await sql`
+      select count(*)::int as count from public.jobs where email_to = ${EMAIL}`;
+    expect(count).toBe(1);
+    await sql`delete from public.stripe_events where id like 'evt_mcp_second_%'`;
+  });
+
+  test("an order resolves to its report even if the lead row was never updated", async () => {
+    await sql`update public.leads set status = 'started', job_id = null where id = ${order.order_id}`;
+    const status = await call("get_report_status", {
+      report_id: order.order_id,
+      access_token: order.access_token,
+    });
+    expect(status.data.report_id).toBe(paid.report_id);
+    // ...and paying again is a no-op that repairs the lead.
+    const again = await call("pay_for_report", {
+      order_id: order.order_id,
+      access_token: order.access_token,
+      payment_token: "spt_stub_again",
+    });
+    expect(again.data.already_paid).toBe(true);
+    const [lead] = await sql`select status, job_id from public.leads where id = ${order.order_id}`;
+    expect(lead.status).toBe("converted");
+    expect(lead.job_id).toBe(paid.report_id);
+  });
+
+  test("a token already spent on one order cannot open or pay another", async () => {
+    const [job] = await sql`select stripe_payment_intent_id as pi from public.jobs where id = ${paid.report_id}`;
+    const other = await call("analyze_brand_visibility", {
+      brand: "McpOtherCo",
+      website: "mcpotherco.com",
+      competitors: ["RivalOne"],
+      email: EMAIL,
+      questions: ["What is the best tool for testing MCP connectors?"],
+    });
+    const res = await call("pay_for_report", {
+      order_id: other.data.order_id,
+      access_token: other.data.access_token,
+      payment_token: (job.pi as string).replace("pi_stub_", ""),
+    });
+    expect(res.isError).toBe(true);
+    expect(res.data.error.code).toBe("PAYMENT_TOKEN_INVALID");
+    expect(JSON.stringify(res.data)).not.toContain(paid.report_id);
+  });
+
+  test("stub payments are refused in production", async () => {
+    const { chargeSharedPaymentToken } = await import("../lib/stripe");
+    const env = process.env as Record<string, string | undefined>;
+    const before = env.NODE_ENV;
+    env.NODE_ENV = "production";
+    try {
+      const res = await chargeSharedPaymentToken({
+        token: "spt_stub_free_report",
+        amountCents: 7900,
+        currency: "usd",
+        description: "x",
+        receiptEmail: EMAIL,
+        metadata: {},
+      });
+      expect(res).toMatchObject({ ok: false, code: "payment_unavailable" });
+    } finally {
+      env.NODE_ENV = before;
+    }
+  });
+
   test("order creation is rate limited per caller", async () => {
     const ip = `198.51.100.${ipCounter++}`;
     let limited = false;
-    for (let i = 0; i < 12 && !limited; i++) {
+    for (let i = 0; i < 35 && !limited; i++) {
       const res = await call(
         "analyze_brand_visibility",
         { brand: "X", website: "localhost", competitors: ["Y"], email: "x@example.com" },

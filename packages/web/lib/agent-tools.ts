@@ -17,6 +17,7 @@ import { provisionPaidReport, reportPriceCents } from "./report-provisioning";
 import {
   chargeSharedPaymentToken,
   createCheckoutSession,
+  expireCheckoutSession,
   refundPaymentIntent,
 } from "./stripe";
 import { serviceClient } from "./supabase-server";
@@ -74,6 +75,7 @@ export type AgentDeps = {
   charge: typeof chargeSharedPaymentToken;
   refund: typeof refundPaymentIntent;
   createCheckout: typeof createCheckoutSession;
+  expireCheckout: typeof expireCheckoutSession;
 };
 
 export function defaultAgentDeps(siteOrigin: string): AgentDeps {
@@ -88,6 +90,7 @@ export function defaultAgentDeps(siteOrigin: string): AgentDeps {
     charge: chargeSharedPaymentToken,
     refund: refundPaymentIntent,
     createCheckout: createCheckoutSession,
+    expireCheckout: expireCheckoutSession,
   };
 }
 
@@ -220,6 +223,8 @@ export async function createOrder(input: z.infer<typeof OrderInput>, deps: Agent
       email,
       successUrl: `${deps.siteOrigin}/checkout/success`,
       cancelUrl: `${deps.siteOrigin}/checkout/cancel`,
+      // The user approves price.amount below; the page must charge the same.
+      exactAmount: true,
     });
     checkoutUrl = session.url;
     await deps.supabase
@@ -260,6 +265,7 @@ type LeadRow = {
   config_jsonb: unknown;
   status: string;
   job_id: string | null;
+  stripe_checkout_session_id: string | null;
 };
 
 function assertAccess(id: string, token: string, kind: "order" | "report"): void {
@@ -278,7 +284,7 @@ function assertAccess(id: string, token: string, kind: "order" | "report"): void
 async function loadLead(deps: AgentDeps, orderId: string): Promise<LeadRow> {
   const { data } = await deps.supabase
     .from("leads")
-    .select("id,email,config_jsonb,status,job_id")
+    .select("id,email,config_jsonb,status,job_id,stripe_checkout_session_id")
     .eq("id", orderId)
     .eq("source", SOURCE)
     .maybeSingle();
@@ -309,8 +315,13 @@ export async function payForOrder(input: z.infer<typeof PayInput>, deps: AgentDe
     next_step: `The analysis is running (about ${TYPICAL_MINUTES} minutes). Call get_report_status with report_id and this new access_token, then get_visibility_report once it is completed.`,
   });
 
-  // Paid already (a retry, or the user used checkout_url). Never charge twice.
-  if (lead.status === "converted" && lead.job_id) return started(lead.job_id, true);
+  // Paid already (a retry, or the user used checkout_url): never charge again.
+  // jobs.lead_id is the source of truth; leads.status can lag behind it.
+  const existing = await jobForLead(deps, lead.id);
+  if (existing) {
+    await closeOrder(deps, lead, existing.id);
+    return started(existing.id, true);
+  }
 
   const parsedConfig = HostedConfigSchema.safeParse(lead.config_jsonb);
   if (!parsedConfig.success) {
@@ -338,32 +349,10 @@ export async function payForOrder(input: z.infer<typeof PayInput>, deps: AgentDe
     throw new AgentError(code, charge.message, true);
   }
 
-  const provisioned = await provisionPaidReport(deps.supabase, {
-    email: lead.email,
-    config,
-    amountCents,
-    source: SOURCE,
-    stripePaymentIntentId: charge.paymentIntentId,
-  });
-
-  let jobId: string;
-  if (provisioned.ok) {
-    jobId = provisioned.jobId;
-  } else if (provisioned.duplicate) {
-    // Same PaymentIntent (the charge is idempotent per token): a concurrent
-    // retry already created the job. Hand back that job.
-    const { data: existing } = await deps.supabase
-      .from("jobs")
-      .select("id")
-      .eq("stripe_payment_intent_id", charge.paymentIntentId)
-      .maybeSingle();
-    if (!existing) {
-      throw new AgentError("INTERNAL", "Payment succeeded but the report could not be located. Use the contact form on openllmrank.io.", false);
-    }
-    return started(existing.id as string, true);
-  } else {
-    // Money taken, no job: give it back now rather than leave it for a human.
-    console.error("[agent] provisioning failed after payment", provisioned);
+  // Money is taken. From here every exit either has a job for this payment
+  // or gives the money back.
+  const giveBack = async (why: string): Promise<never> => {
+    console.error("[agent] refunding payment without a job", { lead: lead.id, why });
     const refunded = await deps.refund(charge.paymentIntentId);
     throw new AgentError(
       "INTERNAL",
@@ -372,14 +361,75 @@ export async function payForOrder(input: z.infer<typeof PayInput>, deps: AgentDe
         : "The report could not be started and the automatic refund did not go through. Use the contact form on openllmrank.io for a refund.",
       refunded,
     );
+  };
+
+  let provisioned: Awaited<ReturnType<typeof provisionPaidReport>>;
+  try {
+    provisioned = await provisionPaidReport(deps.supabase, {
+      email: lead.email,
+      config,
+      amountCents,
+      source: SOURCE,
+      leadId: lead.id,
+      stripePaymentIntentId: charge.paymentIntentId,
+    });
+  } catch (e) {
+    return giveBack((e as Error).message);
   }
 
-  await deps.supabase
-    .from("leads")
-    .update({ status: "converted", job_id: jobId, converted_at: new Date().toISOString() })
-    .eq("id", lead.id);
+  if (provisioned.ok) {
+    await closeOrder(deps, lead, provisioned.jobId);
+    return started(provisioned.jobId, false);
+  }
+  if (!provisioned.duplicate) return giveBack(provisioned.detail ?? provisioned.error);
 
-  return started(jobId, false);
+  // 23505. Someone else fulfilled this order while we were charging, or this
+  // exact payment already has a job.
+  const winner = await jobForLead(deps, lead.id);
+  if (!winner) {
+    // The payment belongs to a job of ANOTHER order (a token replayed across
+    // orders; Stripe's idempotency rejects that outside stub mode). Never
+    // hand out that report.
+    throw new AgentError("PAYMENT_TOKEN_INVALID", "That payment token was already used for a different order.", true);
+  }
+  if (winner.stripe_payment_intent_id !== charge.paymentIntentId) {
+    // The order was paid a second time (fresh token on a retry, a race, or
+    // Checkout). Keep the first payment, return this one.
+    const refunded = await deps.refund(charge.paymentIntentId);
+    if (!refunded) {
+      console.error("[agent] DOUBLE PAYMENT NOT REFUNDED", { lead: lead.id, payment_intent: charge.paymentIntentId });
+    }
+  }
+  await closeOrder(deps, lead, winner.id);
+  return started(winner.id, true);
+}
+
+async function jobForLead(
+  deps: AgentDeps,
+  leadId: string,
+): Promise<{ id: string; stripe_payment_intent_id: string | null } | null> {
+  const { data } = await deps.supabase
+    .from("jobs")
+    .select("id,stripe_payment_intent_id")
+    .eq("lead_id", leadId)
+    .maybeSingle();
+  return (data as { id: string; stripe_payment_intent_id: string | null } | null) ?? null;
+}
+
+// Mark the order converted and stop its Checkout link from taking money.
+// Best-effort: jobs.lead_id already records the truth, and a payment that
+// slips through Checkout anyway is refunded by the webhook.
+async function closeOrder(deps: AgentDeps, lead: LeadRow, jobId: string): Promise<void> {
+  if (lead.status !== "converted" || lead.job_id !== jobId) {
+    const { error } = await deps.supabase
+      .from("leads")
+      .update({ status: "converted", job_id: jobId, converted_at: new Date().toISOString() })
+      .eq("id", lead.id);
+    if (error) console.error("[agent] could not mark order converted", lead.id, error.message);
+  }
+  if (lead.stripe_checkout_session_id) {
+    await deps.expireCheckout(lead.stripe_checkout_session_id);
+  }
 }
 
 // ── getStatus / getReport ───────────────────────────────────────────────
@@ -430,6 +480,7 @@ export async function getStatus(input: z.infer<typeof ReportRefInput>, deps: Age
   let handle: ReturnType<typeof reportHandle> | undefined;
   if (kind === "order") {
     const lead = await loadLead(deps, input.report_id);
+    lead.job_id ??= (await jobForLead(deps, lead.id))?.id ?? null;
     if (!lead.job_id) {
       return {
         status: "awaiting_payment" as const,

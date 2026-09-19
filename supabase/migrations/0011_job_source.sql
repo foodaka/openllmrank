@@ -20,3 +20,15 @@ alter table public.jobs
 create unique index if not exists jobs_stripe_payment_intent_unique
   on public.jobs (stripe_payment_intent_id)
   where stripe_payment_intent_id is not null;
+
+-- One order, one job. An agent order can be paid two ways (a Shared Payment
+-- Token, or the Checkout link it was also given) and a retry can arrive with
+-- a fresh token, so "has this lead been paid?" must be decided by the
+-- database, not by reading leads.status before charging. Whoever inserts
+-- second gets 23505 and refunds their payment.
+alter table public.jobs
+  add column if not exists lead_id uuid references public.leads(id) on delete set null;
+
+create unique index if not exists jobs_lead_unique
+  on public.jobs (lead_id)
+  where lead_id is not null;

@@ -19,16 +19,25 @@ export const runtime = "nodejs";
 export const maxDuration = 90;
 
 export async function POST(req: Request): Promise<Response> {
-  const siteOrigin = (
-    process.env.NEXT_PUBLIC_SITE_ORIGIN ?? new URL(req.url).origin
-  ).replace(/\/+$/, "");
+  // The origin ends up in report links and Stripe return URLs, so in
+  // production it comes from config, never from the request's Host header.
+  const configured = process.env.NEXT_PUBLIC_SITE_ORIGIN;
+  if (!configured && process.env.NODE_ENV === "production") {
+    throw new Error("NEXT_PUBLIC_SITE_ORIGIN is required in production");
+  }
+  const siteOrigin = (configured ?? new URL(req.url).origin).replace(/\/+$/, "");
   const server = buildServer(defaultAgentDeps(siteOrigin), getClientIp(req));
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined, // stateless
     enableJsonResponse: true,
   });
   await server.connect(transport);
-  return transport.handleRequest(req);
+  try {
+    return await transport.handleRequest(req);
+  } finally {
+    // JSON responses are complete once handleRequest resolves.
+    void server.close();
+  }
 }
 
 // Stateless server: there is no event stream to open and no session to end.

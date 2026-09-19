@@ -5,6 +5,7 @@ import { serviceClient } from "../../../../lib/supabase-server";
 import {
   cancelSubscription,
   isSubscriptionActive,
+  refundPaymentIntent,
   verifyWebhook,
 } from "../../../../lib/stripe";
 import { sendAccountInviteEmail } from "../../../../lib/account-invite";
@@ -44,6 +45,39 @@ import { HostedConfigSchema, type HostedConfig } from "@openllmrank/shared/confi
 // duplicate Stripe delivery.
 
 export const dynamic = "force-dynamic";
+
+// An order that already has a job can still be paid again: an agent order is
+// payable by Shared Payment Token AND by its Checkout link (lib/agent-tools.ts),
+// and two payments can race. If this session's payment is not the one that
+// produced the order's job, nothing will ever be delivered for it, so it goes
+// straight back. A redelivery of the SAME payment is left alone.
+async function refundIfSecondPayment(
+  supabase: ReturnType<typeof serviceClient>,
+  leadId: string,
+  session: { id: string; payment_intent?: string | null },
+): Promise<boolean> {
+  if (!session.payment_intent) return false;
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("id,stripe_checkout_session_id,stripe_payment_intent_id")
+    .eq("lead_id", leadId)
+    .maybeSingle();
+  // No job linked to this lead: a pre-0011 order, where the only way to pay
+  // was this session. Nothing to reconcile.
+  if (!job) return false;
+  if (
+    job.stripe_checkout_session_id === session.id ||
+    job.stripe_payment_intent_id === session.payment_intent
+  ) {
+    return false;
+  }
+  console.error("[webhook] order paid twice; refunding the second payment", {
+    lead: leadId,
+    job: job.id,
+    payment_intent: session.payment_intent,
+  });
+  return refundPaymentIntent(session.payment_intent);
+}
 
 type SubscriptionStatus = "incomplete" | "active" | "past_due" | "canceled";
 
@@ -722,8 +756,13 @@ export async function POST(req: Request) {
   // payment before (possibly via a different delivered event in this
   // session). Skip silently.
   if (lead.status === "converted") {
+    const refunded = await refundIfSecondPayment(supabase, leadId, session);
     await markProcessed();
-    return NextResponse.json({ received: true, already_converted: true });
+    return NextResponse.json({
+      received: true,
+      already_converted: true,
+      ...(refunded ? { refunded_second_payment: true } : {}),
+    });
   }
 
   // Re-validate config server-side (defense in depth — Stripe stores
@@ -750,14 +789,21 @@ export async function POST(req: Request) {
     amountCents: session.amount_total ?? reportPriceCents(),
     // An agent order (lib/agent-tools.ts) paid through its checkout_url.
     source: lead.source === "mcp" ? "mcp" : "web",
+    leadId,
     stripeCheckoutSessionId: session.id,
     stripePaymentIntentId: session.payment_intent ?? null,
   });
   if (!provisioned.ok) {
-    // If duplicate session_id, another delivery beat us to it. Treat as success.
+    // Another delivery of this session beat us to it (success), or the order
+    // was already paid another way (refund this payment).
     if (provisioned.duplicate) {
+      const refunded = await refundIfSecondPayment(supabase, leadId, session);
       await markProcessed();
-      return NextResponse.json({ received: true, duplicate_job: true });
+      return NextResponse.json({
+        received: true,
+        duplicate_job: true,
+        ...(refunded ? { refunded_second_payment: true } : {}),
+      });
     }
     return NextResponse.json(
       { error: provisioned.error, detail: provisioned.detail },
