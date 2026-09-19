@@ -93,7 +93,7 @@ Rate limits apply per caller. Analyses take about 10-15 minutes and are polled w
 
 ## Before submitting
 
-- [ ] **Deploy.** Merge, apply migration `0011_job_source.sql` to production, confirm `POST https://openllmrank.io/api/mcp` answers `initialize`. `REPORT_LINK_SECRET` must be set in production (it already is for report emails): it signs the connector's access tokens, and without it every order call returns `INTERNAL`.
+- [ ] **Deploy.** Merge, apply migration `0011_job_source.sql` to production, confirm `POST https://openllmrank.io/api/mcp` answers `initialize`. **Apply the migration before the deploy goes live** (new code writes `jobs.source` and `jobs.lead_id`; without the columns every paid order fails, wizard included). `NEXT_PUBLIC_SITE_ORIGIN` and `REPORT_LINK_SECRET` must be set in production (both already are, for report emails). The secret signs the connector's access tokens; without it every order call returns `INTERNAL`.
 - [ ] **Stripe.** Create the [Stripe profile](https://docs.stripe.com/get-started/account/profile) in the Dashboard (Shared Payment Tokens are granted to a profile) and accept the agentic commerce seller terms. SPTs are a Stripe preview feature.
 - [ ] **Test-mode payment.** With `STRIPE_MODE=test`, mint a token with the test helper (command in `docs/AGENT_API.md`) and run order → pay → status. Confirm the PaymentIntent in the Dashboard carries `metadata.lead_id` and `source=mcp`.
 - [ ] **Live payment.** Issue a real token from your own Link wallet with `npx @stripe/link-cli spend-request create --credential-type shared_payment_token --amount 7900 ...` and buy one report end to end. Refund it afterwards if you like.
