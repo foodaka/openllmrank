@@ -13,6 +13,7 @@ import {
   isLocalStub,
 } from "../../../lib/stripe";
 import { checkRateLimit, getClientIp } from "../../../lib/rate-limit";
+import { reportPriceCents } from "../../../lib/report-provisioning";
 
 // POST /api/checkout
 //
@@ -37,7 +38,6 @@ const BodySchema = z.object({
   plan: z.enum(["report", "tracking"]).default("report"),
 });
 
-export const DEFAULT_REPORT_PRICE_CENTS = 7900;
 export const DEFAULT_SUBSCRIPTION_PRICE_CENTS = 4900;
 
 // Per-IP rate limit: 5 checkout attempts per minute. Without this, anyone
@@ -142,10 +142,7 @@ export async function POST(req: Request) {
             cancelUrl: `${origin}/checkout/cancel`,
           })
         : await createCheckoutSession({
-            amountCents: Number.parseInt(
-              process.env.PRICE_CENTS ?? String(DEFAULT_REPORT_PRICE_CENTS),
-              10,
-            ),
+            amountCents: reportPriceCents(),
             currency: "usd",
             productName: process.env.PRODUCT_NAME ?? "openllmrank report",
             leadId: lead.id,

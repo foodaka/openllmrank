@@ -308,6 +308,102 @@ export async function cancelSubscription(subscriptionId: string): Promise<void> 
   });
 }
 
+// ── Agentic payments (Stripe Shared Payment Tokens) ─────────────────────
+//
+// An AI agent (Muse, via the user's Link wallet) hands the MCP connector an
+// `spt_...` token scoped to one amount. We confirm a PaymentIntent with it;
+// Stripe clones the customer's payment method onto the intent, so refunds
+// and reporting behave exactly like a card payment from Checkout.
+// https://docs.stripe.com/agentic-commerce/concepts/shared-payment-tokens
+
+export type SharedPaymentChargeInput = {
+  token: string;
+  amountCents: number;
+  currency: string;
+  description: string;
+  receiptEmail: string;
+  metadata: Record<string, string>;
+};
+
+export type SharedPaymentChargeResult =
+  | { ok: true; paymentIntentId: string }
+  | { ok: false; code: "payment_declined" | "payment_token_invalid" | "payment_unavailable"; message: string };
+
+const STUB_TOKEN_PREFIX = "spt_stub_";
+
+export async function chargeSharedPaymentToken(
+  input: SharedPaymentChargeInput,
+): Promise<SharedPaymentChargeResult> {
+  if (!/^spt_[A-Za-z0-9_]{1,200}$/.test(input.token)) {
+    return { ok: false, code: "payment_token_invalid", message: "payment_token must be a Stripe Shared Payment Token (spt_...)." };
+  }
+
+  if (isStubMode()) {
+    // Local stub: spt_stub_<anything> pays, anything else declines. The
+    // intent id is derived from the token so a retry maps to the same job.
+    if (!input.token.startsWith(STUB_TOKEN_PREFIX)) {
+      return { ok: false, code: "payment_declined", message: "Stub mode only accepts spt_stub_* tokens." };
+    }
+    return { ok: true, paymentIntentId: `pi_stub_${input.token}` };
+  }
+
+  const stripe = realStripe();
+  try {
+    const intent = await stripe.paymentIntents.create(
+      {
+        amount: input.amountCents,
+        currency: input.currency,
+        confirm: true,
+        description: input.description,
+        receipt_email: input.receiptEmail,
+        metadata: input.metadata,
+        // Not in stripe-node's types yet (preview feature).
+        payment_method_data: { shared_payment_granted_token: input.token },
+      } as unknown as Stripe.PaymentIntentCreateParams,
+      // A token is single-use. Keying on it means an agent retry after a
+      // timeout gets the same PaymentIntent back instead of a decline.
+      { idempotencyKey: `spt-charge:${input.token}` },
+    );
+    if (intent.status === "succeeded") {
+      return { ok: true, paymentIntentId: intent.id };
+    }
+    // requires_action / processing: an agent cannot complete a challenge and
+    // we do not start paid work on unsettled money. Release the intent.
+    await stripe.paymentIntents.cancel(intent.id).catch(() => undefined);
+    return { ok: false, code: "payment_declined", message: `Payment was not completed (status: ${intent.status}).` };
+  } catch (e) {
+    const err = e as { type?: string; message?: string };
+    if (err.type === "StripeCardError") {
+      return { ok: false, code: "payment_declined", message: err.message ?? "The payment was declined." };
+    }
+    if (err.type === "StripeInvalidRequestError") {
+      // Expired, revoked, already used, wrong seller, or over its amount limit.
+      return { ok: false, code: "payment_token_invalid", message: err.message ?? "The payment token could not be used." };
+    }
+    console.error("[stripe] shared payment token charge failed:", err.message);
+    return { ok: false, code: "payment_unavailable", message: "Payment could not be processed right now." };
+  }
+}
+
+// Immediate refund for a payment we took but could not turn into a job.
+// (Refunds for jobs that fail later are the worker refunder's business.)
+export async function refundPaymentIntent(paymentIntentId: string): Promise<boolean> {
+  if (isStubMode()) return true;
+  try {
+    await realStripe().refunds.create(
+      { payment_intent: paymentIntentId },
+      { idempotencyKey: `provision-refund:${paymentIntentId}` },
+    );
+    return true;
+  } catch (e) {
+    console.error("[stripe] refund after failed provisioning did not go through", {
+      payment_intent: paymentIntentId,
+      message: (e as Error).message,
+    });
+    return false;
+  }
+}
+
 // Verify a Stripe webhook signature. In stub mode we accept a magic header
 // `x-stub-event: 1` and trust the payload (only meaningful on localhost).
 // Belt-and-suspenders: the stub branch ALSO requires NODE_ENV !== production

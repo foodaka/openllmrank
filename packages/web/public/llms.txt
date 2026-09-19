@@ -20,6 +20,11 @@ openllmrank is a hosted product plus an MIT-licensed CLI. Both support grounded 
 - We compare your brand against the competitors you provided and surface the content gaps that explain the difference.
 - Reports are emailed within roughly fifteen minutes of payment. If we cannot generate a report, the charge is refunded automatically.
 
+## For AI agents (MCP)
+
+- [MCP endpoint](https://openllmrank.io/api/mcp): Streamable HTTP, no account needed. Tools: `discover_ai_questions` (free), `analyze_brand_visibility` (priced order), `pay_for_report` (Stripe Shared Payment Token), `get_report_status`, `get_visibility_report`.
+- [Agent API documentation](https://github.com/foodaka/openllmrank/blob/main/docs/AGENT_API.md): Tool schemas, the order and payment lifecycle, error codes.
+
 ## Open source
 
 - [openllmrank on GitHub](https://github.com/foodaka/openllmrank): MIT-licensed monorepo. The CLI is published as `openllmrank` on npm.
