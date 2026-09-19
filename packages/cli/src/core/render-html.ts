@@ -242,7 +242,7 @@ function renderPriorityActions(rows: GapRow[], args: HtmlReportArgs): string {
   }).join("")}</div>`;
 }
 
-function findGroundedSource(
+export function findGroundedSource(
   citations: CitationRow[],
   promptId: string,
   competitor: string,

@@ -14,6 +14,7 @@
     "auth:invite-existing": "bun --env-file=.env.local scripts/send-account-invites.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@openllmrank/crawl": "workspace:*",
     "@openllmrank/shared": "workspace:*",
     "@supabase/ssr": "^0.12.4",

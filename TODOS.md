@@ -196,6 +196,38 @@ Tracked work outside the current sprint. Items marked **v1 MUST** are required f
 
 ---
 
+## Agent / MCP connector follow-ups (added by /ship, 2026-09-19)
+
+### Submit the Muse connector
+
+**What:** Work through the checklist in `docs/muse/SUBMISSION.md`: deploy + migration 0011, Stripe profile + agentic seller terms, one test-mode and one live Shared Payment Token purchase, 512×512 icon, support mailbox, then the form at muse.ai/platform (owner-only attestations).
+
+**Why:** `/api/mcp` only reaches Muse users once Meta approves the listing. Meta tests end to end, so the endpoint and a real payment must work first.
+
+### Durable rate limits for `/api/mcp`
+
+**What:** Move the per-caller limits in `lib/mcp-server.ts` from the in-memory `lib/rate-limit.ts` to a durable, shared counter, and create the fallback Checkout session only when an agent asks for it.
+
+**Why:** Hosted agent platforms share a few egress IPs, so per-IP limits are either too tight for real users or too loose to mean much. Paid work is already gated by payment; this is about keeping the free tools fair.
+
+### Reconcile agent payments from Stripe events
+
+**What:** Handle `payment_intent.succeeded` with `metadata.source = "mcp"` in the Stripe webhook: if no job exists for that PaymentIntent, provision it (or refund). The unique indexes from migration 0011 make this safe to run alongside `pay_for_report`.
+
+**Why:** `pay_for_report` refunds on every failure it can see, but a function killed between the charge and the job insert (timeout, instance recycle) sees nothing. Recovery then depends on the agent retrying with the same token inside Stripe's 24h idempotency window. The webhook should be the backstop, as it is for Checkout.
+
+### Land competitor suggestions, then offer them to agents
+
+**What:** Commit `8966297` ("website draft also suggests competitors") is on `feat/dashboard-website-assist` but never reached main, although PR #51's description promises it. Land it, then return suggested competitors from `discover_ai_questions` so an agent does not have to guess them.
+
+**Why:** `analyze_brand_visibility` requires at least one competitor and today the calling agent must invent them.
+
+### OAuth (PKCE) for signed-in agents
+
+**What:** Let an agent act as an openllmrank account: list existing reports, trigger tracked-brand re-runs, read trends. Muse's form lists "OAuth with PKCE" as a supported auth method.
+
+**Why:** v1 is guest purchase only. Existing $49/mo subscribers get nothing from the connector yet, and subscriptions cannot be sold with single-amount payment tokens.
+
 ## Completed
 
 ### Gemini, Perplexity, and xAI providers
