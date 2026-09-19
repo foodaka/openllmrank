@@ -251,7 +251,7 @@ export default function WizardReviewPage() {
           );
         })}
         <p className="plan-note">
-          Weekly runs cover up to three brands; past that the schedule is monthly.
+          Weekly runs cover up to two brands; past that the schedule is monthly.
           Both plans query the same five providers with the same questions.
         </p>
       </fieldset>

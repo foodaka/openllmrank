@@ -278,7 +278,7 @@ export default function HomePage() {
               Tracking is $49 a month: your first report today, a fresh run
               every week across all five engines including Claude, Gemini,
               and Grok, and a dashboard that shows whether your citation rate
-              is moving. Weekly runs cover up to three brands; past that the
+              is moving. Weekly runs cover up to two brands; past that the
               schedule is monthly. Cancel any time from the billing portal. A
               single report is $79 if you only want a snapshot.
             </dd>

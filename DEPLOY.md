@@ -210,7 +210,8 @@ REPORT_LINK_SECRET=<same value as Vercel>  # signs /reports/<id>?t= links in ema
 
 # Scheduler (subscription runs)
 SCHEDULER_POLL_MS=60000
-SCHEDULER_WEEKLY_MAX_BRANDS=3           # D12 margin guard; accounts above this run monthly
+SCHEDULER_WEEKLY_MAX_BRANDS=2           # D12 margin guard; accounts above this run monthly
+SCHEDULER_RERUN_SAMPLES=2               # samples/question after a brand's first run (~$3.70 vs ~$5.50 per run)
 
 WORKER_ID=railway-prod-1
 WORKER_POLL_INTERVAL_MS=5000

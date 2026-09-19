@@ -45,6 +45,7 @@ type EnvShape = {
   crawlPollIntervalMs: number;
   schedulerPollMs: number;
   schedulerWeeklyMaxBrands: number;
+  schedulerRerunSamples: number;
   monitorPortalUrl: string;
   leaseTimeoutMs: number;
   cliRunTimeoutMs: number;
@@ -113,7 +114,10 @@ function build(): EnvShape {
     // claim latency is invisible to the customer.
     schedulerPollMs: int("SCHEDULER_POLL_MS", 60_000),
     // D12 margin guard: past this many active brands an account runs monthly.
-    schedulerWeeklyMaxBrands: int("SCHEDULER_WEEKLY_MAX_BRANDS", 3),
+    schedulerWeeklyMaxBrands: int("SCHEDULER_WEEKLY_MAX_BRANDS", 2),
+    // Samples per question for runs after a brand's first (first run keeps
+    // the configured 3). Two samples cuts a run from ~$5.50 to ~$3.70.
+    schedulerRerunSamples: int("SCHEDULER_RERUN_SAMPLES", 2),
     // Stripe no-code customer-portal login link (dashboard → Settings →
     // Billing → Customer portal). Empty in dev → emails fall back to mailto.
     monitorPortalUrl: optional("STRIPE_PORTAL_URL"),
