@@ -10,6 +10,7 @@ import {
   type WizardState,
 } from "@/lib/wizard-state";
 import { HostedConfigSchema } from "@openllmrank/shared/config";
+import { getAcquisition, trackFunnel } from "../../../lib/funnel-client";
 
 // Plan choice (pricing decision, 2026-09-15): the one-time report anchors
 // the subscription. Tracking costs less than the report it includes, so the
@@ -124,6 +125,7 @@ export default function WizardReviewPage() {
         return;
       }
 
+      trackFunnel("wizard_complete", { plan });
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -131,12 +133,14 @@ export default function WizardReviewPage() {
           config: parsed.data,
           email: email.trim(),
           plan,
+          acquisition: getAcquisition(),
         }),
       });
       const data = (await res.json()) as
         | { url: string; mode: string }
         | { error: string; detail?: unknown };
       if (!res.ok || "error" in data) {
+        trackFunnel("checkout_error", { plan, reason: "session_creation" });
         setSubmitError(
           "error" in data ? data.error : "Could not create checkout session.",
         );
@@ -145,8 +149,10 @@ export default function WizardReviewPage() {
       }
       // Don't clear wizard state until we're actually redirecting — if the
       // user hits back from Stripe we want it preserved.
+      trackFunnel("checkout_start", { plan });
       window.location.assign(data.url);
     } catch (e) {
+      trackFunnel("checkout_error", { plan, reason: "network" });
       setSubmitError((e as Error).message ?? "Network error.");
       setSubmitting(false);
     }

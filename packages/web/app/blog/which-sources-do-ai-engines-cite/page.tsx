@@ -65,7 +65,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Does citing my own website help me get recommended by AI?",
-    a: "It helps, but it isn't enough. Vendor domains did appear in the most-cited list — Salesforce, Brevo, Monday.com, and Plausible all showed up — but they were outnumbered by independent sources. Models weight third-party corroboration heavily. You can't self-cite your way onto the shortlist; you need to be mentioned across the review sites, listicles, and blogs the engines actually retrieve.",
+    a: "It helps, but it isn't enough. Vendor domains did appear in the most-cited list — Salesforce, Brevo, Monday.com, and Plausible all showed up — but they were outnumbered by independent sources. This sample does not establish what causes a model to recommend a brand. Investigate relevant independent sources alongside your own pages.",
   },
   {
     q: "Do all AI engines return sources?",
@@ -132,14 +132,9 @@ export default function WhichSourcesPost() {
       <h1>Which Sources Do AI Engines Cite When Recommending Software?</h1>
       <p className="post-meta">Published July 2026 &middot; {post.readingTime}</p>
 
-      <p className="lede">
-        When we ran 150 buying questions through five grounded AI engines, 149 of
-        them came back with web sources attached. So we logged every one. The
-        pattern is unambiguous and it should reshape how you think about getting
-        recommended: AI doesn&rsquo;t invent its opinions. It synthesizes review
-        sites, listicles, and niche blogs &mdash; and your own homepage is a bit
-        player in that story.
-      </p>
+      <p className="lede">Across 150 grounded API answers in our July 2026 software study, 149 returned web sources. We asked 10 buying questions three times across five providers. G2 was the most frequently listed publisher domain in the published aggregate table. These observations describe this sample, not all AI recommendations.</p>
+      <p>By openllmrank · Methodology clarified September 23, 2026. <Link href="/methodology">Read the methods and limitations</Link>, <a href="/research/july-2026-published-source-counts.csv" download>download the published source counts</a>, or <a href="/research/july-2026-published-prompts.csv" download>download the 10 published prompts</a>. These files transcribe the article; they do not contain raw responses.</p>
+      <p><Link href="/sample-report.html">See how citation evidence appears in a visibility report</Link>.</p>
 
       <h2>The Most-Cited Sources</h2>
       <p>
@@ -257,8 +252,7 @@ export default function WhichSourcesPost() {
         </li>
         <li>
           <strong>Don&rsquo;t stop at your own site.</strong> First-party pages
-          matter for extraction, but corroboration from third parties is what
-          earns the citation. See{" "}
+          matter for extraction, and independent sources are worth investigating. This study does not establish what causes a citation. See{" "}
           <Link href="/blog/how-to-get-mentioned-in-chatgpt">
             how to get mentioned in ChatGPT
           </Link>{" "}

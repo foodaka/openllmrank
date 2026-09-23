@@ -1,16 +1,27 @@
 import { CheckForm } from "./_components/check-form";
 
 export const metadata = {
-  title: "Is your site invisible? — free crawlability check | openllmrank",
+  title: "Free AI Crawler & Crawlability Checker",
+  alternates: { canonical: "/check" },
+  openGraph: {
+    title: "Free AI Crawler & Crawlability Checker",
+    description: "Find blocked crawlers, broken links, orphan pages, and indexing conflicts. No signup required.",
+    url: "https://openllmrank.io/check",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Free AI Crawler & Crawlability Checker",
+    description: "Find blocked crawlers, broken links, orphan pages, and indexing conflicts. No signup required.",
+  },
   description:
-    "Type your domain and see in seconds what blocks Google and AI crawlers from reaching your pages: severed crawl paths, orphan pages, broken internal links, blocked AI bots.",
+    "Check for blocked AI crawlers, broken internal links, orphan pages, and indexing conflicts. Free crawlability check. No signup required.",
 };
 
 export default function CheckPage() {
   return (
     <article className="wrap check-hero">
           <span className="kicker">Free crawlability check</span>
-          <h1>Is your site invisible?</h1>
+          <h1>Can Google and AI crawlers access your website?</h1>
           <p className="sub">
             Our blog sat at &ldquo;Discovered &mdash; not indexed&rdquo; for
             months because broken internal links severed the crawl paths.
@@ -20,6 +31,7 @@ export default function CheckPage() {
           </p>
 
           <CheckForm />
+          <p className="muted">This checks crawl access, not whether AI recommends your brand. For mention and citation evidence, <a href="/sample-report.html">see a sample visibility report</a>.</p>
 
           <hr className="rule" />
 

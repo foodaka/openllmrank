@@ -2,6 +2,12 @@ import Link from "next/link";
 import { ContactLink } from "./_components/contact-link";
 import { getAllPosts } from "../lib/blog";
 
+export const metadata = {
+  title: { absolute: "AI Search Visibility Tracking & Reports | openllmrank" },
+  description: "Measure brand mentions and citations across five grounded AI providers. Compare competitors and inspect the evidence. Track weekly for $49/month or get a $79 report.",
+  alternates: { canonical: "/" },
+};
+
 // Marketing landing page. Editorial long-scroll, mirrors the approved
 // hero mockup at:
 // ~/.gstack/projects/foodaka-openllmrank/designs/marketing-hero-20260517/variant-A.png

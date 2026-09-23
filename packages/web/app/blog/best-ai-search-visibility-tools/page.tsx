@@ -27,328 +27,89 @@ export const metadata: Metadata = {
   },
 };
 
-const FAQ: { q: string; a: string }[] = [
-  {
-    q: "What is an AI search visibility tool?",
-    a: "An AI search visibility tool measures how often, and how favorably, your brand appears in answers from AI engines like ChatGPT, Perplexity, and Gemini. It runs the questions your customers ask through those models, parses the answers for brand mentions and citations, and reports your share of voice versus competitors — the AEO equivalent of a rank tracker in traditional SEO.",
-  },
-  {
-    q: "How much do AI visibility tools cost?",
-    a: "It ranges widely. Enterprise platforms like Profound, Athena HQ, and Brand Radar are subscription products generally aimed at larger teams, typically priced in the hundreds to thousands of dollars per month. openllmrank takes a different model: $49 a month for weekly tracking across all five engines (or a one-time $79 report), plus a free open-source CLI you can self-host for the cost of your own API calls. Pricing on all platforms changes, so confirm current numbers with each vendor.",
-  },
-  {
-    q: "What should I look for in an AI visibility tool?",
-    a: "Provider coverage (how many AI engines it checks), whether it uses grounded/web-connected models, repeatability (does it run each prompt multiple times to handle non-determinism), competitor benchmarking, evidence (does it show the actual answers it captured), and how actionable the output is. Match those against your budget and whether you need continuous monitoring or a periodic snapshot.",
-  },
-  {
-    q: "Do I need a paid tool, or can I check ChatGPT myself?",
-    a: "You can check manually, but a single query is a sample size of one — AI answers vary run to run, so one check is misleading. To see a real trend you need to run each prompt repeatedly across multiple models and parse every answer, which is tedious by hand. A tool automates that. openllmrank's open-source CLI lets you do it yourself for free; the hosted service does it for you from $49 a month.",
-  },
-  {
-    q: "Is openllmrank really open source?",
-    a: "Yes. The full openllmrank CLI is MIT-licensed on npm. Bring your own OpenAI, Anthropic, Gemini, Perplexity, or xAI key and you can self-host the entire workflow for the cost of a few API calls. The hosted tracker exists for marketing and growth leads who don't want to run a CLI.",
-  },
+const OPTIONS = [
+  { name: "openllmrank", price: "$49/month tracking; $79 one-time report", coverage: "Five grounded provider APIs: OpenAI, Anthropic, Gemini, Perplexity, xAI", measurement: "Your questions, three samples per provider. Weekly tracking for up to three brands; monthly beyond that.", evidence: "Answer and citation evidence, competitor comparison, emailed report and dashboard. Open-source CLI.", fit: "Small teams wanting a repeatable benchmark. API results can differ from consumer apps; no Google AI Overview measurement.", href: "/#how-it-works", source: "Product details" },
+  { name: "Profound", price: "Free 7-day trial; Enterprise custom pricing", coverage: "Trial: ChatGPT, Gemini, AI Overviews. Enterprise: up to nine engines.", measurement: "Daily tracking; trial includes 50 recommended prompts. Custom prompts on Enterprise.", evidence: "Enterprise lists CSV/JSON exports and API access; trial does not include exports.", fit: "Teams needing daily tracking and enterprise workflows. Confirm contracted engine coverage and allowances.", href: "https://www.tryprofound.com/pricing", source: "Official pricing" },
+  { name: "Athena HQ", price: "Essential free; Starter $295/month; Enterprise custom", coverage: "Starter advertises 11 models, including ChatGPT, Perplexity, AI Overviews and AI Mode.", measurement: "Starter includes 3,600 credits/month; one credit is one AI response. Confirm refresh cadence.", evidence: "CSV exports, source and competitor insights. Starter API access and extra credits cost extra.", fit: "Teams wanting monitoring with content workflows. Budget for repeated runs across engines, not just unique prompts.", href: "https://athenahq.ai/plans", source: "Official plans" },
+  { name: "Ahrefs Brand Radar", price: "$199/month per AI index; $699/month for all platforms", coverage: "Broad AI visibility discovery plus custom prompts. Coverage and allowances depend on purchase.", measurement: "Discovery indexes and custom tracking are different products. Custom checks can run daily, weekly or monthly.", evidence: "Brand share of voice and cited pages/domains. All-platform access includes 2,500 custom checks/month.", fit: "Teams exploring category-wide visibility alongside SEO. Confirm base-plan requirements and custom-check costs.", href: "https://help.ahrefs.com/en/articles/11064852-what-is-brand-radar-and-how-to-use-it", source: "Official product guide" },
+  { name: "DIY / open-source CLI", price: "Manual checks: your time; CLI: your API costs", coverage: "Whatever interfaces you check or provider keys you configure.", measurement: "You maintain the prompt set, repeat runs, schedule checks and log model changes.", evidence: "You own the captured answers and analysis. Keep raw evidence to audit a result.", fit: "Technical teams comfortable maintaining a workflow; a single manual answer is not a trend.", href: "https://github.com/foodaka/openllmrank", source: "CLI source" },
 ];
 
 export default function BestAiVisibilityToolsPost() {
   const related = getRelatedPosts(SLUG);
-
-  const articleJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: post.title,
-    description: post.description,
-    datePublished: post.date,
-    dateModified: post.dateModified ?? post.date,
-    author: { "@type": "Organization", name: "openllmrank", url: SITE_URL },
-    publisher: { "@type": "Organization", name: "openllmrank", url: SITE_URL },
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": `${SITE_URL}/blog/${SLUG}`,
-    },
-    keywords: post.keywords.join(", "),
-  };
-
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQ.map((f) => ({
-      "@type": "Question",
-      name: f.q,
-      acceptedAnswer: { "@type": "Answer", text: f.a },
-    })),
-  };
-
   return (
     <article className="post">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
-
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <Link href="/">Home</Link>
-        <span className="sep" aria-hidden>
-          /
-        </span>
-        <Link href="/blog">Blog</Link>
-        <span className="sep" aria-hidden>
-          /
-        </span>
-        <span>Best AI search visibility tools</span>
-      </nav>
-
-      <h1>Best AI Search Visibility Tools (2026)</h1>
-      <p className="post-meta">Updated July 2026 &middot; {post.readingTime}</p>
-
-      <p className="lede">
-        AI search visibility tools tell you how often ChatGPT, Perplexity,
-        Gemini, and other answer engines mention your brand &mdash; and which
-        competitors they name instead. This is a candid comparison of the main
-        options in 2026: the enterprise platforms (Profound, Athena HQ, Brand
-        Radar), openllmrank, and the do-it-yourself approach. We build one of
-        these, so we&rsquo;ll be upfront about where each fits and where ours
-        doesn&rsquo;t.
-      </p>
-
-      <h2>What These Tools Actually Do</h2>
-      <p>
-        They all solve the same core problem. Traditional analytics can&rsquo;t
-        see AI answers: when a buyer asks ChatGPT &ldquo;what&rsquo;s the best
-        tool for X?&rdquo; and it names three competitors, nothing shows up in
-        your Google Analytics. An AI visibility tool closes that blind spot. It
-        runs the buying questions your customers ask through AI models, parses
-        every answer for brand mentions and citations, and reports your share of
-        voice against competitors &mdash; essentially a rank tracker for the
-        answer-engine era.
-      </p>
-
-      <h2>What to Look For</h2>
-      <p>
-        Before comparing names, know the dimensions that separate a useful tool
-        from a dashboard of vanity metrics:
-      </p>
-      <ul>
-        <li>
-          <strong>Provider coverage.</strong> How many answer engines does it
-          check? ChatGPT alone isn&rsquo;t the whole picture.
-        </li>
-        <li>
-          <strong>Grounded models.</strong> Does it query web-connected
-          (grounded) models, which reflect live results, or ungrounded ones?
-        </li>
-        <li>
-          <strong>Repeatability.</strong> AI answers vary run to run. Does it run
-          each prompt multiple times to produce a real rate, not a single
-          anecdote?
-        </li>
-        <li>
-          <strong>Competitor benchmarking.</strong> Your citation rate only means
-          something next to your competitors&rsquo;.
-        </li>
-        <li>
-          <strong>Evidence.</strong> Does it show you the actual answers it
-          captured, or just a score you have to trust?
-        </li>
-        <li>
-          <strong>Actionability and price.</strong> Continuous monitoring vs. a
-          periodic snapshot, and whether the cost matches how you&rsquo;ll use
-          it.
-        </li>
-      </ul>
-
-      <h2>The Tools</h2>
-
-      <h3>Profound</h3>
-      <p>
-        One of the better-known enterprise entrants in the AI-visibility
-        category. Positioned for larger marketing teams that want continuous
-        monitoring of brand presence across answer engines, with dashboards and
-        ongoing tracking. Subscription pricing, generally in the range you&rsquo;d
-        expect for enterprise martech. A strong fit if you have the budget and
-        want an always-on platform with a team behind it. Confirm current pricing
-        and coverage directly with them.
-      </p>
-
-      <h3>Athena HQ</h3>
-      <p>
-        Another platform in the &ldquo;generative engine optimization&rdquo;
-        space aimed at brands that want to track and improve how they show up in
-        AI answers. Like other enterprise tools, it leans toward continuous
-        monitoring and workflow features rather than a one-off check, with
-        subscription pricing. Worth evaluating alongside Profound if you&rsquo;re
-        comparing always-on platforms.
-      </p>
-
-      <h3>Brand Radar</h3>
-      <p>
-        Brand-monitoring tooling that extends into AI-answer visibility, tracking
-        mentions and share of voice across AI surfaces. Again positioned for
-        ongoing monitoring at the team level and priced as a subscription. Good
-        for organizations that want AI visibility folded into a broader
-        brand-monitoring practice.
-      </p>
-
-      <h3>openllmrank</h3>
-      <p>
-        Our tool, so treat this as informed rather than neutral. openllmrank is
-        built for a different buyer than the enterprise platforms: the marketing
-        or growth lead who wants a clear, honest answer to &ldquo;does AI
-        recommend us?&rdquo; without a sales call or an enterprise contract. You get a
-        <strong>$49 a month</strong> tracker (or a one-time $79 report) that runs your prompts multiple
-        times across five grounded providers &mdash; OpenAI, Anthropic, Google
-        Gemini, Perplexity, and xAI &mdash; extracts every brand citation, and
-        ships an editorial report with competitor benchmarking, the underlying
-        evidence, and a prioritized action plan. The entire engine is also an{" "}
-        <strong>open-source, MIT-licensed CLI</strong>, so you can self-host and
-        run it on your own schedule for the cost of your own API calls. The
-        trade-off is honest: it&rsquo;s a periodic snapshot, not an always-on
-        monitoring platform. If you need continuous dashboards and alerting, an
-        enterprise tool fits better. If you want a reproducible, evidence-backed
-        read without a five-figure contract, that&rsquo;s the gap we fill.
-      </p>
-
-      <h3>The DIY approach (spreadsheet + prompts)</h3>
-      <p>
-        Free, and a legitimate starting point. Open ChatGPT and Perplexity, ask
-        your buying questions, and log who gets mentioned. The catch is
-        rigor: because answers vary run to run, one pass is a sample size of one,
-        and doing it properly &mdash; many prompts, many runs, multiple models,
-        parsed consistently, tracked over time &mdash; turns into a tedious
-        manual job fast. DIY is great for a quick gut-check and poor for a
-        repeatable metric. (openllmrank&rsquo;s open-source CLI is essentially
-        the automated version of this approach.)
-      </p>
-
-      <h2>Side-by-Side</h2>
-      <div className="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Option</th>
-              <th>Model</th>
-              <th>Best for</th>
-              <th>Trade-off</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <strong>Profound / Athena HQ / Brand Radar</strong>
-              </td>
-              <td>Enterprise subscription, continuous monitoring</td>
-              <td>Larger teams wanting always-on dashboards + alerting</td>
-              <td>Higher cost; often a sales process</td>
-            </tr>
-            <tr>
-              <td>
-                <strong>openllmrank</strong>
-              </td>
-              <td>$49/mo tracking or one-time $79 report + open-source CLI</td>
-              <td>Growth/marketing leads wanting a fast, evidence-backed read</td>
-              <td>Periodic snapshot, not continuous monitoring</td>
-            </tr>
-            <tr>
-              <td>
-                <strong>DIY (spreadsheet)</strong>
-              </td>
-              <td>Free, manual</td>
-              <td>A quick one-off gut-check</td>
-              <td>Not repeatable; tedious at any real scale</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p>
-        Pricing and features across every platform here change frequently. Treat
-        this as a map of the categories, and confirm current specifics with each
-        vendor before you buy.
-      </p>
-
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org", "@type": "Article", headline: post.title,
+        description: post.description, datePublished: post.date, dateModified: post.dateModified,
+        author: { "@type": "Organization", name: "openllmrank", url: SITE_URL },
+        publisher: { "@id": `${SITE_URL}/#organization` },
+        mainEntityOfPage: `${SITE_URL}/blog/${SLUG}`,
+      }) }} />
+      <nav className="breadcrumb" aria-label="Breadcrumb"><Link href="/">Home</Link> / <Link href="/blog">Blog</Link> / Tools compared</nav>
+      <h1>AI Search Visibility Tools Compared: Pricing &amp; Features</h1>
+      <p className="post-meta">By openllmrank · Updated September 23, 2026 · {post.readingTime}</p>
+      <p className="lede">An AI search visibility tool measures whether AI answers mention your brand, cite your website, or recommend a competitor. The right choice depends on which answers you need to measure, how often you need fresh results, and whether you can inspect the evidence.</p>
+      <p>We build openllmrank. This comparison uses the official vendor pages linked below, checked September 23, 2026. It is a documentation review, not a hands-on test of competitors. Prices are in USD; coverage and allowances can change.</p>
       <div className="post-cta">
-        <span className="kicker">Try the fast path</span>
-        <h3>See your AI visibility for $49 a month</h3>
-        <p>
-          Five grounded providers, your prompts run multiple times, citation rate
-          versus competitors, and a prioritized action plan &mdash; delivered by
-          email in about fifteen minutes. No subscription, no sales call.
-        </p>
-        <Link href="/wizard/brand" className="btn-primary">
-          Start tracking &mdash; $49/month
-        </Link>
+        <h2>See what a visibility report contains</h2>
+        <p>Inspect an illustrative report before choosing a tool: questions, competitors, citation evidence, and actions.</p>
+        <Link href="/sample-report.html" className="btn-primary" data-cta-location="comparison_intro">View a sample report</Link>
       </div>
-
-      <h2>Which Is Right for You?</h2>
-      <p>
-        Cut it down to how you&rsquo;ll actually use the data:
-      </p>
+      <h2>Compare price, measurement, and evidence</h2>
+      <p className="post-meta">On small screens, scroll the table sideways to compare all columns.</p>
+      <div className="table-scroll" tabIndex={0} role="region" aria-label="Tool comparison, scroll horizontally"><table className="comparison-table">
+        <caption>Published product information checked September 23, 2026</caption>
+        <thead><tr><th scope="col">Tool and price</th><th scope="col">Coverage and frequency</th><th scope="col">Evidence and trade-offs</th></tr></thead>
+        <tbody>{OPTIONS.map(option => <tr key={option.name}>
+          <th scope="row">{option.name}<p>{option.price}</p><a href={option.href}>{option.source}</a></th>
+          <td>{option.coverage}<p>{option.measurement}</p></td>
+          <td>{option.evidence}<p>{option.fit}</p></td>
+        </tr>)}</tbody>
+      </table></div>
+      <style>{`
+        .post .comparison-table { min-width: 720px; }
+        .post .comparison-table th[scope="row"] { text-transform: none; letter-spacing: normal; font-size: 15px; font-weight: 600; vertical-align: top; width: 25%; }
+        .post .comparison-table th[scope="row"] p, .post .comparison-table th[scope="row"] a { font-weight: 400; font-size: 15px; }
+        .post .comparison-table td { vertical-align: top; }
+        .post .comparison-table caption { text-align: left; margin-bottom: 16px; }
+        .post .table-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+      `}</style>
+      <h2>Which option fits your team?</h2>
       <ul>
-        <li>
-          <strong>You need continuous monitoring, alerting, and a team
-          workflow</strong> &mdash; and have the budget: evaluate the enterprise
-          platforms (Profound, Athena HQ, Brand Radar).
-        </li>
-        <li>
-          <strong>You want a fast, honest, evidence-backed snapshot</strong>{" "}
-          without a subscription: get an{" "}
-          <Link href="/wizard/brand">openllmrank report</Link>, or self-host the
-          open-source CLI.
-        </li>
-        <li>
-          <strong>You just want a five-minute gut-check</strong> and have zero
-          budget: do the DIY pass, then automate it once you care about the
-          trend.
-        </li>
+        <li><strong>A small team starting a benchmark:</strong> consider openllmrank if five grounded APIs and weekly evidence meet your needs. Choose the $79 report for a single assessment or $49/month for tracking.</li>
+        <li><strong>An agency managing several clients:</strong> ask each vendor about client workspaces, seats, export rights, and costs per client. openllmrank changes to monthly scheduling beyond three brands, so verify that cadence fits before buying.</li>
+        <li><strong>A team needing daily tracking and enterprise controls:</strong> evaluate Profound and Athena against your security, region, and workflow requirements. Request a sample export and a written coverage breakdown.</li>
+        <li><strong>An SEO team researching a whole category:</strong> evaluate Brand Radar’s discovery indexes separately from its custom prompt tracking. A large discovery corpus does not mean every question you care about is tracked.</li>
+        <li><strong>A technical team with its own workflow:</strong> start with the open-source CLI and budget for API calls, scheduling, and maintaining the analysis.</li>
       </ul>
-      <p>
-        Whichever you pick, the point is to stop guessing. If you&rsquo;re new to
-        the space, start with{" "}
-        <Link href="/blog/what-is-aeo">what AEO is</Link> and{" "}
-        <Link href="/blog/how-to-get-mentioned-in-chatgpt">
-          how to get mentioned in ChatGPT
-        </Link>
-        , then measure where you stand.
-      </p>
-
-      <h2>Frequently Asked Questions</h2>
-      {FAQ.map((f) => (
-        <div key={f.q}>
-          <h3>{f.q}</h3>
-          <p>{f.a}</p>
-        </div>
-      ))}
-
-      <div className="post-end">
-        <div className="post-cta">
-          <span className="kicker">Measure it</span>
-          <h3>Find out what AI says about your brand</h3>
-          <p>
-            One emailed report, five grounded providers, your citation rate
-            versus competitors, and what to do about it. $49 a month, first
-            report in about fifteen minutes.
-          </p>
-          <Link href="/wizard/brand" className="btn-primary">
-            Start tracking &mdash; $49/month
-          </Link>
-        </div>
-
-        {related.length > 0 && (
-          <div className="related">
-            <h2>Keep reading</h2>
-            <div className="related-list">
-              {related.map((r) => (
-                <Link key={r.slug} href={`/blog/${r.slug}`}>
-                  {r.title}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      <h2>API benchmarks and consumer AI results are different</h2>
+      <p>openllmrank runs web-enabled provider APIs. Those results can differ from ChatGPT, Gemini, or other consumer applications because the model, search tools, location, conversation history, and personalization may differ. Google AI Overviews and AI Mode are separate surfaces. An OpenAI API response is not a measurement of a particular ChatGPT user’s screen.</p>
+      <p>Ask vendors which surface they collect, whether prompts are synthetic or based on observed demand, and how they handle failed answers. Compare like-for-like prompt sets and sampling methods. Read our <Link href="/methodology">benchmark methodology and limitations</Link>.</p>
+      <h2>How to evaluate AI visibility gap analysis</h2>
+      <ol>
+        <li>Choose a stable set of buying questions, including specific categories and constraints your customers actually use.</li>
+        <li>Record your brand and competitors across repeated answers. Separate a brand mention from a linked citation.</li>
+        <li>Inspect the answers where a competitor appears and you do not. Open the cited sources and check their relevance.</li>
+        <li>Make a specific improvement, such as clearer product information or an accurate independent listing. Record the change date.</li>
+        <li>Repeat the same benchmark. Changes are observational: model and retrieval changes can also move the results.</li>
+      </ol>
+      <h2>Questions to ask before buying</h2>
+      <ul>
+        <li>Can I export the exact prompts, timestamps, answers, and cited URLs?</li>
+        <li>Does one credit buy a question, one model response, or a full multi-model run?</li>
+        <li>What happens to the score when a provider fails or returns no sources?</li>
+        <li>Can I separate model changes from changes in my own content?</li>
+        <li>Which features require another subscription, extra credits, or a sales agreement?</li>
+      </ul>
+      <h2>Can I check AI visibility for free?</h2>
+      <p>You can ask questions manually or use the CLI with your own paid API keys. Manual checks are useful examples, but repeated measurements are needed to describe variability. Our <Link href="/check">free AI crawler checker</Link> diagnoses crawl access; it does not measure whether AI recommends your brand.</p>
+      <div className="post-end"><div className="post-cta">
+        <h2>Measure your brand against your competitors</h2>
+        <p>Weekly tracking is $49/month. Prefer one assessment? Get a report for $79. Both use five grounded providers and repeated samples.</p>
+        <Link href="/wizard/brand" className="btn-primary">Start tracking — $49/month</Link>{" "}
+        <Link href="/sample-report.html" className="btn-text">View a sample report</Link>
+      </div><div className="related"><h2>Keep reading</h2><div className="related-list">{related.map(r => <Link key={r.slug} href={`/blog/${r.slug}`}>{r.title}</Link>)}</div></div></div>
     </article>
   );
 }

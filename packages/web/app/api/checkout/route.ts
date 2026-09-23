@@ -14,6 +14,7 @@ import {
 } from "../../../lib/stripe";
 import { checkRateLimit, getClientIp } from "../../../lib/rate-limit";
 import { reportPriceCents } from "../../../lib/report-provisioning";
+import { acquisitionMetadata } from "../../../lib/acquisition";
 
 // POST /api/checkout
 //
@@ -36,6 +37,7 @@ const BodySchema = z.object({
   config: HostedConfigSchema,
   email: z.string().email(),
   plan: z.enum(["report", "tracking"]).default("report"),
+  acquisition: z.unknown().optional(),
 });
 
 export const DEFAULT_SUBSCRIPTION_PRICE_CENTS = 4900;
@@ -137,6 +139,7 @@ export async function POST(req: Request) {
             currency: "usd",
             productName: process.env.SUBSCRIPTION_PRODUCT_NAME ?? "openllmrank tracking",
             leadId: lead.id,
+            acquisition: acquisitionMetadata(parsed.data.acquisition),
             email,
             successUrl: `${origin}/checkout/success`,
             cancelUrl: `${origin}/checkout/cancel`,
@@ -146,6 +149,7 @@ export async function POST(req: Request) {
             currency: "usd",
             productName: process.env.PRODUCT_NAME ?? "openllmrank report",
             leadId: lead.id,
+            acquisition: acquisitionMetadata(parsed.data.acquisition),
             email,
             successUrl: `${origin}/checkout/success`,
             cancelUrl: `${origin}/checkout/cancel`,

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "../styles/globals.css";
+import { AcquisitionTracker } from "./_components/acquisition-tracker";
 
 // Editorial display: Fraunces (variable, opsz axis 9..144 — dramatic at hero sizes).
 // Body: DM Sans (geometric, characterful, not Inter).
@@ -74,6 +75,7 @@ export default function RootLayout({
       <body>
         {children}
         <Analytics />
+        <AcquisitionTracker />
       </body>
     </html>
   );

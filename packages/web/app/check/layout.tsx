@@ -177,8 +177,9 @@ export default function CheckLayout({ children }: { children: React.ReactNode })
 
         @media (max-width: 820px) {
           .check-hero h1, .wrap h1 { font-size: 32px; }
-          .site-nav { padding: var(--space-md); }
-          .site-nav-links { gap: var(--space-md); }
+          .site-nav { padding: var(--space-md); flex-wrap: wrap; gap: var(--space-md); }
+          .site-nav-links { gap: var(--space-md); flex-wrap: wrap; }
+          .site-nav-links a { display: inline-flex; white-space: nowrap; }
         }
       `}</style>
     </>

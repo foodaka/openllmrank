@@ -43,17 +43,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     ...posts,
+    { url: `${SITE_URL}/methodology`, lastModified: new Date("2026-09-23T00:00:00Z") },
     {
       // The free crawlability check — tool page only; tokenized reports are
       // noindexed and robots-disallowed.
       url: `${SITE_URL}/check`,
-      lastModified: new Date("2026-08-15T00:00:00Z"),
+      lastModified: new Date("2026-09-23T00:00:00Z"),
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${SITE_URL}/privacy`,
-      lastModified: LEGAL_LAST_MODIFIED,
+      lastModified: new Date("2026-09-23T00:00:00Z"),
       changeFrequency: "yearly",
       priority: 0.3,
     },

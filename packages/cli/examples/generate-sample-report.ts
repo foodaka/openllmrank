@@ -103,6 +103,14 @@ const html = renderHtmlReport({
 
 const cliOutput = resolve(import.meta.dir, "sample-report.html");
 const webOutput = resolve(import.meta.dir, "../../web/public/sample-report.html");
-await Promise.all([Bun.write(cliOutput, html), Bun.write(webOutput, html)]);
+// Only the public marketing sample needs a purchase/return path. Real customer
+// reports and the CLI example remain focused on the report itself.
+const sampleCta = `<aside aria-label="About this sample" style="margin-bottom:28px;padding:20px;border:1px solid var(--line);border-radius:7px;background:var(--soft)">
+  <strong>Illustrative sample report</strong>
+  <p>See this evidence for your own brand. Weekly tracking is $49/month, or choose a one-time report for $79.</p>
+  <p style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-bottom:0"><a href="/wizard/brand" style="display:inline-flex;padding:12px 18px;border-radius:24px;background:var(--accent);color:var(--paper);font-weight:600">Start tracking — $49/month</a><a href="/">Back to openllmrank</a></p>
+</aside>`;
+const webHtml = html.replace('<main class="wrap">', `<main class="wrap">\n${sampleCta}`);
+await Promise.all([Bun.write(cliOutput, html), Bun.write(webOutput, webHtml)]);
 console.log(`Wrote ${cliOutput}`);
 console.log(`Wrote ${webOutput}`);

@@ -16,6 +16,7 @@ import {
   sendOrderReceivedEmail,
 } from "../../../../lib/report-provisioning";
 import { HostedConfigSchema, type HostedConfig } from "@openllmrank/shared/config";
+import { trackPaidCheckout } from "../../../../lib/payment-analytics";
 
 // Stripe webhook handler. Post-payment provisioning lives here. Flow:
 //
@@ -723,6 +724,7 @@ export async function POST(req: Request) {
     }
 
     await markProcessed();
+    await trackPaidCheckout(event);
     return NextResponse.json({
       received: true,
       subscription_id: subscriptionRowId,
@@ -827,6 +829,7 @@ export async function POST(req: Request) {
   // Mark the event processed. If we reach this line, every step above
   // succeeded — a retry of the same event should short-circuit.
   await markProcessed();
+  await trackPaidCheckout(event);
 
   return NextResponse.json({
     received: true,
