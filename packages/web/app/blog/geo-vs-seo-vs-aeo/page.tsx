@@ -113,6 +113,8 @@ export default function GeoVsSeoVsAeoPost() {
         here&rsquo;s the plain-English version.
       </p>
 
+      <p><Link href="/sample-report.html">See a sample AI visibility report</Link> to understand how mentions and citations are measured, or <Link href="/check">check crawler access for free</Link>. Crawl access alone does not mean AI recommends your brand.</p>
+
       <h2>The One-Sentence Version of Each</h2>
       <p>
         Three acronyms, a lot of overlap, and a fair amount of marketing noise.

@@ -63,6 +63,7 @@ export default function BlogLayout({
           openllmrank &middot; Privacy-friendly, open-source analytics for AI
           search visibility &middot; <Link href="/login">Sign in</Link> &middot;{" "}
           <Link href="/blog">Blog</Link> &middot;{" "}
+          <Link href="/methodology">Methodology</Link> &middot;{" "}
           <Link href="/privacy">Privacy</Link> &middot;{" "}
           <Link href="/terms">Terms</Link> &middot;{" "}
           <ContactLink>Contact</ContactLink> &middot;{" "}
@@ -305,8 +306,9 @@ export default function BlogLayout({
         .related-list a:hover { color: var(--accent); }
 
         @media (max-width: 820px) {
-          .site-nav { padding: 20px 20px 0; }
-          .site-nav-links { gap: 16px; }
+          .site-nav { padding: 20px 20px 0; flex-wrap: wrap; gap: 16px; }
+          .site-nav-links { gap: 16px; flex-wrap: wrap; }
+          .site-nav-links a { display: inline-flex; white-space: nowrap; }
           .blog-wrap { padding: 32px 20px 64px; }
           .blog-head .headline { font-size: 38px; }
           .post { padding: 24px 20px 64px; }

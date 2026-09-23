@@ -252,6 +252,8 @@ export default function StateOfAiSearchPost() {
         quietly erased.
       </p>
 
+      <p>By openllmrank · Methods clarified September 23, 2026. <Link href="/methodology">Read study limitations and download the published prompts</Link>. The public aggregate tables do not include the original answer logs.</p>
+
       <h2>Three Findings, Up Front</h2>
       <p>
         If you read nothing else, read these:

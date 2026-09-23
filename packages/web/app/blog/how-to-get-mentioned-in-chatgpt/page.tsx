@@ -114,6 +114,8 @@ export default function HowToGetMentionedInChatgptPost() {
         to check whether any of it is working.
       </p>
 
+      <p><Link href="/sample-report.html">See a sample AI visibility report</Link> to understand how mentions and citations are measured, or <Link href="/check">check crawler access for free</Link>. Crawl access alone does not mean AI recommends your brand.</p>
+
       <h2>First, How ChatGPT Decides What to Mention</h2>
       <p>
         You can&rsquo;t optimize for a black box, so start with the mechanics.

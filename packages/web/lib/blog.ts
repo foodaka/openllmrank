@@ -33,7 +33,7 @@ export const posts: BlogPost[] = [
     description:
       "We ran 10 buying questions through ChatGPT, Claude, Gemini, Perplexity, and Grok — 3 times each, 150 grounded answers — and counted every brand they named. Every category had a locked shortlist, well-known challengers flickered, and 11 real brands were never named once.",
     date: "2026-07-16",
-    dateModified: "2026-07-16",
+    dateModified: "2026-09-23",
     readingTime: "11 min read",
     tags: ["Data", "AI Search", "Research", "AEO"],
     keywords: [
@@ -53,7 +53,7 @@ export const posts: BlogPost[] = [
     description:
       "Across 150 grounded AI answers, we logged every source the engines cited. The pattern is clear: AI recommendations run downstream of review sites, listicles, and niche blogs — not your own homepage. Here are the domains that get cited most.",
     date: "2026-07-16",
-    dateModified: "2026-07-16",
+    dateModified: "2026-09-23",
     readingTime: "7 min read",
     tags: ["Data", "Sources", "AI Search", "AEO"],
     keywords: [
@@ -94,7 +94,7 @@ export const posts: BlogPost[] = [
     description:
       "SEO earns a ranking, AEO earns a citation, and GEO is another name for the same thing. Here's a plain-English breakdown of how the three overlap, where they diverge, and which to invest in.",
     date: "2026-07-16",
-    dateModified: "2026-07-16",
+    dateModified: "2026-09-23",
     readingTime: "8 min read",
     tags: ["GEO", "SEO", "AEO", "Fundamentals"],
     keywords: [
@@ -113,7 +113,7 @@ export const posts: BlogPost[] = [
     description:
       "A practical, step-by-step guide to getting ChatGPT to recommend and cite your brand — how it retrieves and chooses sources, the content that gets quoted, and how to measure whether it's working.",
     date: "2026-07-16",
-    dateModified: "2026-07-16",
+    dateModified: "2026-09-23",
     readingTime: "10 min read",
     tags: ["ChatGPT", "AEO", "How-to", "AI Search"],
     keywords: [
@@ -129,12 +129,12 @@ export const posts: BlogPost[] = [
   },
   {
     slug: "best-ai-search-visibility-tools",
-    title: "Best AI Search Visibility Tools (2026)",
+    title: "AI Search Visibility Tools Compared: Pricing & Features",
     description:
-      "A candid comparison of AI search visibility and AEO tools — Profound, Athena HQ, Brand Radar, openllmrank, and the DIY spreadsheet approach — with the trade-offs on price, depth, and who each is for.",
+      "Compare openllmrank, Profound, Athena HQ, and Ahrefs Brand Radar by published pricing, engine coverage, measurement methods, and evidence. Updated September 2026.",
     date: "2026-07-16",
-    dateModified: "2026-07-16",
-    readingTime: "9 min read",
+    dateModified: "2026-09-23",
+    readingTime: "6 min read",
     tags: ["Tools", "Comparison", "AEO", "AI Search"],
     keywords: [
       "best ai search visibility tools",
