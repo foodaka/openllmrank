@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { trackFunnel } from "../../../lib/funnel-client";
 
 export function CheckForm() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export function CheckForm() {
     if (busy) return;
     setBusy(true);
     setError(null);
+    trackFunnel("crawl_check_start");
     try {
       const res = await fetch("/api/crawl-check", {
         method: "POST",
@@ -22,12 +24,15 @@ export function CheckForm() {
       });
       const body = (await res.json()) as { token?: string; error?: string };
       if (!res.ok || !body.token) {
+        trackFunnel("crawl_check_error", { reason: "request" });
         setError(body.error ?? "Something went wrong. Try again.");
         setBusy(false);
         return;
       }
+      trackFunnel("crawl_check_created");
       router.push(`/check/${body.token}`);
     } catch {
+      trackFunnel("crawl_check_error", { reason: "network" });
       setError("Network error. Try again.");
       setBusy(false);
     }

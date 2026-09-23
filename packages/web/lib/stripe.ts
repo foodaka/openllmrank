@@ -6,6 +6,7 @@
 import Stripe from "stripe";
 
 export type CheckoutSessionInput = {
+  acquisition?: Record<string, string>;
   amountCents: number;
   currency: string;
   productName: string;
@@ -24,6 +25,7 @@ export type CheckoutSessionResult = {
 };
 
 export type SubscriptionSessionInput = {
+  acquisition?: Record<string, string>;
   amountCents: number;
   currency: string;
   productName: string;
@@ -113,6 +115,7 @@ export async function createCheckoutSession(
       }),
     ],
     metadata: {
+      ...input.acquisition,
       // Webhook reads lead_id to look up the full wizard config and
       // provision the user / brand / job post-payment.
       lead_id: input.leadId,
@@ -160,6 +163,7 @@ export async function createSubscriptionSession(
     input.userId !== undefined
       ? { user_id: input.userId }
       : { lead_id: input.leadId, kind: "tracking" };
+  Object.assign(metadata, input.acquisition);
   // One Customer per email, shared with the crawl-monitor checkout, so the
   // billing portal reaches every subscription a person holds.
   const customerId = await findOrCreateCustomer(input.email);

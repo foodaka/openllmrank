@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ContactLink } from "../_components/contact-link";
 
 export const metadata = {
-  title: "Privacy Policy — openllmrank",
+  title: "Privacy Policy",
+  alternates: { canonical: "/privacy" },
   description:
     "How openllmrank collects, uses, and protects your information.",
 };
@@ -22,7 +23,7 @@ export default function PrivacyPage() {
         <article className="wrap legal">
           <span className="kicker">Privacy Policy</span>
           <h1>Privacy Policy</h1>
-          <p className="muted updated">Last updated: July 14, 2026</p>
+          <p className="muted updated">Last updated: September 23, 2026</p>
 
           <p>
             openllmrank (&ldquo;we,&rdquo; &ldquo;us&rdquo;) operates the
@@ -55,8 +56,7 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong>Basic site analytics</strong> &mdash; aggregate
-              page views and traffic sources via Vercel Analytics, which
-              is cookieless and does not identify individual visitors.
+              page views, traffic-source categories, and product funnel events via Vercel Analytics. We keep the first public landing page and a broad referral category in session storage for up to 30 minutes and attach those fields to checkout metadata to understand which pages lead to purchases. These analytics events exclude email addresses, submitted domains, prompts, and payment identifiers. Attribution attached to purchases is retained with the order records.
             </li>
           </ul>
 
