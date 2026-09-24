@@ -1,0 +1,20 @@
+{
+  "name": "openllmrank",
+  "displayName": "OpenLLMRank",
+  "version": "1.0.0",
+  "description": "See how often ChatGPT, Claude, Gemini, Perplexity and Grok recommend your brand versus competitors, check whether AI crawlers can reach your site, and fix the gaps.",
+  "author": {
+    "name": "OpenLLMRank",
+    "url": "https://openllmrank.io"
+  },
+  "homepage": "https://openllmrank.io",
+  "repository": "https://github.com/foodaka/openllmrank",
+  "license": "MIT",
+  "keywords": ["ai-visibility", "aeo", "geo", "llm-seo", "chatgpt", "perplexity", "brand-monitoring", "crawlability"],
+  "mcpServers": {
+    "openllmrank": {
+      "type": "http",
+      "url": "https://openllmrank.io/api/mcp"
+    }
+  }
+}

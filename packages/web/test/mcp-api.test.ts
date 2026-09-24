@@ -77,12 +77,14 @@ describe("MCP protocol", () => {
     expect(body.result.instructions).toContain("AI assistants");
   });
 
-  test("lists the five tools, described by user intent", async () => {
+  test("lists the tools, described by user intent", async () => {
     const { body } = await rpc("tools/list", {});
     const tools = body.result.tools as { name: string; description: string }[];
     expect(tools.map((t) => t.name).sort()).toEqual([
       "analyze_brand_visibility",
+      "check_ai_crawlability",
       "discover_ai_questions",
+      "get_crawlability_report",
       "get_report_status",
       "get_visibility_report",
       "pay_for_report",
@@ -112,6 +114,12 @@ describe("MCP protocol", () => {
     expect(isError).toBe(true);
     expect(data.error.code).toBe("INVALID_INPUT");
     expect(data.error.recoverable).toBe(true);
+  });
+
+  test("a malformed check_token is rejected before any lookup", async () => {
+    const { isError, text } = await call("get_crawlability_report", { check_token: "nope" });
+    expect(isError).toBe(true);
+    expect(text).toContain("check_token");
   });
 
   test("an id without its token is denied before any lookup", async () => {
@@ -375,5 +383,70 @@ describePg("MCP agent flow", () => {
       limited = res.data.error.code === "RATE_LIMITED";
     }
     expect(limited).toBe(true);
+  });
+});
+
+describePg("MCP crawlability check", () => {
+  const DOMAIN = "mcp-crawlability.example";
+  let sql: SQL;
+
+  beforeAll(async () => {
+    sql = new SQL(PG_URL);
+    await sql`delete from public.crawl_checks where domain = ${DOMAIN}`;
+  });
+
+  afterAll(async () => {
+    await sql`delete from public.crawl_checks where domain = ${DOMAIN}`;
+    await sql.end();
+  });
+
+  test("queues a check, then reports AI crawler access, findings and a fix prompt", async () => {
+    const started = await call("check_ai_crawlability", { website: `https://${DOMAIN}/pricing` });
+    expect(started.isError).toBe(false);
+    expect(started.data.status).toBe("queued");
+    expect(started.data.report_url).toBe(`https://openllmrank.test/check/${started.data.check_token}`);
+
+    const pending = await call("get_crawlability_report", { check_token: started.data.check_token });
+    expect(pending.data.done).toBe(false);
+    expect(pending.data.poll_after_seconds).toBeGreaterThan(0);
+
+    // Simulate the worker finishing: OAI-SearchBot blocked, plus an orphan
+    // page. Only the orphan is code-fixable; robots policy is the user's call.
+    const phase1 = {
+      schema_version: 1,
+      robots_txt_found: true,
+      robots_blocks_all: false,
+      sitemap_urls: [],
+      sitemap_found: true,
+      bot_access: [{ bot: "OAI-SearchBot", category: "ai_search", allowed: false }],
+    };
+    const findings = [
+      { type: "bot_blocked", bot: "OAI-SearchBot", category: "ai_search", severity: "critical", tier: "headline" },
+      { type: "orphan_page", url: `https://${DOMAIN}/ghost`, severity: "warning", tier: "headline" },
+    ];
+    await sql`
+      update public.crawl_checks
+      set state = 'complete', phase1_jsonb = ${phase1 as unknown as Record<string, unknown>},
+          findings_jsonb = ${findings as unknown as Record<string, unknown>[]},
+          pages_crawled = 1, pages_discovered = 1, finished_at = now()
+      where domain = ${DOMAIN}
+    `;
+
+    const done = await call("get_crawlability_report", { check_token: started.data.check_token });
+    expect(done.isError).toBe(false);
+    expect(done.data.done).toBe(true);
+    expect(done.data.ai_crawler_access).toEqual(phase1.bot_access);
+    expect(done.data.finding_counts.critical).toBe(1);
+    expect(done.data.findings[0].description).toContain("OAI-SearchBot is blocked");
+    expect(done.data.fix_prompt).toContain("untrusted-crawl-findings");
+    expect(done.data.next_step).toBeUndefined();
+  });
+
+  test("an unknown check_token is denied", async () => {
+    const res = await call("get_crawlability_report", {
+      check_token: "00000000-0000-4000-8000-000000000000",
+    });
+    expect(res.isError).toBe(true);
+    expect(res.data.error.code).toBe("ACCESS_DENIED");
   });
 });

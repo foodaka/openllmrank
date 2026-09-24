@@ -1,3 +1,4 @@
+import { describeFinding, isTerminalState } from "@openllmrank/crawl";
 import { z } from "zod";
 import {
   HOSTED_CAPS,
@@ -11,6 +12,7 @@ import {
   signedReportUrl,
   verifyReportToken,
 } from "@openllmrank/shared/report-token";
+import { readCrawlReport, submitCrawlCheck } from "./crawl-check";
 import { buildAgentReport, type AgentReport, type StoredRunMetrics } from "./agent-report";
 import { loadReportData } from "./report-data";
 import { provisionPaidReport, reportPriceCents } from "./report-provisioning";
@@ -36,6 +38,8 @@ import {
 //   payForOrder         order + Shared Payment Token -> paid job
 //   getStatus           order/report id -> queued | running | completed | failed
 //   getReport           report id -> compact structured results
+//   checkAiCrawlability website -> crawl check token        (free)
+//   getCrawlabilityReport check token -> AI crawler access + findings
 //
 // Every write reuses the wizard's machinery: the order is a `leads` row, the
 // paid job comes from provisionPaidReport (same as the Stripe webhook), the
@@ -550,5 +554,96 @@ function toStoredMetrics(row: Record<string, unknown>): StoredRunMetrics {
     samples_total: Number(row.samples_total),
     per_provider_jsonb: (row.per_provider_jsonb ?? {}) as Record<string, number>,
     per_competitor_jsonb: (row.per_competitor_jsonb ?? []) as { name: string; rate: number }[],
+  };
+}
+
+// ── checkAiCrawlability / getCrawlabilityReport ─────────────────────────
+//
+// The free /check tool for agents: can AI search crawlers reach the site?
+// Same code path as the web form (lib/crawl-check.ts), so the same durable
+// per-IP and per-domain quotas apply. The check token is the capability:
+// per requester, unguessable, never another requester's (decision 7A).
+
+const CRAWL_POLL_AFTER_SECONDS = 15;
+
+export const CrawlCheckInput = z.object({
+  website: z.string().min(1).max(300),
+});
+
+export const CrawlReportInput = z.object({
+  check_token: z.string().uuid(),
+});
+
+function crawlReportUrl(deps: Pick<AgentDeps, "siteOrigin">, token: string): string {
+  return `${deps.siteOrigin}/check/${token}`;
+}
+
+export async function checkAiCrawlability(
+  input: z.infer<typeof CrawlCheckInput>,
+  ip: string,
+  deps: Pick<AgentDeps, "siteOrigin">,
+) {
+  const result = await submitCrawlCheck({ domain: input.website, ip });
+  if (!result.ok) {
+    throw new AgentError(result.status === 400 ? "INVALID_INPUT" : "RATE_LIMITED", result.error, true);
+  }
+  return {
+    status: "queued" as const,
+    check_token: result.token,
+    reused_recent_check: result.deduped,
+    report_url: crawlReportUrl(deps, result.token),
+    poll_after_seconds: CRAWL_POLL_AFTER_SECONDS,
+    next_step:
+      "Call get_crawlability_report with check_token. AI crawler access (robots.txt) is usually ready within seconds; the full crawl takes a minute or two.",
+  };
+}
+
+export async function getCrawlabilityReport(
+  input: z.infer<typeof CrawlReportInput>,
+  deps: Pick<AgentDeps, "siteOrigin">,
+) {
+  const result = await readCrawlReport(input.check_token);
+  if (!result.ok) {
+    if (result.status === 500) {
+      throw new AgentError("INTERNAL", "This report could not be read. Run a new check.", true);
+    }
+    // One answer for unknown and removed, so tokens cannot be probed.
+    throw new AgentError("ACCESS_DENIED", "No check matches that check_token.", false);
+  }
+  const report = result.report;
+  const done = isTerminalState(report.state);
+  const findings = report.findings.map((f) => ({
+    severity: f.severity,
+    tier: f.tier,
+    type: f.type,
+    description: describeFinding(f),
+  }));
+  return {
+    domain: report.domain,
+    status: report.state,
+    done,
+    ai_crawler_access: report.phase1?.bot_access ?? null,
+    robots_txt_found: report.phase1?.robots_txt_found ?? null,
+    sitemap_found: report.phase1?.sitemap_found ?? null,
+    pages_crawled: report.pages_crawled,
+    pages_discovered: report.pages_discovered,
+    finding_counts: {
+      critical: findings.filter((f) => f.severity === "critical").length,
+      warning: findings.filter((f) => f.severity === "warning").length,
+      info: findings.filter((f) => f.severity === "info").length,
+    },
+    findings,
+    failure_reason: report.failure_reason,
+    newer_check_exists: report.superseded,
+    // Written for a coding agent working in the site's repo; URLs in it are
+    // fenced as data by packages/crawl.
+    fix_prompt: report.fix_prompt,
+    report_url: crawlReportUrl(deps, input.check_token),
+    ...(done
+      ? {}
+      : {
+          poll_after_seconds: CRAWL_POLL_AFTER_SECONDS,
+          next_step: "The crawl is still running. Call get_crawlability_report again shortly; partial results are included.",
+        }),
   };
 }
