@@ -1,0 +1,17 @@
+{
+  "name": "openllmrank",
+  "owner": {
+    "name": "OpenLLMRank",
+    "url": "https://openllmrank.io"
+  },
+  "metadata": {
+    "description": "OpenLLMRank's official Cursor plugin marketplace."
+  },
+  "plugins": [
+    {
+      "name": "openllmrank",
+      "source": "plugins/openllmrank",
+      "description": "See how often ChatGPT, Claude, Gemini, Perplexity and Grok recommend your brand versus competitors, check whether AI crawlers can reach your site, and fix the gaps."
+    }
+  ]
+}

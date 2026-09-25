@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "openllmrank": {
+      "url": "https://openllmrank.io/api/mcp"
+    }
+  }
+}

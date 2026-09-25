@@ -26,6 +26,16 @@ openllmrank run
 openllmrank report --html
 ```
 
+## Use it from your AI agent
+
+The [OpenLLMRank plugin](./plugins/openllmrank) bundles the hosted MCP server with skills for checking AI crawler access, running a visibility audit, and fixing citation gaps.
+
+```
+/plugin marketplace add foodaka/openllmrank      # Claude Code
+/plugin install openllmrank@openllmrank
+npx skills add foodaka/openllmrank               # any agent that reads SKILL.md
+```
+
 ## Working in this repo
 
 ```bash

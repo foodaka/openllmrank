@@ -1,0 +1,35 @@
+{
+  "name": "openllmrank",
+  "version": "1.0.0",
+  "description": "See how often ChatGPT, Claude, Gemini, Perplexity and Grok recommend your brand versus competitors, check whether AI crawlers can reach your site, and fix the gaps.",
+  "author": {
+    "name": "OpenLLMRank",
+    "url": "https://openllmrank.io"
+  },
+  "homepage": "https://openllmrank.io",
+  "repository": "https://github.com/foodaka/openllmrank",
+  "license": "MIT",
+  "keywords": ["ai-visibility", "aeo", "geo", "llm-seo", "chatgpt", "perplexity", "brand-monitoring", "crawlability"],
+  "skills": "./skills/",
+  "mcpServers": {
+    "openllmrank": {
+      "url": "https://openllmrank.io/api/mcp"
+    }
+  },
+  "interface": {
+    "displayName": "OpenLLMRank",
+    "shortDescription": "How often AI assistants recommend your brand versus competitors, and how to fix it.",
+    "longDescription": "See how often ChatGPT, Claude, Gemini, Perplexity and Grok recommend your brand versus competitors, check whether AI crawlers can reach your site, and fix the gaps.",
+    "developerName": "OpenLLMRank",
+    "category": "Productivity",
+    "capabilities": ["Interactive"],
+    "websiteURL": "https://openllmrank.io",
+    "privacyPolicyURL": "https://openllmrank.io/privacy",
+    "termsOfServiceURL": "https://openllmrank.io/terms",
+    "defaultPrompt": [
+      "Can ChatGPT and Perplexity crawl my site? Check it and fix what's blocking them.",
+      "How visible is my company in AI answers compared to our competitors?",
+      "Why does AI recommend my competitor instead of us? Tell me what to change."
+    ]
+  }
+}
