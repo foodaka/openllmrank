@@ -109,6 +109,7 @@ depend on the hosted project's redirect allow-list. Local dev is covered by
 - **Email OTP expiry**: 3600 seconds, to match the "expires in an hour" copy in the invite email.
 - **Enable sign-ups**: leave on. Checkout provisions accounts through the admin API; the login page only signs in.
 - Apply migrations `0006`–`0010` (`supabase db push`) before the first deploy of this version. `0010` revokes browser writes to the scheduler-owned brand columns.
+- Apply migration `0012` (`mention_checks`, `mention_answers`) before deploying the free AI visibility checker. The worker needs `OPENAI_API_KEY`, `PERPLEXITY_API_KEY` and `GOOGLE_API_KEY` (already required for reports); the web app reads `MENTION_CHECK_DAILY_BUDGET_USD` (default 10, 0 disables).
 
 ### 1.3 First deploy
 

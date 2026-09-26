@@ -222,6 +222,49 @@ A domain checked in the last 24 hours reuses that crawl (`reused_recent_check: t
 - `fix_prompt` is an instruction for a coding agent working in the site's repository, covering the code-fixable findings (orphan pages, broken links, noindex pages, sitemaps). Robots.txt policy is left to the site owner. Its data block is fenced as untrusted.
 - An unknown or removed token gets `ACCESS_DENIED`.
 
+### `check_ai_mentions`
+
+Free quick check, the same as [openllmrank.io/ai-visibility-checker](https://openllmrank.io/ai-visibility-checker): asks ChatGPT, Perplexity and Gemini one buyer question once, with web search on.
+
+| Input | Type | |
+|---|---|---|
+| `brand` | string | the brand to look for |
+| `website` | string | its domain; mentions of the domain and cited pages on it count |
+| `question` | string | 10-300 characters, phrased as a buyer would ask, without naming the brand |
+
+Returns `check_token`, `result_url` and `poll_after_seconds`. Answers usually arrive within 20-60 seconds.
+
+### `get_ai_mentions`
+
+| Input | Type | |
+|---|---|---|
+| `check_token` | uuid | from `check_ai_mentions` |
+
+```json
+{
+  "brand": "Acme",
+  "question": "What's the best payroll software for a 20-person startup?",
+  "status": "complete",
+  "done": true,
+  "mentioned_count": 1,
+  "answered_count": 2,
+  "answers": [
+    {
+      "assistant": "ChatGPT",
+      "model": "gpt-5.4-mini",
+      "answered": true,
+      "mentioned": true,
+      "excerpts": ["…the usual shortlist is Gusto, Rippling and Acme Payroll…"],
+      "answer_preview": "For a 20-person startup, the usual shortlist is…",
+      "sources": [{ "url": "https://acme.com/pricing", "domain": "acme.com", "is_brand": true }]
+    }
+  ],
+  "result_url": "https://openllmrank.io/ai-visibility-checker/…"
+}
+```
+
+One question asked once is a first signal, not a measurement. Answers are cached per question for 24 hours, so repeating a question returns the same answers.
+
 ## Access
 
 There are no accounts or API keys. Instead:
@@ -302,4 +345,5 @@ Nothing in `lib/agent-tools.ts` knows about MCP or Muse. A REST or OpenAPI bindi
 - One-off reports only. Subscriptions ($49/mo tracking) are not sold through this interface: a Shared Payment Token authorizes a single amount.
 - No competitor discovery: the calling agent proposes competitors.
 - The crawlability check allows 10 checks per caller IP and 5 crawls per domain per day, counted together with the web form. Through a hosted agent platform (shared egress IPs) the per-IP allowance is shared by that platform's users; from Claude Code or Codex it is the user's own.
+- The quick mention check allows 3 checks per caller IP per day (shared with the web form) and stops for everyone when the day's spend cap is reached.
 - No sign-in. An agent cannot list a user's existing dashboard reports. That needs OAuth (PKCE) and is the natural v2.

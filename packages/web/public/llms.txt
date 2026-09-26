@@ -9,6 +9,8 @@ openllmrank is a hosted product plus an MIT-licensed CLI. Both support grounded 
 - [Home](https://openllmrank.io/): What the report measures, how it works, sample, FAQ, pricing.
 - [Sample report](https://openllmrank.io/sample-report.html): A real (anonymized) report so you can see exactly what gets delivered.
 - [Wizard — start a report](https://openllmrank.io/wizard/brand): Three-minute signup. Enter brand, competitors, and buying questions.
+- [Free AI visibility checker](https://openllmrank.io/ai-visibility-checker): Ask ChatGPT, Perplexity and Gemini one buyer question and see whether they mention your brand, who they name instead, and which sources they cite.
+- [Free crawlability check](https://openllmrank.io/check): Whether AI search crawlers can reach your site.
 - [Terms of Service](https://openllmrank.io/terms): Service terms, refund policy, AI-output disclaimer, governing law.
 - [Privacy Policy](https://openllmrank.io/privacy): What we collect, who we share it with, retention, user rights.
 
@@ -22,7 +24,7 @@ openllmrank is a hosted product plus an MIT-licensed CLI. Both support grounded 
 
 ## For AI agents (MCP)
 
-- [MCP endpoint](https://openllmrank.io/api/mcp): Streamable HTTP, no account needed. Tools: `discover_ai_questions` (free), `analyze_brand_visibility` (priced order), `pay_for_report` (Stripe Shared Payment Token), `get_report_status`, `get_visibility_report`, `check_ai_crawlability` and `get_crawlability_report` (free AI crawler access check).
+- [MCP endpoint](https://openllmrank.io/api/mcp): Streamable HTTP, no account needed. Tools: `discover_ai_questions` (free), `analyze_brand_visibility` (priced order), `pay_for_report` (Stripe Shared Payment Token), `get_report_status`, `get_visibility_report`, `check_ai_crawlability` and `get_crawlability_report` (free AI crawler access check), `check_ai_mentions` and `get_ai_mentions` (free quick check: does ChatGPT, Perplexity or Gemini mention a brand for one buyer question).
 - [Agent plugin](https://github.com/foodaka/openllmrank/tree/main/plugins/openllmrank): The MCP server plus skills (`ai-crawlability-check`, `ai-visibility-audit`, `fix-citation-gaps`) for Claude Code (`/plugin marketplace add foodaka/openllmrank`), Codex, Cursor, or `npx skills add foodaka/openllmrank`.
 - [Agent API documentation](https://github.com/foodaka/openllmrank/blob/main/docs/AGENT_API.md): Tool schemas, the order and payment lifecycle, error codes.
 

@@ -53,6 +53,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      // The free "Does AI mention you?" check — tool page only; tokenized
+      // results are noindexed and robots-disallowed.
+      url: `${SITE_URL}/ai-visibility-checker`,
+      lastModified: new Date("2026-09-25T00:00:00Z"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${SITE_URL}/privacy`,
       lastModified: new Date("2026-09-23T00:00:00Z"),
       changeFrequency: "yearly",

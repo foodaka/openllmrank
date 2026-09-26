@@ -12,7 +12,8 @@
     "./design-tokens": "./src/design-tokens.ts",
     "./design-tokens.css": "./src/design-tokens.css",
     "./cadence": "./src/cadence.ts",
-    "./report-token": "./src/report-token.ts"
+    "./report-token": "./src/report-token.ts",
+    "./mention-check": "./src/mention-check.ts"
   },
   "dependencies": {
     "zod": "^3.25.0"
