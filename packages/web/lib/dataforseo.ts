@@ -1,4 +1,4 @@
-// Minimal DataForSEO client for question research: keyword ideas and
+// Minimal DataForSEO client for question research: related keywords and
 // suggestions (Google demand) and AI keyword search volume (demand in AI
 // assistants). Request/response shapes follow DataForSEO's v3 API; the
 // field surface mirrors OpenSEO's typed client (MIT, every-app/open-seo).
@@ -149,6 +149,30 @@ export type KeywordQuery = {
   languageCode: string;
   limit: number;
 };
+
+/** Semantically related keywords: Google's "searches related to" graph
+ * around the seed. Much closer to the topic than keyword_ideas, which
+ * returns anything in the same Google Ads category. */
+export async function fetchRelatedKeywords(q: KeywordQuery & { depth?: number }, fetchImpl?: typeof fetch) {
+  const res = await post(
+    "/v3/dataforseo_labs/google/related_keywords/live",
+    {
+      keyword: q.keyword,
+      location_code: q.locationCode,
+      language_code: q.languageCode,
+      limit: q.limit,
+      depth: q.depth ?? 2,
+      include_serp_info: false,
+      include_seed_keyword: true,
+    },
+    z.object({ keyword_data: LabsKeywordItemSchema.nullish() }).passthrough(),
+    fetchImpl,
+  );
+  return {
+    items: res.items.map((i) => i.keyword_data).filter((k): k is LabsKeywordItem => Boolean(k)),
+    costUsd: res.costUsd,
+  };
+}
 
 /** Keywords in the same category as the seed (broad ideas). */
 export function fetchKeywordIdeas(q: KeywordQuery, fetchImpl?: typeof fetch) {
