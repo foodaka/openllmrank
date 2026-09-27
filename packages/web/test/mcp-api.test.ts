@@ -83,7 +83,9 @@ describe("MCP protocol", () => {
     expect(tools.map((t) => t.name).sort()).toEqual([
       "analyze_brand_visibility",
       "check_ai_crawlability",
+      "check_ai_mentions",
       "discover_ai_questions",
+      "get_ai_mentions",
       "get_crawlability_report",
       "get_report_status",
       "get_visibility_report",
@@ -448,5 +450,56 @@ describePg("MCP crawlability check", () => {
     });
     expect(res.isError).toBe(true);
     expect(res.data.error.code).toBe("ACCESS_DENIED");
+  });
+});
+
+describePg("MCP quick mention check", () => {
+  const DOMAIN = "mcp-mentions.example";
+  let sql: SQL;
+
+  beforeAll(async () => {
+    sql = new SQL(PG_URL);
+    await sql`delete from public.mention_checks where domain = ${DOMAIN}`;
+  });
+
+  afterAll(async () => {
+    await sql`delete from public.mention_checks where domain = ${DOMAIN}`;
+    await sql.end();
+  });
+
+  test("queues a check and reports per-assistant verdicts once the worker finishes", async () => {
+    const started = await call("check_ai_mentions", {
+      brand: "Acme",
+      website: DOMAIN,
+      question: "What is the best tool for agent mention tests?",
+    });
+    expect(started.isError).toBe(false);
+    expect(started.data.result_url).toBe(`https://openllmrank.test/ai-visibility-checker/${started.data.check_token}`);
+
+    const pending = await call("get_ai_mentions", { check_token: started.data.check_token });
+    expect(pending.data.done).toBe(false);
+
+    const results = {
+      schema_version: 1,
+      answers: [
+        { provider: "openai", model: "gpt-5.4-mini", status: "ok", mentioned: false, excerpts: [], answer_preview: "Globex.", sources: [], cached: false },
+      ],
+      mentioned_count: 0,
+      answered_count: 1,
+    };
+    await sql`
+      update public.mention_checks
+      set state = 'complete', results_jsonb = ${results as unknown as Record<string, unknown>}, finished_at = now()
+      where id = ${started.data.check_token}
+    `;
+    const done = await call("get_ai_mentions", { check_token: started.data.check_token });
+    expect(done.data.done).toBe(true);
+    expect(done.data.answers[0]).toMatchObject({ assistant: "ChatGPT", answered: true, mentioned: false });
+    expect(done.data.next_step).toContain("analyze_brand_visibility");
+  });
+
+  test("a question that is too short is a recoverable input error", async () => {
+    const res = await call("check_ai_mentions", { brand: "Acme", website: DOMAIN, question: "short" });
+    expect(res.isError).toBe(true);
   });
 });

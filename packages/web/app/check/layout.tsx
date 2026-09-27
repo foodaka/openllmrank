@@ -18,6 +18,7 @@ export default function CheckLayout({ children }: { children: React.ReactNode })
       <nav className="site-nav">
         <Link href="/" className="wordmark">openllmrank</Link>
         <ul className="site-nav-links">
+          <li><Link href="/ai-visibility-checker">AI mention check</Link></li>
           <li><Link href="/check">Crawl check</Link></li>
           <li><Link href="/blog">Blog</Link></li>
           <li><Link href="/wizard/brand" className="nav-cta">Get my report</Link></li>

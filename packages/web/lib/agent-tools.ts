@@ -13,6 +13,8 @@ import {
   verifyReportToken,
 } from "@openllmrank/shared/report-token";
 import { readCrawlReport, submitCrawlCheck } from "./crawl-check";
+import { MentionCheckInput, readMentionCheck, submitMentionCheck } from "./mention-check";
+import { MENTION_PROVIDER_LABELS } from "@openllmrank/shared/mention-check";
 import { buildAgentReport, type AgentReport, type StoredRunMetrics } from "./agent-report";
 import { loadReportData } from "./report-data";
 import { provisionPaidReport, reportPriceCents } from "./report-provisioning";
@@ -40,6 +42,8 @@ import {
 //   getReport           report id -> compact structured results
 //   checkAiCrawlability website -> crawl check token        (free)
 //   getCrawlabilityReport check token -> AI crawler access + findings
+//   checkAiMentions     brand + website + question -> check token (free)
+//   getAiMentions       check token -> per-assistant mention verdicts
 //
 // Every write reuses the wizard's machinery: the order is a `leads` row, the
 // paid job comes from provisionPaidReport (same as the Stripe webhook), the
@@ -645,5 +649,97 @@ export async function getCrawlabilityReport(
           poll_after_seconds: CRAWL_POLL_AFTER_SECONDS,
           next_step: "The crawl is still running. Call get_crawlability_report again shortly; partial results are included.",
         }),
+  };
+}
+
+// ── checkAiMentions / getAiMentions ─────────────────────────────────────
+//
+// The free /ai-visibility-checker for agents: one buyer question, asked once
+// to a few grounded assistants. Same code path and limits as the web form
+// (lib/mention-check.ts). The check token is the capability.
+
+const MENTION_POLL_AFTER_SECONDS = 10;
+
+// Plain schema for the tool listing (clients see it as JSON Schema); the
+// normalizing web-form schema runs inside checkAiMentions.
+export const MentionCheckToolInput = z.object({
+  brand: z.string().trim().min(1).max(120),
+  website: z.string().trim().min(1).max(300),
+  question: z.string().min(10).max(300),
+});
+
+export const MentionReportInput = z.object({
+  check_token: z.string().uuid(),
+});
+
+function mentionCheckUrl(deps: Pick<AgentDeps, "siteOrigin">, token: string): string {
+  return `${deps.siteOrigin}/ai-visibility-checker/${token}`;
+}
+
+export async function checkAiMentions(
+  raw: z.infer<typeof MentionCheckToolInput>,
+  ip: string,
+  deps: Pick<AgentDeps, "siteOrigin">,
+) {
+  const parsed = MentionCheckInput.safeParse(raw);
+  if (!parsed.success) {
+    throw new AgentError("INVALID_INPUT", parsed.error.issues[0]?.message ?? "Invalid input", true);
+  }
+  const result = await submitMentionCheck({ input: parsed.data, ip });
+  if (!result.ok) {
+    throw new AgentError(
+      result.status === 400 ? "INVALID_INPUT" : "RATE_LIMITED",
+      result.error,
+      true,
+    );
+  }
+  return {
+    status: "queued" as const,
+    check_token: result.token,
+    result_url: mentionCheckUrl(deps, result.token),
+    poll_after_seconds: MENTION_POLL_AFTER_SECONDS,
+    next_step: "Call get_ai_mentions with check_token. Answers usually arrive within 20-60 seconds.",
+  };
+}
+
+export async function getAiMentions(
+  input: z.infer<typeof MentionReportInput>,
+  deps: Pick<AgentDeps, "siteOrigin">,
+) {
+  const result = await readMentionCheck(input.check_token);
+  if (!result.ok) {
+    if (result.status === 500) {
+      throw new AgentError("INTERNAL", "These results could not be read. Run a new check.", true);
+    }
+    throw new AgentError("ACCESS_DENIED", "No check matches that check_token.", false);
+  }
+  const check = result.check;
+  const done = check.state === "complete" || check.state === "failed";
+  return {
+    brand: check.brand,
+    domain: check.domain,
+    question: check.question,
+    status: check.state,
+    done,
+    mentioned_count: check.results?.mentioned_count ?? null,
+    answered_count: check.results?.answered_count ?? null,
+    answers:
+      check.results?.answers.map((a) => ({
+        assistant: MENTION_PROVIDER_LABELS[a.provider] ?? a.provider,
+        model: a.model,
+        answered: a.status === "ok",
+        mentioned: a.mentioned,
+        excerpts: a.excerpts,
+        answer_preview: a.answer_preview,
+        sources: a.sources.map((s) => ({ url: s.url, domain: s.domain, is_brand: s.is_brand })),
+      })) ?? [],
+    failure_reason: check.failure_reason,
+    result_url: mentionCheckUrl(deps, input.check_token),
+    ...(done
+      ? {
+          next_step:
+            "One question asked once is a first signal. For a measured comparison against competitors (up to 10 questions, 3 samples, 5 assistants), use analyze_brand_visibility.",
+        }
+      : { poll_after_seconds: MENTION_POLL_AFTER_SECONDS, next_step: "Still asking. Call get_ai_mentions again shortly." }),
   };
 }

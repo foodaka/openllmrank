@@ -7,7 +7,7 @@ The plugin bundles the OpenLLMRank MCP server (`https://openllmrank.io/api/mcp`,
 | Skill | What it does | Cost |
 | --- | --- | --- |
 | `ai-crawlability-check` | Checks robots.txt access for OAI-SearchBot, Claude-SearchBot, PerplexityBot and search engines, crawls the site for unreachable pages, and fixes what can be fixed in code | Free |
-| `ai-visibility-audit` | Asks five AI assistants your buyers' questions, measures how often each recommends you vs competitors, and explains where you lose | One-time report, price confirmed before paying |
+| `ai-visibility-audit` | Starts with a free quick check (one question on ChatGPT, Perplexity and Gemini), then the full report: five assistants, repeated samples, measured against competitors | Quick check free; report price confirmed before paying |
 | `fix-citation-gaps` | Compares the competitor page the AI cited with yours and writes (or applies) specific page changes | Free (uses a report) |
 
 ## Install
