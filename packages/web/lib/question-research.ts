@@ -1,7 +1,8 @@
 // Question research: a topic ("corporate step challenge app") becomes the
 // buyer questions worth tracking, ranked by demand.
 //
-//   1. DataForSEO keyword ideas + suggestions  → Google demand per keyword
+//   1. DataForSEO related keywords + suggestions → Google demand per keyword,
+//      filtered to keywords that share a meaningful word with the topic
 //   2. DataForSEO AI keyword search volume     → demand inside AI assistants
 //   3. one LLM call groups keywords into buyer questions, phrased the way
 //      people ask an assistant; a question's demand is its keywords' sum
@@ -19,13 +20,17 @@ import { z } from "zod";
 import {
   DataforseoError,
   fetchAiSearchVolume,
-  fetchKeywordIdeas,
+  fetchRelatedKeywords,
   fetchKeywordSuggestions,
   type LabsKeywordItem,
 } from "./dataforseo";
 import { serviceClient } from "./supabase-server";
 
 export const RESEARCH_SCHEMA_VERSION = 1;
+/** Bump when the pipeline's output changes meaning; older cached results
+ * are then re-run instead of served. (2: related keywords + relevance.) */
+export const PIPELINE_VERSION = 2;
+const FEW_RELEVANT = 5;
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_SEARCHES_PER_DAY = 10;
@@ -79,6 +84,7 @@ export type ResearchQuestion = {
 
 export type ResearchResults = {
   schema_version: typeof RESEARCH_SCHEMA_VERSION;
+  pipeline_version?: number;
   topic: string;
   location_code: number;
   questions: ResearchQuestion[];
@@ -112,8 +118,51 @@ function trendOf(item: LabsKeywordItem): number[] {
     .map((m) => m.search_volume ?? 0);
 }
 
-/** Merge ideas + suggestions, dedupe case-insensitively, keep the busiest. */
-export function mergeKeywords(lists: LabsKeywordItem[][], keep = KEYWORDS_KEPT): ResearchKeyword[] {
+// Words too generic to show a keyword is about the topic ("dunkin rewards
+// app" shares only "app" with "corporate step challenge app").
+const GENERIC_WORDS = new Set(
+  ("a an and are app apps b2b b2c best business companies company for free from how in is me near of on online " +
+    "platform platforms program programs saas service services software solution solutions system systems the to " +
+    "tool tools top vs what which with").split(" "),
+);
+
+function meaningfulWords(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 1 && !GENERIC_WORDS.has(w))
+      // Crude singular form, enough for challenge/challenges, step/steps.
+      .map((w) => (w.length > 3 && w.endsWith("s") && !w.endsWith("ss") ? w.slice(0, -1) : w)),
+  );
+}
+
+/** The topic without generic words, in its original order and casing:
+ * "B2B corporate step challenge app" -> "corporate step challenge". */
+export function coreTopic(topic: string): string {
+  return topic
+    .split(/\s+/)
+    .filter((w) => {
+      const bare = w.toLowerCase().replace(/[^a-z0-9]/g, "");
+      return bare.length > 1 && !GENERIC_WORDS.has(bare);
+    })
+    .join(" ");
+}
+
+/** A keyword is on-topic when it shares a meaningful word with the topic.
+ * A topic made only of generic words ("best software") filters nothing. */
+export function relevantTo(topic: string): (keyword: string) => boolean {
+  const topicWords = meaningfulWords(topic);
+  if (topicWords.size === 0) return () => true;
+  return (keyword) => [...meaningfulWords(keyword)].some((w) => topicWords.has(w));
+}
+
+/** Merge related + suggestions, dedupe case-insensitively, keep the busiest. */
+export function mergeKeywords(
+  lists: LabsKeywordItem[][],
+  keep = KEYWORDS_KEPT,
+  isRelevant: (keyword: string) => boolean = () => true,
+): ResearchKeyword[] {
   const byKey = new Map<string, ResearchKeyword>();
   for (const list of lists) {
     for (const item of list) {
@@ -134,9 +183,18 @@ export function mergeKeywords(lists: LabsKeywordItem[][], keep = KEYWORDS_KEPT):
   }
   return [...byKey.values()]
     // Navigational keywords name a specific site; they're not buyer questions.
-    .filter((k) => k.intent !== "navigational")
+    .filter((k) => k.intent !== "navigational" && isRelevant(k.keyword))
     .sort((a, b) => (b.volume ?? -1) - (a.volume ?? -1) || a.keyword.localeCompare(b.keyword))
     .slice(0, keep);
+}
+
+/** Union of two already-filtered keyword lists, busiest first. */
+function combineKeywords(a: ResearchKeyword[], b: ResearchKeyword[]): ResearchKeyword[] {
+  const byKey = new Map<string, ResearchKeyword>();
+  for (const k of [...a, ...b]) if (!byKey.has(k.keyword.toLowerCase())) byKey.set(k.keyword.toLowerCase(), k);
+  return [...byKey.values()]
+    .sort((x, y) => (y.volume ?? -1) - (x.volume ?? -1) || x.keyword.localeCompare(y.keyword))
+    .slice(0, KEYWORDS_KEPT);
 }
 
 export function applyAiVolume(
@@ -231,6 +289,7 @@ export async function groupIntoQuestions(topic: string, keywords: ResearchKeywor
 Group keywords that express the same buyer need, and write one natural question per group, the way a buyer would type it to an assistant (10-200 characters), for example "What's the best app for running a step challenge at work?".
 Only write questions whose answer names specific products or vendors: recommendations ("best X for Y", "which X should a small team use"), comparisons ("X vs Y"), and alternatives ("alternatives to X"). Do not write educational questions (what features matter, what makes X effective, how X works). Make each question distinct: different audiences, use cases or constraints, not rephrasings of the same ask. Never include a year or date.
 Each keyword may appear in at most one question. Skip keywords that are navigational, job-related, or unrelated to buying.
+Stay on the topic given in the data. Drop keywords about other industries or unrelated products (for example a restaurant's rewards app when the topic is workplace fitness challenges); never turn an off-topic keyword into a question. Fewer good questions beat many loose ones.
 Every keyword you list must be copied exactly from the input. Return at most ${MAX_QUESTIONS} questions, most commercially valuable first. Return JSON only.`,
         },
         { role: "user", content: data },
@@ -275,14 +334,14 @@ Every keyword you list must be copied exactly from the input. Return at most ${M
 // ── The pipeline ────────────────────────────────────────────────────────
 
 export type ResearchDeps = {
-  ideas: typeof fetchKeywordIdeas;
+  related: typeof fetchRelatedKeywords;
   suggestions: typeof fetchKeywordSuggestions;
   aiVolume: typeof fetchAiSearchVolume;
   group: typeof groupIntoQuestions;
 };
 
 export const defaultResearchDeps: ResearchDeps = {
-  ideas: fetchKeywordIdeas,
+  related: fetchRelatedKeywords,
   suggestions: fetchKeywordSuggestions,
   aiVolume: fetchAiSearchVolume,
   group: groupIntoQuestions,
@@ -301,21 +360,38 @@ export async function runResearch(
   let costUsd = 0;
   const notes: string[] = [];
 
-  let lists: LabsKeywordItem[][];
-  try {
-    const [ideas, suggestions] = await Promise.all([deps.ideas(query), deps.suggestions(query)]);
-    costUsd += ideas.costUsd + suggestions.costUsd;
-    lists = [suggestions.items, ideas.items];
-  } catch (e) {
-    throw toResearchError(e);
-  }
+  const fetchLists = async (seed: string): Promise<LabsKeywordItem[][]> => {
+    try {
+      const q = { ...query, keyword: seed };
+      const [related, suggestions] = await Promise.all([deps.related(q), deps.suggestions(q)]);
+      costUsd += related.costUsd + suggestions.costUsd;
+      return [suggestions.items, related.items];
+    } catch (e) {
+      throw toResearchError(e);
+    }
+  };
 
-  let keywords = mergeKeywords(lists);
+  const isRelevant = relevantTo(topic);
+  let keywords = mergeKeywords(await fetchLists(topic), KEYWORDS_KEPT, isRelevant);
+  // Long, specific phrasings often have no search data of their own. Retry
+  // once with the topic's core words before giving up.
+  const core = coreTopic(topic);
+  if (keywords.length < FEW_RELEVANT && core && core.toLowerCase() !== topic.toLowerCase()) {
+    const broader = mergeKeywords(await fetchLists(core), KEYWORDS_KEPT, isRelevant);
+    if (broader.length > keywords.length) {
+      keywords = combineKeywords(keywords, broader);
+      notes.push(`Few searches use the exact phrase “${topic}”, so these results are for “${core}”.`);
+    }
+  }
+  const base = { schema_version: RESEARCH_SCHEMA_VERSION as typeof RESEARCH_SCHEMA_VERSION, pipeline_version: PIPELINE_VERSION, topic, location_code: market.code };
   if (keywords.length === 0) {
     return {
-      results: { schema_version: RESEARCH_SCHEMA_VERSION, topic, location_code: market.code, questions: [], keywords: [], notes: ["No search data for this topic. Try a broader or more common phrasing."] },
+      results: { ...base, questions: [], keywords: [], notes: ["No search data for this topic. Try a broader or more common phrasing, like the product category in 2-3 words."] },
       costUsd,
     };
+  }
+  if (keywords.length < FEW_RELEVANT) {
+    notes.push("Few searches match this exact phrasing. A shorter, more common topic (the product category in 2-3 words) usually finds more demand.");
   }
 
   try {
@@ -337,7 +413,7 @@ export async function runResearch(
   if (questions.length === 0) notes.push(GROUPING_FAILED_NOTE);
 
   return {
-    results: { schema_version: RESEARCH_SCHEMA_VERSION, topic, location_code: market.code, questions, keywords, notes },
+    results: { ...base, questions, keywords, notes },
     costUsd,
   };
 }
@@ -405,7 +481,11 @@ export async function researchQuestions(args: {
     .limit(1)
     .maybeSingle();
   const deps = args.deps ?? researchRuntime.deps;
-  if (hit && StoredResultsSchema.safeParse(hit.results_jsonb).success) {
+  const current =
+    hit &&
+    StoredResultsSchema.safeParse(hit.results_jsonb).success &&
+    (hit.results_jsonb as ResearchResults).pipeline_version === PIPELINE_VERSION;
+  if (hit && current) {
     const cached = hit.results_jsonb as ResearchResults;
     if (cached.questions.length > 0 || cached.keywords.length === 0) {
       return record(args, key, cached, 0, true);

@@ -13,6 +13,8 @@ import {
   applyAiVolume,
   buildQuestions,
   mergeKeywords,
+  coreTopic,
+  relevantTo,
   runResearch,
   type ResearchDeps,
 } from "../lib/question-research";
@@ -45,6 +47,25 @@ describe("mergeKeywords", () => {
       ...Array.from({ length: 14 }, (_, i) => ({ year: 2025 + Math.floor(i / 12), month: (i % 12) + 1, search_volume: i })),
     ].reverse();
     expect(mergeKeywords([[item]])[0]!.trend).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+  });
+});
+
+describe("relevantTo", () => {
+  test("keeps keywords sharing a meaningful word with the topic, drops generic-only overlaps", () => {
+    const keep = relevantTo("B2B corporate step challenge app");
+    expect(keep("corporate step challenges")).toBe(true);
+    expect(keep("walking challenge ideas")).toBe(true);
+    expect(keep("dunkin rewards app")).toBe(false);
+    expect(keep("best reward apps")).toBe(false);
+  });
+
+  test("a topic made only of generic words filters nothing", () => {
+    expect(relevantTo("best free software")("anything at all")).toBe(true);
+  });
+
+  test("mergeKeywords applies it", () => {
+    const merged = mergeKeywords([[kw("dunkin rewards app", 14800), kw("step challenge app", 900)]], 60, relevantTo("step challenge app"));
+    expect(merged.map((k) => k.keyword)).toEqual(["step challenge app"]);
   });
 });
 
@@ -110,7 +131,7 @@ describe("runResearch", () => {
 
   function deps(over: Partial<ResearchDeps> = {}): ResearchDeps {
     return {
-      ideas: ok([kw("step challenge app", 500)]),
+      related: ok([kw("step challenge app", 500)]),
       suggestions: ok([kw("corporate step challenge", 300)]),
       aiVolume: async () => ({ items: [{ keyword: "step challenge app", ai_search_volume: 25 }], costUsd: 0.005 }),
       group: async () => ({
@@ -125,7 +146,8 @@ describe("runResearch", () => {
     expect(results.questions).toHaveLength(1);
     expect(results.questions[0]).toMatchObject({ volume: 800, ai_volume: 25 });
     expect(results.keywords).toHaveLength(2);
-    expect(results.notes).toEqual([]);
+    expect(results.notes.join(" ")).not.toContain("couldn't group");
+    expect(results.notes.join(" ")).not.toContain("AI search volume");
     expect(costUsd).toBeCloseTo(0.025, 6);
   });
 
@@ -136,7 +158,7 @@ describe("runResearch", () => {
       deps({ aiVolume: async () => { throw new DataforseoError("down", "upstream"); } }),
     );
     expect(results.questions[0]!.ai_volume).toBeNull();
-    expect(results.notes[0]).toContain("AI search volume was unavailable");
+    expect(results.notes.join(" ")).toContain("AI search volume was unavailable");
   });
 
   test("grouping failing still returns the keyword table", async () => {
@@ -147,14 +169,54 @@ describe("runResearch", () => {
   });
 
   test("provider errors map to user-facing statuses without leaking details", async () => {
-    const billing = runResearch("x", market, deps({ ideas: async () => { throw new DataforseoError("out of credit", "billing"); } }));
+    const billing = runResearch("x", market, deps({ related: async () => { throw new DataforseoError("out of credit", "billing"); } }));
     await expect(billing).rejects.toMatchObject({ status: 503 });
-    const upstream = runResearch("x", market, deps({ ideas: async () => { throw new DataforseoError("500", "upstream"); } }));
+    const upstream = runResearch("x", market, deps({ related: async () => { throw new DataforseoError("500", "upstream"); } }));
     await expect(upstream).rejects.toMatchObject({ status: 502 });
   });
 
+  test("off-topic keywords never reach the grouping step, and a thin result explains itself", async () => {
+    let seen: string[] = [];
+    const { results } = await runResearch(
+      "corporate step challenge app",
+      market,
+      deps({
+        related: ok([kw("dunkin rewards app", 14800), kw("taco bell rewards app", 5400)]),
+        suggestions: ok([kw("corporate step challenge app", 90)]),
+        group: async (_t, keywords) => {
+          seen = keywords.map((k) => k.keyword);
+          return { questions: [] };
+        },
+      }),
+    );
+    expect(seen).toEqual(["corporate step challenge app"]);
+    expect(results.pipeline_version).toBe(2);
+    expect(results.notes.join(" ")).toContain("shorter, more common topic");
+  });
+
+  test("a long phrasing with no data of its own retries once with its core words", async () => {
+    const seeds: string[] = [];
+    const byTopic = (map: Record<string, LabsKeywordItem[]>) => async (q: { keyword: string }) => {
+      seeds.push(q.keyword);
+      return { items: map[q.keyword] ?? [], costUsd: 0.01 };
+    };
+    const { results, costUsd } = await runResearch(
+      "B2B corporate step challenge app",
+      market,
+      deps({
+        related: byTopic({ "corporate step challenge": [kw("corporate step challenge", 300), kw("step challenge ideas", 200)] }),
+        suggestions: byTopic({ "corporate step challenge": [kw("corporate step challenge app", 90), kw("step challenge for work", 80), kw("company step challenge", 70)] }),
+      }),
+    );
+    expect(coreTopic("B2B corporate step challenge app")).toBe("corporate step challenge");
+    expect([...new Set(seeds)]).toEqual(["B2B corporate step challenge app", "corporate step challenge"]);
+    expect(results.keywords).toHaveLength(5);
+    expect(results.notes.join(" ")).toContain("results are for “corporate step challenge”");
+    expect(costUsd).toBeCloseTo(0.045, 6); // 4 keyword calls + AI volume
+  });
+
   test("no search data at all is an explained empty result", async () => {
-    const { results } = await runResearch("zzzz", market, deps({ ideas: ok([]), suggestions: ok([]) }));
+    const { results } = await runResearch("zzzz", market, deps({ related: ok([]), suggestions: ok([]) }));
     expect(results.keywords).toEqual([]);
     expect(results.notes[0]).toContain("No search data");
   });

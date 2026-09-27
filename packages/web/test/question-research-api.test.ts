@@ -53,7 +53,7 @@ const item = (keyword: string, volume: number) => ({
 const { researchRuntime } = await import("../lib/question-research");
 const savedDeps = researchRuntime.deps;
 researchRuntime.deps = {
-  ideas: async () => {
+  related: async () => {
     providerCalls++;
     return { items: [item("step challenge app", 500)], costUsd: 0.01 };
   },
@@ -225,7 +225,7 @@ describePg("question research API", () => {
   });
 
   test("a cached search whose grouping failed retries only the grouping", async () => {
-    const topic = `regroup ${crypto.randomUUID().slice(0, 8)}`;
+    const topic = `step challenge regroup ${crypto.randomUUID().slice(0, 8)}`;
     const u = await makeUser("regroup");
     await signIn(u);
     const brandId = await makeBrand(u, ["Existing question about step apps?"]);
@@ -243,7 +243,7 @@ describePg("question research API", () => {
     researchRuntime.deps.group = group;
     const retried = (await (await search(brandId, topic)).json()) as any;
     expect(retried.results.questions).toHaveLength(1);
-    expect(retried.results.notes).toEqual([]);
+    expect(retried.results.notes.join(" ")).not.toContain("couldn't group");
     expect(providerCalls).toBe(3); // no DataForSEO spend on the retry
 
     const again = (await (await search(brandId, topic)).json()) as any;
