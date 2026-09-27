@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import "../../styles/dashboard.css";
 import { getBrands } from "@/lib/dashboard-data";
-import { NavLink } from "./_components/nav-link";
+import { DashSidebar } from "./_components/dash-sidebar";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -21,27 +20,9 @@ export default async function DashboardLayout({
   const brands = await getBrands();
 
   return (
-    <>
-      <header className="dash-header">
-        <div className="dash-header-inner">
-          <Link href="/dashboard" className="wordmark">
-            openllmrank
-          </Link>
-          <nav className="dash-nav" aria-label="Dashboard">
-            {brands.map((b) => (
-              <NavLink key={b.id} href={`/dashboard/${b.id}`}>
-                {b.name}
-              </NavLink>
-            ))}
-            <NavLink href="/dashboard/brands/new">Add a brand</NavLink>
-            <NavLink href="/dashboard/billing">Billing</NavLink>
-            <form action="/auth/signout" method="post">
-              <button type="submit">Sign out</button>
-            </form>
-          </nav>
-        </div>
-      </header>
+    <div className="dash-shell">
+      <DashSidebar brands={brands.map((b) => ({ id: b.id, name: b.name, website: b.website }))} />
       <main className="dash-wrap">{children}</main>
-    </>
+    </div>
   );
 }
