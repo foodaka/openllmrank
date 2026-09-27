@@ -98,6 +98,7 @@ Deferred to v2. The warm-paper palette is the brand identity for v1; dark mode w
 - **Max content width:** 1120px for marketing, 720px for wizard / forms / focused content.
 - **Wizard pattern:** One big question per page. Kicker top-left (`STEP N OF 4`), then large serif heading, then the field(s), then footer with Back / Next. No mid-page chrome.
 - **Marketing pattern:** Editorial long-scroll. Hero → "How it works" as numbered paragraphs (not a feature grid) → inline sample report link → FAQ as serif Q&A → final CTA. No card mosaics.
+- **Dashboard pattern:** Editorial left sidebar (approved 2026-09-27): serif wordmark, a native brand switcher, then the brand's sections under kicker labels (Tracking, Research, Brand) and account links below a hairline. Current item = `--soft` highlight, never a colored left bar; no icons. Below 820px it collapses to a top block with the switcher and a horizontally scrolling row of links.
 - **Mobile breakpoint:** 820px. Single column below; headline → data → CTA stacking. 44px minimum touch targets.
 
 ### Radii

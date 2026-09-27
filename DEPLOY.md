@@ -109,6 +109,7 @@ depend on the hosted project's redirect allow-list. Local dev is covered by
 - **Email OTP expiry**: 3600 seconds, to match the "expires in an hour" copy in the invite email.
 - **Enable sign-ups**: leave on. Checkout provisions accounts through the admin API; the login page only signs in.
 - Apply migrations `0006`–`0010` (`supabase db push`) before the first deploy of this version. `0010` revokes browser writes to the scheduler-owned brand columns.
+- Apply migration `0012` (`question_research`) before deploying question research. The web app needs `DATAFORSEO_API_KEY` (or `DATAFORSEO_LOGIN` + `DATAFORSEO_PASSWORD`) and `OPENAI_API_KEY`; optional `QUESTION_RESEARCH_PER_DAY` (default 10). Without DataForSEO credentials the page loads and searches return "not configured".
 
 ### 1.3 First deploy
 
