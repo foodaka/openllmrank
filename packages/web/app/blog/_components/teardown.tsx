@@ -179,14 +179,16 @@ export function TeardownCta({ category }: { category: string }) {
   return (
     <div className="post-cta">
       <span className="kicker">Your category</span>
-      <h3>Get this teardown for your own market</h3>
+      <h3>Track what AI recommends in your category, every week</h3>
       <p>
-        We ran {category} through five AI engines for about four dollars. The same run on your brand
-        and your competitors comes with every answer, the sources behind it, and what to fix.
+        This teardown is one snapshot of {category}. AI answers differ by engine and shift as new
+        pages get published. openllmrank re-asks your buyers&rsquo; questions across all five
+        engines every week, with every answer and source, so you see when you or a competitor moves.
       </p>
       <Link href="/wizard/brand" className="btn-primary">
-        Get my report
+        Start tracking &mdash; $49/month
       </Link>
+      <p className="td-cta-alt">Prefer a single snapshot? A one-time report is $79.</p>
     </div>
   );
 }
