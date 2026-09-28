@@ -133,7 +133,7 @@ export type BrandWriteResult =
   | { ok: true; brandId: string }
   | { ok: false; status: number; code: string; message: string };
 
-async function hasActiveSubscription(user: SupabaseClient): Promise<boolean> {
+export async function hasActiveSubscription(user: SupabaseClient): Promise<boolean> {
   const { data } = await user
     .from("subscriptions")
     .select("id")
@@ -253,4 +253,74 @@ export async function archiveBrand(args: {
   if (error) return { ok: false, status: 500, code: "db", message: error.message };
   await recomputeAccountCadence(args.service, args.userId);
   return { ok: true, brandId: args.brandId };
+}
+
+export type TrackPromptResult =
+  | { ok: true; prompts: string[]; added: boolean }
+  | { ok: false; status: 400 | 404 | 409 | 500; code: "not_found" | "invalid" | "full" | "no_config" | "db"; message: string };
+
+/** Append one buyer question to a brand's tracked prompts (question
+ * research's "Track this"). Idempotent: an already-tracked question is a
+ * no-op success. Applies from the brand's next run, like any prompt edit. */
+export async function trackPrompt(args: {
+  user: SupabaseClient;
+  service: SupabaseClient;
+  userId: string;
+  brandId: string;
+  question: string;
+}): Promise<TrackPromptResult> {
+  const question = args.question.trim().replace(/\s+/g, " ");
+  if (question.length < 10 || question.length > 300) {
+    return { ok: false, status: 400, code: "invalid", message: "Questions must be 10-300 characters." };
+  }
+
+  // RLS: a brand the caller does not own reads as absent.
+  const { data: owned } = await args.user
+    .from("brands")
+    .select("id,archived_at")
+    .eq("id", args.brandId)
+    .maybeSingle();
+  if (!owned || owned.archived_at) {
+    return { ok: false, status: 404, code: "not_found", message: "Brand not found." };
+  }
+
+  const { data: row } = await args.service
+    .from("brands")
+    .select("config_jsonb")
+    .eq("id", args.brandId)
+    .eq("user_id", args.userId)
+    .maybeSingle();
+  const parsed = HostedConfigSchema.safeParse(row?.config_jsonb);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      status: 409,
+      code: "no_config",
+      message: "Open Brand settings and save this brand once before adding questions.",
+    };
+  }
+  const config = parsed.data;
+  if (config.prompts.some((p) => p.trim().toLowerCase() === question.toLowerCase())) {
+    return { ok: true, prompts: config.prompts, added: false };
+  }
+  if (config.prompts.length >= HOSTED_CAPS.max_prompts) {
+    return {
+      ok: false,
+      status: 409,
+      code: "full",
+      message: `This brand already tracks ${HOSTED_CAPS.max_prompts} questions. Remove one in Brand settings first.`,
+    };
+  }
+
+  const next = HostedConfigSchema.safeParse({ ...config, prompts: [...config.prompts, question] });
+  if (!next.success) {
+    return { ok: false, status: 400, code: "invalid", message: next.error.issues[0]?.message ?? "Invalid question." };
+  }
+  const { error } = await args.service
+    .from("brands")
+    .update({ config_jsonb: next.data })
+    .eq("id", args.brandId)
+    .eq("user_id", args.userId);
+  if (error) return { ok: false, status: 500, code: "db", message: error.message };
+  return { ok: true, prompts: next.data.prompts, added: true };
 }
