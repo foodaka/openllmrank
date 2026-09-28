@@ -1,0 +1,353 @@
+{
+  "slug": "transactional-email-apis",
+  "run": {
+    "id": "2026-09-28T14-23-07-722Z",
+    "date": "2026-09-28",
+    "questions": [
+      "cheapest transactional email service for a side project",
+      "which email provider works best for apps built with Lovable or Bolt",
+      "what email service should I use with Next.js and Supabase",
+      "best email API for sending signup and password reset emails from my app"
+    ],
+    "excluded_questions": [
+      "Resend vs Postmark vs SendGrid for transactional email",
+      "alternatives to SendGrid for sending emails from a web app"
+    ],
+    "engines": [
+      {
+        "provider": "xai",
+        "model": "grok-4.3"
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-5.4-mini"
+      },
+      {
+        "provider": "anthropic",
+        "model": "claude-haiku-4-5"
+      },
+      {
+        "provider": "perplexity",
+        "model": "sonar"
+      },
+      {
+        "provider": "google",
+        "model": "gemini-3.5-flash"
+      }
+    ],
+    "samples": 3,
+    "answers": 60,
+    "cost_usd": 3.47
+  },
+  "highlight": null,
+  "brands": [
+    {
+      "name": "Resend",
+      "answers": 55
+    },
+    {
+      "name": "Postmark",
+      "answers": 45
+    },
+    {
+      "name": "Amazon SES",
+      "answers": 42
+    },
+    {
+      "name": "SendGrid",
+      "answers": 36
+    },
+    {
+      "name": "Mailgun",
+      "answers": 33
+    },
+    {
+      "name": "Brevo",
+      "answers": 28
+    },
+    {
+      "name": "Mailtrap",
+      "answers": 28
+    },
+    {
+      "name": "MailerSend",
+      "answers": 11
+    }
+  ],
+  "by_engine": [
+    {
+      "provider": "xai",
+      "model": "grok-4.3",
+      "answers": 12,
+      "brands": [
+        {
+          "name": "Resend",
+          "answers": 12
+        },
+        {
+          "name": "Postmark",
+          "answers": 12
+        },
+        {
+          "name": "SendGrid",
+          "answers": 12
+        },
+        {
+          "name": "Brevo",
+          "answers": 11
+        },
+        {
+          "name": "Amazon SES",
+          "answers": 10
+        },
+        {
+          "name": "Mailgun",
+          "answers": 9
+        },
+        {
+          "name": "Mailtrap",
+          "answers": 5
+        },
+        {
+          "name": "MailerSend",
+          "answers": 3
+        }
+      ]
+    },
+    {
+      "provider": "openai",
+      "model": "gpt-5.4-mini",
+      "answers": 12,
+      "brands": [
+        {
+          "name": "Mailgun",
+          "answers": 10
+        },
+        {
+          "name": "Postmark",
+          "answers": 9
+        },
+        {
+          "name": "Amazon SES",
+          "answers": 9
+        },
+        {
+          "name": "Resend",
+          "answers": 7
+        },
+        {
+          "name": "SendGrid",
+          "answers": 7
+        },
+        {
+          "name": "Brevo",
+          "answers": 4
+        },
+        {
+          "name": "MailerSend",
+          "answers": 0
+        },
+        {
+          "name": "Mailtrap",
+          "answers": 0
+        }
+      ]
+    },
+    {
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5",
+      "answers": 12,
+      "brands": [
+        {
+          "name": "Resend",
+          "answers": 12
+        },
+        {
+          "name": "Mailtrap",
+          "answers": 9
+        },
+        {
+          "name": "Postmark",
+          "answers": 7
+        },
+        {
+          "name": "Mailgun",
+          "answers": 6
+        },
+        {
+          "name": "Amazon SES",
+          "answers": 5
+        },
+        {
+          "name": "Brevo",
+          "answers": 5
+        },
+        {
+          "name": "SendGrid",
+          "answers": 4
+        },
+        {
+          "name": "MailerSend",
+          "answers": 4
+        }
+      ]
+    },
+    {
+      "provider": "perplexity",
+      "model": "sonar",
+      "answers": 12,
+      "brands": [
+        {
+          "name": "Resend",
+          "answers": 12
+        },
+        {
+          "name": "Postmark",
+          "answers": 9
+        },
+        {
+          "name": "Amazon SES",
+          "answers": 9
+        },
+        {
+          "name": "SendGrid",
+          "answers": 8
+        },
+        {
+          "name": "Mailtrap",
+          "answers": 6
+        },
+        {
+          "name": "Brevo",
+          "answers": 5
+        },
+        {
+          "name": "MailerSend",
+          "answers": 2
+        },
+        {
+          "name": "Mailgun",
+          "answers": 1
+        }
+      ]
+    },
+    {
+      "provider": "google",
+      "model": "gemini-3.5-flash",
+      "answers": 12,
+      "brands": [
+        {
+          "name": "Resend",
+          "answers": 12
+        },
+        {
+          "name": "Amazon SES",
+          "answers": 9
+        },
+        {
+          "name": "Postmark",
+          "answers": 8
+        },
+        {
+          "name": "Mailtrap",
+          "answers": 8
+        },
+        {
+          "name": "Mailgun",
+          "answers": 7
+        },
+        {
+          "name": "SendGrid",
+          "answers": 5
+        },
+        {
+          "name": "Brevo",
+          "answers": 3
+        },
+        {
+          "name": "MailerSend",
+          "answers": 2
+        }
+      ]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "sequenzy.com",
+      "citations": 47,
+      "answers": 25
+    },
+    {
+      "domain": "resend.com",
+      "citations": 22,
+      "answers": 18
+    },
+    {
+      "domain": "docs.lovable.dev",
+      "citations": 19,
+      "answers": 9
+    },
+    {
+      "domain": "mailtrap.io",
+      "citations": 19,
+      "answers": 13
+    },
+    {
+      "domain": "brevo.com",
+      "citations": 17,
+      "answers": 17
+    },
+    {
+      "domain": "elasticemail.com",
+      "citations": 17,
+      "answers": 10
+    },
+    {
+      "domain": "makerkit.dev",
+      "citations": 17,
+      "answers": 5
+    },
+    {
+      "domain": "courier.com",
+      "citations": 15,
+      "answers": 12
+    },
+    {
+      "domain": "lovable.dev",
+      "citations": 15,
+      "answers": 9
+    },
+    {
+      "domain": "support.bolt.new",
+      "citations": 14,
+      "answers": 9
+    }
+  ],
+  "quotes": [
+    {
+      "provider": "google",
+      "model": "gemini-3.5-flash",
+      "question": "which email provider works best for apps built with Lovable or Bolt",
+      "text": "Resend is widely considered the gold standard for modern AI-driven development.",
+      "brands": [
+        "Resend"
+      ]
+    },
+    {
+      "provider": "openai",
+      "model": "gpt-5.4-mini",
+      "question": "best email API for sending signup and password reset emails from my app",
+      "text": "For signup, welcome, and password reset emails, my default pick is Postmark if you want the smoothest “transactional email only” experience.",
+      "brands": [
+        "Postmark"
+      ]
+    },
+    {
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5",
+      "question": "which email provider works best for apps built with Lovable or Bolt",
+      "text": "Bolt.new projects often use Supabase for the backend, and Sequenzy has native Supabase integration that auto-syncs your users table to subscribers, with no webhook configuration needed.",
+      "brands": []
+    }
+  ]
+}

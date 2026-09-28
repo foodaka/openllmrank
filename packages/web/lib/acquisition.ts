@@ -5,7 +5,7 @@ export function publicLanding(path: unknown): string {
   return typeof path === "string" && publicPaths.has(path) ? path : "other";
 }
 
-const SOURCES = ["direct", "google", "bing", "chatgpt", "perplexity", "claude", "gemini", "other"] as const;
+const SOURCES = ["direct", "google", "bing", "chatgpt", "perplexity", "claude", "gemini", "x", "linkedin", "hackernews", "other"] as const;
 export type Acquisition = { landing: string; source: string };
 export function referralSource(referrer: string): string {
   if (!referrer) return "direct";
@@ -17,6 +17,10 @@ export function referralSource(referrer: string): string {
     if (matches("claude.ai")) return "claude";
     if (matches("gemini.google.com")) return "gemini";
     if (matches("bing.com")) return "bing";
+    // Social channels teardown posts are shared on. X sends its t.co shortener as the referrer.
+    if (matches("t.co") || matches("x.com") || matches("twitter.com")) return "x";
+    if (matches("linkedin.com") || matches("lnkd.in")) return "linkedin";
+    if (matches("news.ycombinator.com")) return "hackernews";
     if (/^(www\.)?google\.(com|[a-z]{2}|co\.[a-z]{2}|com\.[a-z]{2})$/.test(host)) return "google";
   } catch { /* No raw referrer is retained. */ }
   return "other";
