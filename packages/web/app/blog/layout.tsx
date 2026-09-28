@@ -290,6 +290,92 @@ export default function BlogLayout({
           max-width: 520px;
         }
 
+        /* --- Teardown data posts (app/blog/_components/teardown.tsx) --- */
+        .td-chart {
+          margin: 32px 0 40px;
+          padding: 24px 0;
+          border-top: 2px solid var(--ink);
+          border-bottom: 1px solid var(--line);
+        }
+        .td-chart figcaption { margin-bottom: 20px; }
+        .td-chart-title {
+          display: block;
+          font-family: var(--font-display);
+          font-size: 22px;
+          line-height: 1.2;
+          color: var(--ink);
+        }
+        .td-chart-unit {
+          display: block;
+          margin-top: 6px;
+          font-size: 14px;
+          color: var(--muted);
+        }
+        .td-bars { list-style: none; margin: 0; padding: 0; }
+        .post .td-bars li {
+          display: grid;
+          grid-template-columns: 150px 1fr 92px;
+          gap: 16px;
+          align-items: center;
+          margin: 0;
+          padding: 7px 0;
+          font-size: 15px;
+        }
+        .td-bar-name { line-height: 1.25; }
+        .td-bar-note {
+          display: block;
+          font-size: 12px;
+          color: var(--accent-2);
+        }
+        .td-bar-track {
+          height: 14px;
+          background: var(--soft);
+          border-radius: var(--radius-sm);
+          overflow: hidden;
+        }
+        .td-bar-fill {
+          display: block;
+          height: 100%;
+          background: var(--accent);
+          border-radius: var(--radius-sm);
+        }
+        .td-bar-value {
+          font-variant-numeric: tabular-nums;
+          font-weight: 600;
+        }
+        .td-bar-count { font-weight: 400; font-size: 13px; color: var(--muted); }
+        .td-bars li.is-highlight .td-bar-name,
+        .td-bars li.is-highlight .td-bar-value { color: var(--accent-2); font-weight: 600; }
+        .td-bars li.is-highlight .td-bar-fill { background: var(--accent-2); }
+
+        .td-table .td-sub {
+          display: block;
+          font-size: 13px;
+          color: var(--muted);
+        }
+        .post .td-table .td-num {
+          text-align: right;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .td-quote { margin: 28px 0; }
+        .td-quote blockquote { margin: 0 0 8px; }
+        .td-quote figcaption {
+          padding-left: 22px;
+          font-size: 14px;
+          color: var(--muted);
+        }
+
+        .td-method {
+          margin: 48px 0;
+          padding: 28px 0;
+          border-top: 1px solid var(--line);
+          border-bottom: 1px solid var(--line);
+        }
+        .post .td-method ul { list-style: none; padding: 0; margin: 12px 0 0; font-size: 15px; }
+        .post .td-method ol { font-size: 15px; margin: 8px 0 0; }
+        .post .td-method li { margin-bottom: 8px; }
+
         .post-end {
           margin-top: 64px;
           padding-top: 40px;
@@ -315,6 +401,8 @@ export default function BlogLayout({
           .post h1 { font-size: 34px; }
           .post h2 { font-size: 26px; margin-top: 44px; }
           .post .lede { font-size: 19px; }
+          .post .td-bars li { grid-template-columns: 104px 1fr 76px; gap: 10px; font-size: 14px; }
+          .td-bar-count { display: none; }
         }
       `}</style>
     </>

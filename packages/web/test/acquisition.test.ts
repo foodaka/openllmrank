@@ -15,6 +15,15 @@ describe("acquisition privacy and payment integrity", () => {
     expect(referralSource("invalid")).toBe("other");
     expect(referralSource("")).toBe("direct");
   });
+  test("classifies the social channels teardowns are posted on", () => {
+    expect(referralSource("https://t.co/abc123")).toBe("x");
+    expect(referralSource("https://x.com/someone/status/1")).toBe("x");
+    expect(referralSource("https://www.linkedin.com/feed/")).toBe("linkedin");
+    expect(referralSource("https://lnkd.in/xyz")).toBe("linkedin");
+    expect(referralSource("https://news.ycombinator.com/item?id=1")).toBe("hackernews");
+    expect(referralSource("https://t.co.evil.example")).toBe("other");
+    expect(sanitizeAcquisition({ landing: "/blog/transactional-email-apis", source: "hackernews" })).toEqual({ landing: "/blog/transactional-email-apis", source: "hackernews" });
+  });
   const event = (extra = {}) => ({ type: "checkout.session.completed", livemode: true, data: { object: { payment_status: "paid", mode: "subscription", amount_total: 4900, currency: "usd", metadata: { lead_id: "private-id", acquisition_landing: "/check", acquisition_source: "google" } } }, ...extra });
   test("records live verified paid checkout properties without identifiers", () => {
     expect(paymentProperties(event())).toEqual({ landing: "/check", source: "google", plan: "tracking", amount_cents: 4900, currency: "usd" });

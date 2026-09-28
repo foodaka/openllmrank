@@ -1,0 +1,29 @@
+{
+  "brand": { "name": "Resend", "aliases": ["resend.com"] },
+  "competitors": [
+    { "name": "Postmark", "aliases": ["postmarkapp.com"] },
+    { "name": "SendGrid", "aliases": ["sendgrid.com", "Twilio SendGrid"] },
+    { "name": "Mailgun", "aliases": ["mailgun.com"] },
+    { "name": "Amazon SES", "aliases": ["AWS SES", "Amazon Simple Email Service", "aws.amazon.com/ses"] },
+    { "name": "Brevo", "aliases": ["brevo.com", "Sendinblue"] },
+    { "name": "MailerSend", "aliases": ["mailersend.com"] },
+    { "name": "Mailtrap", "aliases": ["mailtrap.io"] }
+  ],
+  "prompts": [
+    "best email API for sending signup and password reset emails from my app",
+    "what email service should I use with Next.js and Supabase",
+    "which email provider works best for apps built with Lovable or Bolt",
+    "cheapest transactional email service for a side project",
+    "alternatives to SendGrid for sending emails from a web app",
+    "Resend vs Postmark vs SendGrid for transactional email"
+  ],
+  "providers": [
+    { "id": "openai", "model": "gpt-5.4-mini" },
+    { "id": "anthropic", "model": "claude-haiku-4-5" },
+    { "id": "google", "model": "gemini-3.5-flash" },
+    { "id": "perplexity", "model": "sonar" },
+    { "id": "xai", "model": "grok-4.3" }
+  ],
+  "samples_per_prompt": 3,
+  "concurrency_per_provider": 4
+}

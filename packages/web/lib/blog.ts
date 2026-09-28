@@ -170,6 +170,26 @@ export const posts: BlogPost[] = [
       "ai crawlers blocked",
     ],
   },
+  {
+    slug: "transactional-email-apis",
+    title:
+      "AI Engines Pick Resend for Sending App Email. Their Most-Cited Source Is a Vendor Blog.",
+    description:
+      "We asked ChatGPT, Claude, Gemini, Perplexity and Grok which email API to use for signup and password reset emails, 60 times. Resend was named in 92% of answers, ChatGPT was the exception, and the most cited source was one email vendor's blog.",
+    date: "2026-09-28",
+    dateModified: "2026-09-28",
+    readingTime: "6 min read",
+    tags: ["Teardown", "Data", "AI Search"],
+    keywords: [
+      "best email api",
+      "transactional email service",
+      "resend vs postmark",
+      "email service for nextjs supabase",
+      "lovable email provider",
+      "ai search teardown",
+      "what does chatgpt recommend",
+    ],
+  },
 ];
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
@@ -215,6 +235,11 @@ const RELATED: Record<string, string[]> = {
     "what-is-aeo",
     "how-to-get-mentioned-in-chatgpt",
     "geo-vs-seo-vs-aeo",
+  ],
+  "transactional-email-apis": [
+    "state-of-ai-search-2026",
+    "which-sources-do-ai-engines-cite",
+    "how-to-get-mentioned-in-chatgpt",
   ],
   "discovered-currently-not-indexed": [
     "how-to-get-mentioned-in-chatgpt",
