@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandLogo } from "@/app/_components/brand-logo";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -157,9 +158,7 @@ function CheckoutSuccessInner() {
   return (
     <main>
       <nav className="topbar">
-        <Link href="/" className="wordmark">
-          openllmrank
-        </Link>
+        <Link href="/" className="wordmark"><BrandLogo /></Link>
       </nav>
       <div className="wrap success-wrap">
         <span className="kicker">

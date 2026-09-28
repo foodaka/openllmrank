@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/app/_components/brand-logo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ContactLink } from "../_components/contact-link";
@@ -35,9 +36,7 @@ export default function BlogLayout({
       />
 
       <nav className="site-nav">
-        <Link href="/" className="wordmark">
-          openllmrank
-        </Link>
+        <Link href="/" className="wordmark"><BrandLogo /></Link>
         <ul className="site-nav-links">
           <li>
             <Link href="/blog">Blog</Link>

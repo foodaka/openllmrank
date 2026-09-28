@@ -5,6 +5,7 @@
 // wizard-step1 mockup. Each step page composes this and provides its own
 // form body via children.
 
+import { BrandLogo } from "@/app/_components/brand-logo";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -34,9 +35,7 @@ export function WizardShell({
   return (
     <main>
       <nav className="wizard-topbar">
-        <Link href="/" className="wordmark">
-          openllmrank
-        </Link>
+        <Link href="/" className="wordmark"><BrandLogo /></Link>
       </nav>
 
       <div className="wizard-wrap">

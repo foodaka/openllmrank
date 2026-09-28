@@ -1,12 +1,11 @@
+import { BrandLogo } from "@/app/_components/brand-logo";
 import Link from "next/link";
 
 export default function CheckoutCancelPage() {
   return (
     <main>
       <nav className="topbar">
-        <Link href="/" className="wordmark">
-          openllmrank
-        </Link>
+        <Link href="/" className="wordmark"><BrandLogo /></Link>
       </nav>
       <div className="wrap cancel-wrap">
         <span className="kicker">Cart saved</span>

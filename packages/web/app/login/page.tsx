@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/app/_components/brand-logo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -48,9 +49,7 @@ export default async function LoginPage({
 
   return (
     <main className="auth-wrap">
-      <Link href="/" className="wordmark">
-        openllmrank
-      </Link>
+      <Link href="/" className="wordmark"><BrandLogo /></Link>
       <LoginForm next={target} devHint={devHint} initialError={loginErrorCopy(error)} />
     </main>
   );
