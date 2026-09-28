@@ -376,6 +376,8 @@ export default function BlogLayout({
         .post .td-method ol { font-size: 15px; margin: 8px 0 0; }
         .post .td-method li { margin-bottom: 8px; }
 
+        .post-cta .td-cta-alt { margin: 14px 0 0; font-size: 14px; }
+
         .post-end {
           margin-top: 64px;
           padding-top: 40px;
