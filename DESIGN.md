@@ -28,6 +28,16 @@ Every design decision serves this. When you have to choose between two options, 
 
 ## Typography
 
+### Brand identity
+
+The approved citation mark pairs two sculptural quotation forms in moss green.
+Use `packages/web/public/brand/citation.svg` with the live Fraunces wordmark via
+`BrandLogo`; retain the surrounding home/dashboard link and its existing typography.
+The mark is decorative beside the readable brand name. Browser and home-screen
+icons reverse the mark in paper on a moss tile: `app/icon.svg`, `app/favicon.ico`
+(16, 32, and 48px), and `app/apple-icon.png` (180px). Keep these exports in sync
+when changing the mark. This identity was selected from direction 02 on 2026-09-28.
+
 | Role | Font | Notes |
 |------|------|-------|
 | Display / hero | **Fraunces**, Georgia, "Times New Roman", serif | Fraunces is a variable serif with an `opsz` axis (9..144) — gets dramatic at hero sizes. Loaded from Google Fonts. Falls back to Georgia if Google Fonts is unreachable. Weight 500. Line-height 0.98. Letter-spacing -1% to -2%. Serif is the differentiator. Do NOT swap to a sans-serif "for consistency." |

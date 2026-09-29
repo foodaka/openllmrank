@@ -210,3 +210,18 @@ button:focus-visible,
   font-size: 15px;
   margin: var(--space-sm) 0 var(--space-md);
 }
+
+/* Citation identity: live text retains the site's Fraunces wordmark styling. */
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.brand-logo-mark {
+  display: block;
+  width: 1.3em;
+  height: 1.3em;
+  flex: none;
+}

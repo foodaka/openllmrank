@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/app/_components/brand-logo";
 import Link from "next/link";
 import { ContactLink } from "./_components/contact-link";
 import { getAllPosts } from "../lib/blog";
@@ -55,7 +56,7 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
       />
       <nav className="site-nav">
-        <div className="wordmark">openllmrank</div>
+        <div className="wordmark"><BrandLogo /></div>
         <ul className="site-nav-links">
           <li>
             <a href="#how-it-works">How it works</a>

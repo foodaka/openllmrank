@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/app/_components/brand-logo";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -16,7 +17,7 @@ export default function CheckLayout({ children }: { children: React.ReactNode })
   return (
     <>
       <nav className="site-nav">
-        <Link href="/" className="wordmark">openllmrank</Link>
+        <Link href="/" className="wordmark"><BrandLogo /></Link>
         <ul className="site-nav-links">
           <li><Link href="/check">Crawl check</Link></li>
           <li><Link href="/blog">Blog</Link></li>

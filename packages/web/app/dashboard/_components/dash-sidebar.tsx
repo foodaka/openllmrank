@@ -5,6 +5,7 @@
 // wordmark, kicker labels, hairlines, no icons. The switcher is a native
 // <select> so it's keyboard- and screen-reader-friendly with no menu code.
 
+import { BrandLogo } from "@/app/_components/brand-logo";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -47,9 +48,7 @@ export function DashSidebar({ brands }: { brands: SidebarBrand[] }) {
 
   return (
     <aside className="dash-sidebar">
-      <Link href="/dashboard" className="wordmark">
-        openllmrank
-      </Link>
+      <Link href="/dashboard" className="wordmark"><BrandLogo /></Link>
 
       {brands.length > 0 ? (
         <div className="dash-switcher">

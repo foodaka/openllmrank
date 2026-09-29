@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/app/_components/brand-logo";
 import Link from "next/link";
 import { ContactLink } from "../_components/contact-link";
 
@@ -12,7 +13,7 @@ export default function PrivacyPage() {
   return (
     <>
       <nav className="site-nav">
-        <Link href="/" className="wordmark">openllmrank</Link>
+        <Link href="/" className="wordmark"><BrandLogo /></Link>
         <ul className="site-nav-links">
           <li><Link href="/">Home</Link></li>
           <li><Link href="/terms">Terms</Link></li>
