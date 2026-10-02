@@ -59,7 +59,7 @@ export default function Image() {
               textTransform: "uppercase",
             }}
           >
-            The AI-recommended app stack, 2026
+            AI search teardown
           </div>
         </div>
 
