@@ -17,7 +17,12 @@
 
 import type { SQL } from "bun";
 import { HostedConfigSchema } from "@openllmrank/shared/config";
-import { effectiveCadence, nextRunAfter } from "@openllmrank/shared/cadence";
+import {
+  DEFAULT_RERUN_SAMPLES_PER_PROMPT,
+  effectiveCadence,
+  nextRunAfter,
+  rerunConfig,
+} from "@openllmrank/shared/cadence";
 import { env } from "./env";
 import { db } from "./db";
 import { alert } from "./alerts";
@@ -29,6 +34,7 @@ type DueBrandRow = {
   config_jsonb: unknown;
   subscription_id: string;
   email: string | null;
+  has_completed_run: boolean;
 };
 
 export type ScheduleResult = {
@@ -39,6 +45,8 @@ export type ScheduleResult = {
 export type ScheduleOptions = {
   /** Brands above this count drop the account from weekly to monthly (D12). */
   weeklyMaxBrands: number;
+  /** Samples per question once a brand has a completed run (first run keeps its config). */
+  rerunSamples?: number;
   /** Injectable clock for tests. */
   now?: Date;
   /** Max brands to schedule per tick. */
@@ -71,7 +79,11 @@ export async function scheduleDueRuns(
 
   await sql.begin(async (tx) => {
     const due = (await tx`
-      select b.id, b.user_id, b.name, b.config_jsonb, s.id as subscription_id, u.email
+      select b.id, b.user_id, b.name, b.config_jsonb, s.id as subscription_id, u.email,
+             exists (
+               select 1 from public.jobs j
+               where j.brand_id = b.id and j.status = 'completed'
+             ) as has_completed_run
       from public.brands b
       join public.subscriptions s
         on s.user_id = b.user_id and s.status = 'active'
@@ -112,13 +124,18 @@ export async function scheduleDueRuns(
       `) as unknown as Array<{ n: number }>;
       const cadence = effectiveCadence(counted[0]?.n ?? 1, opts.weeklyMaxBrands);
 
+      // The first run keeps full depth (it is the report the customer
+      // bought); every run after it uses the re-run sample count.
+      const jobConfig = brand.has_completed_run
+        ? rerunConfig(parsed.data, opts.rerunSamples ?? DEFAULT_RERUN_SAMPLES_PER_PROMPT)
+        : parsed.data;
       const inserted = (await tx`
         insert into public.jobs
           (user_id, brand_id, status, origin, subscription_id, config_jsonb,
            amount_cents, currency, email_to)
         values
           (${brand.user_id}, ${brand.id}, 'paid', 'scheduled', ${brand.subscription_id},
-           ${parsed.data}, 0, 'usd', ${brand.email})
+           ${jobConfig}, 0, 'usd', ${brand.email})
         returning id
       `) as unknown as Array<{ id: string }>;
       const jobId = inserted[0]!.id;
@@ -155,6 +172,7 @@ export function startSchedulerLoop(): SchedulerLoopHandle {
       try {
         const tick = await scheduleDueRuns(db(), {
           weeklyMaxBrands: env.schedulerWeeklyMaxBrands,
+          rerunSamples: env.schedulerRerunSamples,
         });
         for (const s of tick.scheduled) {
           console.log(
