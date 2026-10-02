@@ -190,6 +190,24 @@ export const posts: BlogPost[] = [
       "what does chatgpt recommend",
     ],
   },
+  {
+    slug: "ai-app-stack-2026",
+    title: "The AI-Recommended App Stack, 2026: Every Engine Says Next.js, Supabase, Vercel and Stripe",
+    description:
+      "We asked ChatGPT, Claude, Gemini, Perplexity and Grok what to build an app with, 75 times. 51 answers named the same four products. Here is the stack each engine would build you, layer by layer, and where they disagree.",
+    date: "2026-10-02",
+    dateModified: "2026-10-02",
+    readingTime: "7 min read",
+    tags: ["Teardown", "Data", "AI Search"],
+    keywords: [
+      "best tech stack 2026",
+      "saas tech stack",
+      "tech stack for solo founder",
+      "nextjs supabase vercel stripe",
+      "what stack does chatgpt recommend",
+      "ai search teardown",
+    ],
+  },
 ];
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
@@ -236,8 +254,13 @@ const RELATED: Record<string, string[]> = {
     "how-to-get-mentioned-in-chatgpt",
     "geo-vs-seo-vs-aeo",
   ],
-  "transactional-email-apis": [
+  "ai-app-stack-2026": [
+    "transactional-email-apis",
+    "which-sources-do-ai-engines-cite",
     "state-of-ai-search-2026",
+  ],
+  "transactional-email-apis": [
+    "ai-app-stack-2026",
     "which-sources-do-ai-engines-cite",
     "how-to-get-mentioned-in-chatgpt",
   ],

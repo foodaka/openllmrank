@@ -357,6 +357,10 @@ export default function BlogLayout({
           font-variant-numeric: tabular-nums;
         }
 
+        .td-stack th[scope="row"] { font-weight: 600; white-space: nowrap; }
+        .td-stack td { font-size: 15px; }
+        .td-stack td.td-empty { color: var(--muted); font-style: italic; }
+
         .td-quote { margin: 28px 0; }
         .td-quote blockquote { margin: 0 0 8px; }
         .td-quote figcaption {
