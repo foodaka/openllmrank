@@ -192,3 +192,62 @@ export function TeardownCta({ category }: { category: string }) {
     </div>
   );
 }
+
+export type StackLayer = { label: string; brands: string[] };
+
+// The most-named brand of a layer within a list of brand counts, with ties
+// joined ("Clerk / Auth0"). Null when no brand of the layer was named.
+export function layerLeader(
+  counts: TeardownBrandCount[],
+  layer: StackLayer,
+): { name: string; answers: number } | null {
+  const named = layer.brands
+    .map((name) => ({ name, answers: counts.find((b) => b.name === name)?.answers ?? 0 }))
+    .filter((b) => b.answers > 0);
+  if (named.length === 0) return null;
+  const top = Math.max(...named.map((b) => b.answers));
+  const leaders = named.filter((b) => b.answers === top);
+  return { name: leaders.map((b) => b.name).join(" / "), answers: top };
+}
+
+// One row per layer, one column per engine: the stack each engine would build
+// you, from the same counts as every other figure in the post.
+export function StackGrid({ data, layers }: { data: TeardownData; layers: StackLayer[] }) {
+  return (
+    <div className="table-scroll">
+      <table className="td-table td-stack">
+        <thead>
+          <tr>
+            <th>Layer</th>
+            {data.by_engine.map((e) => (
+              <th key={e.provider}>
+                {engineLabel(e.provider)}
+                <span className="td-sub">{e.model}</span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {layers.map((layer) => (
+            <tr key={layer.label}>
+              <th scope="row">{layer.label}</th>
+              {data.by_engine.map((e) => {
+                const lead = layerLeader(e.brands, layer);
+                return (
+                  <td key={e.provider} className={lead ? undefined : "td-empty"}>
+                    {lead ? lead.name : "none named"}
+                    {lead && (
+                      <span className="td-sub">
+                        {lead.answers}/{e.answers}
+                      </span>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

@@ -1,0 +1,2114 @@
+{
+  "slug": "ai-app-stack-2026",
+  "run": {
+    "id": "2026-10-02T14-18-34-272Z",
+    "date": "2026-10-02",
+    "questions": [
+      "cheapest stack to launch a web app with auth, payments and a database",
+      "what tech stack should I use to build a SaaS app in 2026",
+      "what are the best ways to build an app in 2026",
+      "what should I use to build an AI app as an indie hacker",
+      "best tech stack for a solo founder shipping fast"
+    ],
+    "excluded_questions": [],
+    "engines": [
+      {
+        "provider": "google",
+        "model": "gemini-3.5-flash"
+      },
+      {
+        "provider": "perplexity",
+        "model": "sonar"
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-5.4-mini"
+      },
+      {
+        "provider": "anthropic",
+        "model": "claude-haiku-4-5"
+      },
+      {
+        "provider": "xai",
+        "model": "grok-4.3"
+      }
+    ],
+    "samples": 3,
+    "answers": 75,
+    "cost_usd": 2.25
+  },
+  "highlight": null,
+  "brands": [
+    {
+      "name": "Supabase",
+      "answers": 67
+    },
+    {
+      "name": "Vercel",
+      "answers": 63
+    },
+    {
+      "name": "Next.js",
+      "answers": 62
+    },
+    {
+      "name": "PostgreSQL",
+      "answers": 59
+    },
+    {
+      "name": "React",
+      "answers": 57
+    },
+    {
+      "name": "Stripe",
+      "answers": 53
+    },
+    {
+      "name": "TypeScript",
+      "answers": 46
+    },
+    {
+      "name": "Tailwind CSS",
+      "answers": 38
+    },
+    {
+      "name": "Clerk",
+      "answers": 32
+    },
+    {
+      "name": "Resend",
+      "answers": 32
+    },
+    {
+      "name": "PostHog",
+      "answers": 29
+    },
+    {
+      "name": "shadcn/ui",
+      "answers": 26
+    },
+    {
+      "name": "Cursor",
+      "answers": 26
+    },
+    {
+      "name": "OpenAI",
+      "answers": 24
+    },
+    {
+      "name": "FastAPI",
+      "answers": 21
+    },
+    {
+      "name": "Prisma",
+      "answers": 21
+    },
+    {
+      "name": "React Native",
+      "answers": 20
+    },
+    {
+      "name": "Neon",
+      "answers": 19
+    },
+    {
+      "name": "Sentry",
+      "answers": 19
+    },
+    {
+      "name": "Drizzle",
+      "answers": 18
+    },
+    {
+      "name": "Firebase",
+      "answers": 18
+    },
+    {
+      "name": "Railway",
+      "answers": 17
+    },
+    {
+      "name": "Lemon Squeezy",
+      "answers": 17
+    },
+    {
+      "name": "Nuxt",
+      "answers": 16
+    },
+    {
+      "name": "Flutter",
+      "answers": 16
+    },
+    {
+      "name": "Anthropic",
+      "answers": 16
+    },
+    {
+      "name": "SvelteKit",
+      "answers": 15
+    },
+    {
+      "name": "Lovable",
+      "answers": 15
+    },
+    {
+      "name": "Cloudflare",
+      "answers": 14
+    },
+    {
+      "name": "AWS",
+      "answers": 14
+    },
+    {
+      "name": "Ruby on Rails",
+      "answers": 13
+    },
+    {
+      "name": "Django",
+      "answers": 13
+    },
+    {
+      "name": "Bolt.new",
+      "answers": 13
+    },
+    {
+      "name": "v0",
+      "answers": 13
+    },
+    {
+      "name": "Fly.io",
+      "answers": 13
+    },
+    {
+      "name": "Expo",
+      "answers": 12
+    },
+    {
+      "name": "Laravel",
+      "answers": 12
+    },
+    {
+      "name": "Bubble",
+      "answers": 12
+    },
+    {
+      "name": "NextAuth",
+      "answers": 12
+    },
+    {
+      "name": "FlutterFlow",
+      "answers": 11
+    },
+    {
+      "name": "Better Auth",
+      "answers": 11
+    },
+    {
+      "name": "Paddle",
+      "answers": 10
+    },
+    {
+      "name": "Replit",
+      "answers": 8
+    },
+    {
+      "name": "Plausible",
+      "answers": 8
+    },
+    {
+      "name": "Vercel AI SDK",
+      "answers": 8
+    },
+    {
+      "name": "Remix",
+      "answers": 7
+    },
+    {
+      "name": "Claude Code",
+      "answers": 7
+    },
+    {
+      "name": "WorkOS",
+      "answers": 7
+    },
+    {
+      "name": "MongoDB Atlas",
+      "answers": 7
+    },
+    {
+      "name": "Turso",
+      "answers": 7
+    },
+    {
+      "name": "Postmark",
+      "answers": 7
+    },
+    {
+      "name": "Groq",
+      "answers": 5
+    },
+    {
+      "name": "Auth0",
+      "answers": 4
+    },
+    {
+      "name": "Netlify",
+      "answers": 4
+    },
+    {
+      "name": "SendGrid",
+      "answers": 4
+    },
+    {
+      "name": "Google Gemini",
+      "answers": 4
+    },
+    {
+      "name": "OpenRouter",
+      "answers": 3
+    },
+    {
+      "name": "PlanetScale",
+      "answers": 2
+    },
+    {
+      "name": "Google Analytics",
+      "answers": 2
+    },
+    {
+      "name": "Vercel Analytics",
+      "answers": 2
+    },
+    {
+      "name": "Together AI",
+      "answers": 2
+    },
+    {
+      "name": "DeepSeek",
+      "answers": 2
+    },
+    {
+      "name": "Kinde",
+      "answers": 1
+    },
+    {
+      "name": "Convex",
+      "answers": 1
+    },
+    {
+      "name": "Polar.sh",
+      "answers": 1
+    },
+    {
+      "name": "Mixpanel",
+      "answers": 1
+    },
+    {
+      "name": "Umami",
+      "answers": 1
+    },
+    {
+      "name": "Mistral",
+      "answers": 1
+    },
+    {
+      "name": "Stack Auth",
+      "answers": 0
+    },
+    {
+      "name": "Xata",
+      "answers": 0
+    },
+    {
+      "name": "Render.com",
+      "answers": 0
+    },
+    {
+      "name": "AWS Amplify",
+      "answers": 0
+    },
+    {
+      "name": "Gumroad",
+      "answers": 0
+    },
+    {
+      "name": "Creem",
+      "answers": 0
+    },
+    {
+      "name": "Amplitude",
+      "answers": 0
+    },
+    {
+      "name": "LogRocket",
+      "answers": 0
+    },
+    {
+      "name": "Highlight.io",
+      "answers": 0
+    },
+    {
+      "name": "Bugsnag",
+      "answers": 0
+    },
+    {
+      "name": "Better Stack",
+      "answers": 0
+    },
+    {
+      "name": "xAI",
+      "answers": 0
+    }
+  ],
+  "by_engine": [
+    {
+      "provider": "google",
+      "model": "gemini-3.5-flash",
+      "answers": 15,
+      "brands": [
+        {
+          "name": "Supabase",
+          "answers": 15
+        },
+        {
+          "name": "React",
+          "answers": 15
+        },
+        {
+          "name": "PostgreSQL",
+          "answers": 15
+        },
+        {
+          "name": "Vercel",
+          "answers": 15
+        },
+        {
+          "name": "Next.js",
+          "answers": 13
+        },
+        {
+          "name": "Stripe",
+          "answers": 12
+        },
+        {
+          "name": "Lemon Squeezy",
+          "answers": 12
+        },
+        {
+          "name": "Cursor",
+          "answers": 11
+        },
+        {
+          "name": "TypeScript",
+          "answers": 10
+        },
+        {
+          "name": "Tailwind CSS",
+          "answers": 10
+        },
+        {
+          "name": "Nuxt",
+          "answers": 9
+        },
+        {
+          "name": "v0",
+          "answers": 9
+        },
+        {
+          "name": "shadcn/ui",
+          "answers": 8
+        },
+        {
+          "name": "Clerk",
+          "answers": 8
+        },
+        {
+          "name": "Resend",
+          "answers": 8
+        },
+        {
+          "name": "SvelteKit",
+          "answers": 7
+        },
+        {
+          "name": "Cloudflare",
+          "answers": 7
+        },
+        {
+          "name": "Neon",
+          "answers": 6
+        },
+        {
+          "name": "Paddle",
+          "answers": 6
+        },
+        {
+          "name": "Anthropic",
+          "answers": 6
+        },
+        {
+          "name": "Laravel",
+          "answers": 5
+        },
+        {
+          "name": "Ruby on Rails",
+          "answers": 5
+        },
+        {
+          "name": "Lovable",
+          "answers": 5
+        },
+        {
+          "name": "Bolt.new",
+          "answers": 5
+        },
+        {
+          "name": "PostHog",
+          "answers": 5
+        },
+        {
+          "name": "Vercel AI SDK",
+          "answers": 5
+        },
+        {
+          "name": "Prisma",
+          "answers": 4
+        },
+        {
+          "name": "Drizzle",
+          "answers": 4
+        },
+        {
+          "name": "Claude Code",
+          "answers": 4
+        },
+        {
+          "name": "Better Auth",
+          "answers": 4
+        },
+        {
+          "name": "OpenAI",
+          "answers": 4
+        },
+        {
+          "name": "React Native",
+          "answers": 3
+        },
+        {
+          "name": "Flutter",
+          "answers": 3
+        },
+        {
+          "name": "Turso",
+          "answers": 3
+        },
+        {
+          "name": "AWS",
+          "answers": 3
+        },
+        {
+          "name": "Groq",
+          "answers": 3
+        },
+        {
+          "name": "Expo",
+          "answers": 2
+        },
+        {
+          "name": "Django",
+          "answers": 2
+        },
+        {
+          "name": "FastAPI",
+          "answers": 2
+        },
+        {
+          "name": "Replit",
+          "answers": 2
+        },
+        {
+          "name": "Bubble",
+          "answers": 2
+        },
+        {
+          "name": "FlutterFlow",
+          "answers": 2
+        },
+        {
+          "name": "MongoDB Atlas",
+          "answers": 2
+        },
+        {
+          "name": "Railway",
+          "answers": 2
+        },
+        {
+          "name": "Fly.io",
+          "answers": 2
+        },
+        {
+          "name": "Postmark",
+          "answers": 2
+        },
+        {
+          "name": "SendGrid",
+          "answers": 2
+        },
+        {
+          "name": "Google Analytics",
+          "answers": 2
+        },
+        {
+          "name": "Google Gemini",
+          "answers": 2
+        },
+        {
+          "name": "OpenRouter",
+          "answers": 2
+        },
+        {
+          "name": "Together AI",
+          "answers": 2
+        },
+        {
+          "name": "DeepSeek",
+          "answers": 2
+        },
+        {
+          "name": "Auth0",
+          "answers": 1
+        },
+        {
+          "name": "Kinde",
+          "answers": 1
+        },
+        {
+          "name": "NextAuth",
+          "answers": 1
+        },
+        {
+          "name": "Firebase",
+          "answers": 1
+        },
+        {
+          "name": "Netlify",
+          "answers": 1
+        },
+        {
+          "name": "Polar.sh",
+          "answers": 1
+        },
+        {
+          "name": "Plausible",
+          "answers": 1
+        },
+        {
+          "name": "Umami",
+          "answers": 1
+        },
+        {
+          "name": "Remix",
+          "answers": 0
+        },
+        {
+          "name": "WorkOS",
+          "answers": 0
+        },
+        {
+          "name": "Stack Auth",
+          "answers": 0
+        },
+        {
+          "name": "PlanetScale",
+          "answers": 0
+        },
+        {
+          "name": "Convex",
+          "answers": 0
+        },
+        {
+          "name": "Xata",
+          "answers": 0
+        },
+        {
+          "name": "Render.com",
+          "answers": 0
+        },
+        {
+          "name": "AWS Amplify",
+          "answers": 0
+        },
+        {
+          "name": "Gumroad",
+          "answers": 0
+        },
+        {
+          "name": "Creem",
+          "answers": 0
+        },
+        {
+          "name": "Mixpanel",
+          "answers": 0
+        },
+        {
+          "name": "Amplitude",
+          "answers": 0
+        },
+        {
+          "name": "Vercel Analytics",
+          "answers": 0
+        },
+        {
+          "name": "Sentry",
+          "answers": 0
+        },
+        {
+          "name": "LogRocket",
+          "answers": 0
+        },
+        {
+          "name": "Highlight.io",
+          "answers": 0
+        },
+        {
+          "name": "Bugsnag",
+          "answers": 0
+        },
+        {
+          "name": "Better Stack",
+          "answers": 0
+        },
+        {
+          "name": "Mistral",
+          "answers": 0
+        },
+        {
+          "name": "xAI",
+          "answers": 0
+        }
+      ]
+    },
+    {
+      "provider": "perplexity",
+      "model": "sonar",
+      "answers": 15,
+      "brands": [
+        {
+          "name": "Supabase",
+          "answers": 12
+        },
+        {
+          "name": "Vercel",
+          "answers": 12
+        },
+        {
+          "name": "Next.js",
+          "answers": 10
+        },
+        {
+          "name": "PostgreSQL",
+          "answers": 9
+        },
+        {
+          "name": "Stripe",
+          "answers": 9
+        },
+        {
+          "name": "TypeScript",
+          "answers": 6
+        },
+        {
+          "name": "Cursor",
+          "answers": 6
+        },
+        {
+          "name": "Clerk",
+          "answers": 6
+        },
+        {
+          "name": "Resend",
+          "answers": 6
+        },
+        {
+          "name": "PostHog",
+          "answers": 6
+        },
+        {
+          "name": "React",
+          "answers": 5
+        },
+        {
+          "name": "Tailwind CSS",
+          "answers": 5
+        },
+        {
+          "name": "Lovable",
+          "answers": 4
+        },
+        {
+          "name": "Django",
+          "answers": 3
+        },
+        {
+          "name": "FastAPI",
+          "answers": 3
+        },
+        {
+          "name": "shadcn/ui",
+          "answers": 3
+        },
+        {
+          "name": "Drizzle",
+          "answers": 3
+        },
+        {
+          "name": "Bolt.new",
+          "answers": 3
+        },
+        {
+          "name": "Replit",
+          "answers": 3
+        },
+        {
+          "name": "Better Auth",
+          "answers": 3
+        },
+        {
+          "name": "WorkOS",
+          "answers": 3
+        },
+        {
+          "name": "Neon",
+          "answers": 3
+        },
+        {
+          "name": "Railway",
+          "answers": 3
+        },
+        {
+          "name": "AWS",
+          "answers": 3
+        },
+        {
+          "name": "Sentry",
+          "answers": 3
+        },
+        {
+          "name": "Ruby on Rails",
+          "answers": 2
+        },
+        {
+          "name": "Postmark",
+          "answers": 2
+        },
+        {
+          "name": "React Native",
+          "answers": 1
+        },
+        {
+          "name": "Expo",
+          "answers": 1
+        },
+        {
+          "name": "Laravel",
+          "answers": 1
+        },
+        {
+          "name": "Prisma",
+          "answers": 1
+        },
+        {
+          "name": "v0",
+          "answers": 1
+        },
+        {
+          "name": "Bubble",
+          "answers": 1
+        },
+        {
+          "name": "FlutterFlow",
+          "answers": 1
+        },
+        {
+          "name": "NextAuth",
+          "answers": 1
+        },
+        {
+          "name": "Firebase",
+          "answers": 1
+        },
+        {
+          "name": "SvelteKit",
+          "answers": 0
+        },
+        {
+          "name": "Nuxt",
+          "answers": 0
+        },
+        {
+          "name": "Remix",
+          "answers": 0
+        },
+        {
+          "name": "Flutter",
+          "answers": 0
+        },
+        {
+          "name": "Claude Code",
+          "answers": 0
+        },
+        {
+          "name": "Auth0",
+          "answers": 0
+        },
+        {
+          "name": "Kinde",
+          "answers": 0
+        },
+        {
+          "name": "Stack Auth",
+          "answers": 0
+        },
+        {
+          "name": "PlanetScale",
+          "answers": 0
+        },
+        {
+          "name": "Convex",
+          "answers": 0
+        },
+        {
+          "name": "MongoDB Atlas",
+          "answers": 0
+        },
+        {
+          "name": "Turso",
+          "answers": 0
+        },
+        {
+          "name": "Xata",
+          "answers": 0
+        },
+        {
+          "name": "Netlify",
+          "answers": 0
+        },
+        {
+          "name": "Render.com",
+          "answers": 0
+        },
+        {
+          "name": "Fly.io",
+          "answers": 0
+        },
+        {
+          "name": "Cloudflare",
+          "answers": 0
+        },
+        {
+          "name": "AWS Amplify",
+          "answers": 0
+        },
+        {
+          "name": "Lemon Squeezy",
+          "answers": 0
+        },
+        {
+          "name": "Paddle",
+          "answers": 0
+        },
+        {
+          "name": "Polar.sh",
+          "answers": 0
+        },
+        {
+          "name": "Gumroad",
+          "answers": 0
+        },
+        {
+          "name": "Creem",
+          "answers": 0
+        },
+        {
+          "name": "SendGrid",
+          "answers": 0
+        },
+        {
+          "name": "Plausible",
+          "answers": 0
+        },
+        {
+          "name": "Google Analytics",
+          "answers": 0
+        },
+        {
+          "name": "Mixpanel",
+          "answers": 0
+        },
+        {
+          "name": "Amplitude",
+          "answers": 0
+        },
+        {
+          "name": "Umami",
+          "answers": 0
+        },
+        {
+          "name": "Vercel Analytics",
+          "answers": 0
+        },
+        {
+          "name": "LogRocket",
+          "answers": 0
+        },
+        {
+          "name": "Highlight.io",
+          "answers": 0
+        },
+        {
+          "name": "Bugsnag",
+          "answers": 0
+        },
+        {
+          "name": "Better Stack",
+          "answers": 0
+        },
+        {
+          "name": "OpenAI",
+          "answers": 0
+        },
+        {
+          "name": "Anthropic",
+          "answers": 0
+        },
+        {
+          "name": "Google Gemini",
+          "answers": 0
+        },
+        {
+          "name": "OpenRouter",
+          "answers": 0
+        },
+        {
+          "name": "Groq",
+          "answers": 0
+        },
+        {
+          "name": "Mistral",
+          "answers": 0
+        },
+        {
+          "name": "Together AI",
+          "answers": 0
+        },
+        {
+          "name": "xAI",
+          "answers": 0
+        },
+        {
+          "name": "DeepSeek",
+          "answers": 0
+        },
+        {
+          "name": "Vercel AI SDK",
+          "answers": 0
+        }
+      ]
+    },
+    {
+      "provider": "openai",
+      "model": "gpt-5.4-mini",
+      "answers": 15,
+      "brands": [
+        {
+          "name": "Next.js",
+          "answers": 14
+        },
+        {
+          "name": "Supabase",
+          "answers": 13
+        },
+        {
+          "name": "PostgreSQL",
+          "answers": 13
+        },
+        {
+          "name": "Vercel",
+          "answers": 13
+        },
+        {
+          "name": "Stripe",
+          "answers": 13
+        },
+        {
+          "name": "React",
+          "answers": 10
+        },
+        {
+          "name": "OpenAI",
+          "answers": 10
+        },
+        {
+          "name": "TypeScript",
+          "answers": 8
+        },
+        {
+          "name": "Clerk",
+          "answers": 8
+        },
+        {
+          "name": "Tailwind CSS",
+          "answers": 7
+        },
+        {
+          "name": "Prisma",
+          "answers": 7
+        },
+        {
+          "name": "PostHog",
+          "answers": 7
+        },
+        {
+          "name": "Sentry",
+          "answers": 6
+        },
+        {
+          "name": "shadcn/ui",
+          "answers": 5
+        },
+        {
+          "name": "Drizzle",
+          "answers": 5
+        },
+        {
+          "name": "Resend",
+          "answers": 5
+        },
+        {
+          "name": "React Native",
+          "answers": 4
+        },
+        {
+          "name": "Flutter",
+          "answers": 3
+        },
+        {
+          "name": "FastAPI",
+          "answers": 3
+        },
+        {
+          "name": "NextAuth",
+          "answers": 3
+        },
+        {
+          "name": "Firebase",
+          "answers": 3
+        },
+        {
+          "name": "Fly.io",
+          "answers": 3
+        },
+        {
+          "name": "Django",
+          "answers": 2
+        },
+        {
+          "name": "Cloudflare",
+          "answers": 2
+        },
+        {
+          "name": "Postmark",
+          "answers": 2
+        },
+        {
+          "name": "Remix",
+          "answers": 1
+        },
+        {
+          "name": "Expo",
+          "answers": 1
+        },
+        {
+          "name": "Laravel",
+          "answers": 1
+        },
+        {
+          "name": "Ruby on Rails",
+          "answers": 1
+        },
+        {
+          "name": "FlutterFlow",
+          "answers": 1
+        },
+        {
+          "name": "WorkOS",
+          "answers": 1
+        },
+        {
+          "name": "Neon",
+          "answers": 1
+        },
+        {
+          "name": "Railway",
+          "answers": 1
+        },
+        {
+          "name": "AWS",
+          "answers": 1
+        },
+        {
+          "name": "Plausible",
+          "answers": 1
+        },
+        {
+          "name": "Anthropic",
+          "answers": 1
+        },
+        {
+          "name": "SvelteKit",
+          "answers": 0
+        },
+        {
+          "name": "Nuxt",
+          "answers": 0
+        },
+        {
+          "name": "Lovable",
+          "answers": 0
+        },
+        {
+          "name": "Bolt.new",
+          "answers": 0
+        },
+        {
+          "name": "v0",
+          "answers": 0
+        },
+        {
+          "name": "Cursor",
+          "answers": 0
+        },
+        {
+          "name": "Claude Code",
+          "answers": 0
+        },
+        {
+          "name": "Replit",
+          "answers": 0
+        },
+        {
+          "name": "Bubble",
+          "answers": 0
+        },
+        {
+          "name": "Auth0",
+          "answers": 0
+        },
+        {
+          "name": "Better Auth",
+          "answers": 0
+        },
+        {
+          "name": "Kinde",
+          "answers": 0
+        },
+        {
+          "name": "Stack Auth",
+          "answers": 0
+        },
+        {
+          "name": "PlanetScale",
+          "answers": 0
+        },
+        {
+          "name": "Convex",
+          "answers": 0
+        },
+        {
+          "name": "MongoDB Atlas",
+          "answers": 0
+        },
+        {
+          "name": "Turso",
+          "answers": 0
+        },
+        {
+          "name": "Xata",
+          "answers": 0
+        },
+        {
+          "name": "Netlify",
+          "answers": 0
+        },
+        {
+          "name": "Render.com",
+          "answers": 0
+        },
+        {
+          "name": "AWS Amplify",
+          "answers": 0
+        },
+        {
+          "name": "Lemon Squeezy",
+          "answers": 0
+        },
+        {
+          "name": "Paddle",
+          "answers": 0
+        },
+        {
+          "name": "Polar.sh",
+          "answers": 0
+        },
+        {
+          "name": "Gumroad",
+          "answers": 0
+        },
+        {
+          "name": "Creem",
+          "answers": 0
+        },
+        {
+          "name": "SendGrid",
+          "answers": 0
+        },
+        {
+          "name": "Google Analytics",
+          "answers": 0
+        },
+        {
+          "name": "Mixpanel",
+          "answers": 0
+        },
+        {
+          "name": "Amplitude",
+          "answers": 0
+        },
+        {
+          "name": "Umami",
+          "answers": 0
+        },
+        {
+          "name": "Vercel Analytics",
+          "answers": 0
+        },
+        {
+          "name": "LogRocket",
+          "answers": 0
+        },
+        {
+          "name": "Highlight.io",
+          "answers": 0
+        },
+        {
+          "name": "Bugsnag",
+          "answers": 0
+        },
+        {
+          "name": "Better Stack",
+          "answers": 0
+        },
+        {
+          "name": "Google Gemini",
+          "answers": 0
+        },
+        {
+          "name": "OpenRouter",
+          "answers": 0
+        },
+        {
+          "name": "Groq",
+          "answers": 0
+        },
+        {
+          "name": "Mistral",
+          "answers": 0
+        },
+        {
+          "name": "Together AI",
+          "answers": 0
+        },
+        {
+          "name": "xAI",
+          "answers": 0
+        },
+        {
+          "name": "DeepSeek",
+          "answers": 0
+        },
+        {
+          "name": "Vercel AI SDK",
+          "answers": 0
+        }
+      ]
+    },
+    {
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5",
+      "answers": 15,
+      "brands": [
+        {
+          "name": "Supabase",
+          "answers": 13
+        },
+        {
+          "name": "React",
+          "answers": 13
+        },
+        {
+          "name": "Next.js",
+          "answers": 11
+        },
+        {
+          "name": "Vercel",
+          "answers": 11
+        },
+        {
+          "name": "PostgreSQL",
+          "answers": 10
+        },
+        {
+          "name": "TypeScript",
+          "answers": 8
+        },
+        {
+          "name": "Tailwind CSS",
+          "answers": 7
+        },
+        {
+          "name": "Firebase",
+          "answers": 7
+        },
+        {
+          "name": "Stripe",
+          "answers": 7
+        },
+        {
+          "name": "FastAPI",
+          "answers": 6
+        },
+        {
+          "name": "Nuxt",
+          "answers": 5
+        },
+        {
+          "name": "Railway",
+          "answers": 5
+        },
+        {
+          "name": "AWS",
+          "answers": 5
+        },
+        {
+          "name": "SvelteKit",
+          "answers": 4
+        },
+        {
+          "name": "Bubble",
+          "answers": 4
+        },
+        {
+          "name": "FlutterFlow",
+          "answers": 4
+        },
+        {
+          "name": "Fly.io",
+          "answers": 4
+        },
+        {
+          "name": "OpenAI",
+          "answers": 4
+        },
+        {
+          "name": "React Native",
+          "answers": 3
+        },
+        {
+          "name": "Remix",
+          "answers": 3
+        },
+        {
+          "name": "Flutter",
+          "answers": 3
+        },
+        {
+          "name": "Django",
+          "answers": 3
+        },
+        {
+          "name": "Auth0",
+          "answers": 3
+        },
+        {
+          "name": "Netlify",
+          "answers": 3
+        },
+        {
+          "name": "Resend",
+          "answers": 3
+        },
+        {
+          "name": "Sentry",
+          "answers": 3
+        },
+        {
+          "name": "Anthropic",
+          "answers": 3
+        },
+        {
+          "name": "Laravel",
+          "answers": 2
+        },
+        {
+          "name": "Ruby on Rails",
+          "answers": 2
+        },
+        {
+          "name": "Prisma",
+          "answers": 2
+        },
+        {
+          "name": "Clerk",
+          "answers": 2
+        },
+        {
+          "name": "NextAuth",
+          "answers": 2
+        },
+        {
+          "name": "PlanetScale",
+          "answers": 2
+        },
+        {
+          "name": "MongoDB Atlas",
+          "answers": 2
+        },
+        {
+          "name": "SendGrid",
+          "answers": 2
+        },
+        {
+          "name": "shadcn/ui",
+          "answers": 1
+        },
+        {
+          "name": "Turso",
+          "answers": 1
+        },
+        {
+          "name": "Paddle",
+          "answers": 1
+        },
+        {
+          "name": "PostHog",
+          "answers": 1
+        },
+        {
+          "name": "Groq",
+          "answers": 1
+        },
+        {
+          "name": "Mistral",
+          "answers": 1
+        },
+        {
+          "name": "Expo",
+          "answers": 0
+        },
+        {
+          "name": "Drizzle",
+          "answers": 0
+        },
+        {
+          "name": "Lovable",
+          "answers": 0
+        },
+        {
+          "name": "Bolt.new",
+          "answers": 0
+        },
+        {
+          "name": "v0",
+          "answers": 0
+        },
+        {
+          "name": "Cursor",
+          "answers": 0
+        },
+        {
+          "name": "Claude Code",
+          "answers": 0
+        },
+        {
+          "name": "Replit",
+          "answers": 0
+        },
+        {
+          "name": "Better Auth",
+          "answers": 0
+        },
+        {
+          "name": "Kinde",
+          "answers": 0
+        },
+        {
+          "name": "WorkOS",
+          "answers": 0
+        },
+        {
+          "name": "Stack Auth",
+          "answers": 0
+        },
+        {
+          "name": "Neon",
+          "answers": 0
+        },
+        {
+          "name": "Convex",
+          "answers": 0
+        },
+        {
+          "name": "Xata",
+          "answers": 0
+        },
+        {
+          "name": "Render.com",
+          "answers": 0
+        },
+        {
+          "name": "Cloudflare",
+          "answers": 0
+        },
+        {
+          "name": "AWS Amplify",
+          "answers": 0
+        },
+        {
+          "name": "Lemon Squeezy",
+          "answers": 0
+        },
+        {
+          "name": "Polar.sh",
+          "answers": 0
+        },
+        {
+          "name": "Gumroad",
+          "answers": 0
+        },
+        {
+          "name": "Creem",
+          "answers": 0
+        },
+        {
+          "name": "Postmark",
+          "answers": 0
+        },
+        {
+          "name": "Plausible",
+          "answers": 0
+        },
+        {
+          "name": "Google Analytics",
+          "answers": 0
+        },
+        {
+          "name": "Mixpanel",
+          "answers": 0
+        },
+        {
+          "name": "Amplitude",
+          "answers": 0
+        },
+        {
+          "name": "Umami",
+          "answers": 0
+        },
+        {
+          "name": "Vercel Analytics",
+          "answers": 0
+        },
+        {
+          "name": "LogRocket",
+          "answers": 0
+        },
+        {
+          "name": "Highlight.io",
+          "answers": 0
+        },
+        {
+          "name": "Bugsnag",
+          "answers": 0
+        },
+        {
+          "name": "Better Stack",
+          "answers": 0
+        },
+        {
+          "name": "Google Gemini",
+          "answers": 0
+        },
+        {
+          "name": "OpenRouter",
+          "answers": 0
+        },
+        {
+          "name": "Together AI",
+          "answers": 0
+        },
+        {
+          "name": "xAI",
+          "answers": 0
+        },
+        {
+          "name": "DeepSeek",
+          "answers": 0
+        },
+        {
+          "name": "Vercel AI SDK",
+          "answers": 0
+        }
+      ]
+    },
+    {
+      "provider": "xai",
+      "model": "grok-4.3",
+      "answers": 15,
+      "brands": [
+        {
+          "name": "Supabase",
+          "answers": 14
+        },
+        {
+          "name": "Next.js",
+          "answers": 14
+        },
+        {
+          "name": "React",
+          "answers": 14
+        },
+        {
+          "name": "TypeScript",
+          "answers": 14
+        },
+        {
+          "name": "PostgreSQL",
+          "answers": 12
+        },
+        {
+          "name": "Vercel",
+          "answers": 12
+        },
+        {
+          "name": "Stripe",
+          "answers": 12
+        },
+        {
+          "name": "Resend",
+          "answers": 10
+        },
+        {
+          "name": "PostHog",
+          "answers": 10
+        },
+        {
+          "name": "React Native",
+          "answers": 9
+        },
+        {
+          "name": "Tailwind CSS",
+          "answers": 9
+        },
+        {
+          "name": "shadcn/ui",
+          "answers": 9
+        },
+        {
+          "name": "Cursor",
+          "answers": 9
+        },
+        {
+          "name": "Neon",
+          "answers": 9
+        },
+        {
+          "name": "Expo",
+          "answers": 8
+        },
+        {
+          "name": "Clerk",
+          "answers": 8
+        },
+        {
+          "name": "Flutter",
+          "answers": 7
+        },
+        {
+          "name": "FastAPI",
+          "answers": 7
+        },
+        {
+          "name": "Prisma",
+          "answers": 7
+        },
+        {
+          "name": "Sentry",
+          "answers": 7
+        },
+        {
+          "name": "Drizzle",
+          "answers": 6
+        },
+        {
+          "name": "Lovable",
+          "answers": 6
+        },
+        {
+          "name": "Firebase",
+          "answers": 6
+        },
+        {
+          "name": "Railway",
+          "answers": 6
+        },
+        {
+          "name": "Plausible",
+          "answers": 6
+        },
+        {
+          "name": "OpenAI",
+          "answers": 6
+        },
+        {
+          "name": "Anthropic",
+          "answers": 6
+        },
+        {
+          "name": "Bolt.new",
+          "answers": 5
+        },
+        {
+          "name": "Bubble",
+          "answers": 5
+        },
+        {
+          "name": "NextAuth",
+          "answers": 5
+        },
+        {
+          "name": "Cloudflare",
+          "answers": 5
+        },
+        {
+          "name": "Lemon Squeezy",
+          "answers": 5
+        },
+        {
+          "name": "SvelteKit",
+          "answers": 4
+        },
+        {
+          "name": "Better Auth",
+          "answers": 4
+        },
+        {
+          "name": "Fly.io",
+          "answers": 4
+        },
+        {
+          "name": "Remix",
+          "answers": 3
+        },
+        {
+          "name": "Laravel",
+          "answers": 3
+        },
+        {
+          "name": "Ruby on Rails",
+          "answers": 3
+        },
+        {
+          "name": "Django",
+          "answers": 3
+        },
+        {
+          "name": "v0",
+          "answers": 3
+        },
+        {
+          "name": "Claude Code",
+          "answers": 3
+        },
+        {
+          "name": "Replit",
+          "answers": 3
+        },
+        {
+          "name": "FlutterFlow",
+          "answers": 3
+        },
+        {
+          "name": "WorkOS",
+          "answers": 3
+        },
+        {
+          "name": "MongoDB Atlas",
+          "answers": 3
+        },
+        {
+          "name": "Turso",
+          "answers": 3
+        },
+        {
+          "name": "Paddle",
+          "answers": 3
+        },
+        {
+          "name": "Vercel AI SDK",
+          "answers": 3
+        },
+        {
+          "name": "Nuxt",
+          "answers": 2
+        },
+        {
+          "name": "AWS",
+          "answers": 2
+        },
+        {
+          "name": "Vercel Analytics",
+          "answers": 2
+        },
+        {
+          "name": "Google Gemini",
+          "answers": 2
+        },
+        {
+          "name": "Convex",
+          "answers": 1
+        },
+        {
+          "name": "Postmark",
+          "answers": 1
+        },
+        {
+          "name": "Mixpanel",
+          "answers": 1
+        },
+        {
+          "name": "OpenRouter",
+          "answers": 1
+        },
+        {
+          "name": "Groq",
+          "answers": 1
+        },
+        {
+          "name": "Auth0",
+          "answers": 0
+        },
+        {
+          "name": "Kinde",
+          "answers": 0
+        },
+        {
+          "name": "Stack Auth",
+          "answers": 0
+        },
+        {
+          "name": "PlanetScale",
+          "answers": 0
+        },
+        {
+          "name": "Xata",
+          "answers": 0
+        },
+        {
+          "name": "Netlify",
+          "answers": 0
+        },
+        {
+          "name": "Render.com",
+          "answers": 0
+        },
+        {
+          "name": "AWS Amplify",
+          "answers": 0
+        },
+        {
+          "name": "Polar.sh",
+          "answers": 0
+        },
+        {
+          "name": "Gumroad",
+          "answers": 0
+        },
+        {
+          "name": "Creem",
+          "answers": 0
+        },
+        {
+          "name": "SendGrid",
+          "answers": 0
+        },
+        {
+          "name": "Google Analytics",
+          "answers": 0
+        },
+        {
+          "name": "Amplitude",
+          "answers": 0
+        },
+        {
+          "name": "Umami",
+          "answers": 0
+        },
+        {
+          "name": "LogRocket",
+          "answers": 0
+        },
+        {
+          "name": "Highlight.io",
+          "answers": 0
+        },
+        {
+          "name": "Bugsnag",
+          "answers": 0
+        },
+        {
+          "name": "Better Stack",
+          "answers": 0
+        },
+        {
+          "name": "Mistral",
+          "answers": 0
+        },
+        {
+          "name": "Together AI",
+          "answers": 0
+        },
+        {
+          "name": "xAI",
+          "answers": 0
+        },
+        {
+          "name": "DeepSeek",
+          "answers": 0
+        }
+      ]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "appypie.com",
+      "citations": 18,
+      "answers": 9
+    },
+    {
+      "domain": "dev.to",
+      "citations": 17,
+      "answers": 11
+    },
+    {
+      "domain": "mindstudio.ai",
+      "citations": 13,
+      "answers": 7
+    },
+    {
+      "domain": "designrevision.com",
+      "citations": 12,
+      "answers": 12
+    },
+    {
+      "domain": "yle.fi",
+      "citations": 12,
+      "answers": 3
+    },
+    {
+      "domain": "makerkit.dev",
+      "citations": 11,
+      "answers": 11
+    },
+    {
+      "domain": "linkedin.com",
+      "citations": 9,
+      "answers": 3
+    },
+    {
+      "domain": "memeburn.com",
+      "citations": 9,
+      "answers": 3
+    },
+    {
+      "domain": "nextjs.org",
+      "citations": 9,
+      "answers": 4
+    },
+    {
+      "domain": "reddit.com",
+      "citations": 9,
+      "answers": 3
+    }
+  ],
+  "quotes": [
+    {
+      "provider": "openai",
+      "model": "gpt-5.4-mini",
+      "question": "best tech stack for a solo founder shipping fast",
+      "text": "If you’re a solo founder and the goal is ship fast, the best default stack in 2026 is usually: Next.js + TypeScript + Tailwind CSS + Supabase + Vercel + Stripe.",
+      "brands": [
+        "Supabase",
+        "Next.js",
+        "TypeScript",
+        "Tailwind CSS",
+        "Vercel",
+        "Stripe"
+      ]
+    },
+    {
+      "provider": "perplexity",
+      "model": "sonar",
+      "question": "best tech stack for a solo founder shipping fast",
+      "text": "For a solo founder shipping fast, the best default stack is Next.js + TypeScript + Supabase + Vercel + Stripe, with PostHog for analytics and Cursor for coding speed.",
+      "brands": [
+        "Supabase",
+        "Next.js",
+        "TypeScript",
+        "Cursor",
+        "Vercel",
+        "Stripe",
+        "PostHog"
+      ]
+    },
+    {
+      "provider": "google",
+      "model": "gemini-3.5-flash",
+      "question": "what are the best ways to build an app in 2026",
+      "text": "For Non-Technical Creators (Full-Stack AI Builders): Lovable & Bolt.new: These platforms allow you to describe your app idea in plain English.",
+      "brands": [
+        "Lovable",
+        "Bolt.new"
+      ]
+    },
+    {
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5",
+      "question": "what are the best ways to build an app in 2026",
+      "text": "Top no-code tools include Softr for complete beginners, Bubble for a balance between power and ease of use, and FlutterFlow for building for multiple platforms.",
+      "brands": [
+        "Flutter",
+        "Bubble",
+        "FlutterFlow"
+      ]
+    },
+    {
+      "provider": "google",
+      "model": "gemini-3.5-flash",
+      "question": "what should I use to build an AI app as an indie hacker",
+      "text": "For Reasoning & Complexity (The Main Brain): Use Anthropic’s Claude 3.5 Sonnet (often praised for the best writing, coding, and logic) or OpenAI’s GPT-4o.",
+      "brands": [
+        "Anthropic",
+        "OpenAI"
+      ]
+    }
+  ]
+}
