@@ -64,7 +64,7 @@ export default function Image() {
         </div>
 
         <div style={{ fontSize: 48, color: colors.ink, lineHeight: 1.05, letterSpacing: "-0.015em", maxWidth: 1040 }}>
-          Ask an AI what to build your app with, and you get the same four products.
+          What AI recommends you build with in 2026
         </div>
 
         <div style={{ display: "flex", gap: 16 }}>
