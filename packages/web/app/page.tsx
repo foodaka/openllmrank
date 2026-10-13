@@ -3,10 +3,25 @@ import Link from "next/link";
 import { ContactLink } from "./_components/contact-link";
 import { getAllPosts } from "../lib/blog";
 
+const HOME_TITLE = "How AI Recommends Your Brand vs. Competitors | OpenLLMRank";
+const HOME_DESCRIPTION =
+  "Open-source AI visibility benchmark. Measure how often AI search engines mention and cite your brand vs. competitors. Free CLI, or hosted reports from $49/mo.";
+
 export const metadata = {
-  title: { absolute: "AI Search Visibility Tracking & Reports | openllmrank" },
-  description: "Measure brand mentions and citations across five grounded AI providers. Compare competitors and inspect the evidence. Track weekly for $49/month or get a $79 report.",
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
   alternates: { canonical: "/" },
+  // Page-level openGraph/twitter replace the layout's objects (no deep merge),
+  // so the shared fields are restated here.
+  openGraph: {
+    type: "website",
+    url: "https://openllmrank.io",
+    siteName: "openllmrank",
+    locale: "en_US",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+  },
+  twitter: { card: "summary_large_image", title: HOME_TITLE, description: HOME_DESCRIPTION },
 };
 
 // Marketing landing page. Editorial long-scroll, mirrors the approved
