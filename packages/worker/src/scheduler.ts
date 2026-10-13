@@ -196,7 +196,8 @@ export async function scheduleRetryAfterFailure(
   job: { id: string; brand_id: string; origin: string },
   now: Date = new Date(),
 ): Promise<{ retryAt: string | null }> {
-  if (job.origin === "one_shot") return { retryAt: null };
+  // Free snapshots are never retried on a schedule either.
+  if (job.origin === "one_shot" || job.origin === "snapshot") return { retryAt: null };
   const dayAgo = new Date(now.getTime() - 24 * 3600 * 1000).toISOString();
   const failures = (await sql`
     select count(*)::int as n from public.jobs

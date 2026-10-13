@@ -80,6 +80,9 @@ export default function HomePage() {
             <a href="#sample">Sample report</a>
           </li>
           <li>
+            <Link href="/snapshot">Free snapshot</Link>
+          </li>
+          <li>
             <Link href="/check">Free crawl check</Link>
           </li>
           <li>
@@ -113,14 +116,14 @@ export default function HomePage() {
               and sources from five AI providers.
             </p>
             <p className="hero-actions">
-              <Link href="/wizard/brand" className="btn-primary">
+              <Link href="/snapshot" className="btn-primary">
+                Get a free AI snapshot
+              </Link>
+              <Link href="/wizard/brand" className="btn-text">
                 Start tracking &mdash; $49/month
               </Link>
-              <a href="#sample" className="btn-text">
-                See a sample report
-              </a>
             </p>
-            <p className="hero-plan-note">Track weekly for $49/month. Or get one report for $79.</p>
+            <p className="hero-plan-note">Free snapshot, no card. Track weekly for $49/month, or get one report for $79.</p>
           </div>
 
             <div className="report-providers" aria-label="Providers included in every report">
@@ -373,12 +376,16 @@ export default function HomePage() {
               Start tracking &mdash; $49/month
             </Link>
           </p>
+          <p className="muted">
+            Not sure yet? <Link href="/snapshot">Get a free snapshot first</Link>.
+          </p>
         </section>
 
         <footer className="wrap site-footer">
           <span className="muted">
             openllmrank &middot; Privacy-friendly, open-source analytics for AI search visibility &middot;{" "}
             <Link href="/login">Sign in</Link> &middot;{" "}
+            <Link href="/snapshot">Free AI snapshot</Link> &middot;{" "}
             <Link href="/check">Free crawl check</Link> &middot;{" "}
             <Link href="/blog">Blog</Link> &middot;{" "}
             <Link href="/privacy">Privacy</Link> &middot;{" "}

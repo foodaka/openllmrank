@@ -102,10 +102,33 @@ export async function suggestFromWebsite(
     if (prompts.length < 3) throw new SuggestionError("We couldn’t draft enough distinct questions. Please try again.");
     return { ...parsed.data, prompts };
   } catch (error) {
-    if (error instanceof SuggestionError) throw error;
-    if (error instanceof GuardedFetchError && ['blocked_address', 'invalid_url'].includes(error.code)) {
-      throw new SuggestionError("Use a public website. Private or internal addresses aren’t supported.", 400);
+    throw toSuggestionError(error);
+  }
+}
+
+function toSuggestionError(error: unknown): SuggestionError {
+  if (error instanceof SuggestionError) return error;
+  if (error instanceof GuardedFetchError && ['blocked_address', 'invalid_url'].includes(error.code)) {
+    return new SuggestionError("Use a public website. Private or internal addresses aren’t supported.", 400);
+  }
+  return new SuggestionError("We couldn’t finish reading your website and drafting suggestions. Try again, or continue manually.", 503);
+}
+
+/**
+ * Same robots-respecting, SSRF-guarded read as suggestFromWebsite, returning
+ * the untrusted model input ({ website, title, text } as JSON). The free
+ * snapshot uses it with its own prompt, which also drafts competitors.
+ */
+export async function readWebsiteContent(website: string, fetchPage: typeof guardedFetch = guardedFetch): Promise<string> {
+  try {
+    const page = await readWebsitePage(website, fetchPage);
+    if (page.status < 200 || page.status >= 300 || !/text\/html|application\/xhtml/i.test(page.headers['content-type'] || '')) {
+      throw new SuggestionError("We couldn’t read that page. Try your public homepage.");
     }
-    throw new SuggestionError("We couldn’t finish reading your website and drafting suggestions. Try again, or continue manually.", 503);
+    const extracted = extract(page.body);
+    if (extracted.content.length < 150) throw new SuggestionError("There isn’t enough readable text on that page. Try a page that describes your product.");
+    return JSON.stringify({ website, title: extracted.title.slice(0, 300), text: extracted.content.slice(0, 8000) });
+  } catch (error) {
+    throw toSuggestionError(error);
   }
 }

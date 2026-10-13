@@ -1,6 +1,6 @@
 import { getAllPosts } from "./blog";
 
-const publicPaths = new Set(["/", "/check", "/blog", "/methodology", "/sample-report.html", ...getAllPosts().map(p => `/blog/${p.slug}`)]);
+const publicPaths = new Set(["/", "/check", "/snapshot", "/blog", "/methodology", "/sample-report.html", ...getAllPosts().map(p => `/blog/${p.slug}`)]);
 export function publicLanding(path: unknown): string {
   return typeof path === "string" && publicPaths.has(path) ? path : "other";
 }

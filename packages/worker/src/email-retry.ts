@@ -9,7 +9,7 @@
 
 import type { SQL } from "bun";
 import { db } from "./db";
-import { sendReport } from "./emailer";
+import { sendReport, sendSnapshotReady } from "./emailer";
 import { alert } from "./alerts";
 import { env } from "./env";
 import { signedReportUrl } from "@openllmrank/shared/report-token";
@@ -31,6 +31,7 @@ type PendingEmailRow = {
   user_id: string;
   brand_id: string;
   email_to: string;
+  origin: string;
   config_jsonb: {
     brand: { name: string; aliases: string[]; website?: string; category?: string };
     competitors: Array<{ name: string; aliases: string[] }>;
@@ -46,7 +47,7 @@ type PendingEmailRow = {
 
 async function fetchPendingEmails(sql: SQL): Promise<PendingEmailRow[]> {
   return (await sql`
-    select j.id, j.user_id, j.brand_id, j.email_to, j.config_jsonb,
+    select j.id, j.user_id, j.brand_id, j.email_to, j.origin::text as origin, j.config_jsonb,
            j.cli_run_id, j.email_attempts, j.succeeded_count, j.failed_count,
            b.name as brand_name,
            j.succeeded_at::text as succeeded_at
@@ -225,12 +226,19 @@ async function processOneEmail(
     return;
   }
 
-  const result = await sendReport({
-    jobId: row.id,
-    to: row.email_to,
-    brand_name: row.brand_name,
-    reportUrl: reportUrlForJob(row.id),
-  });
+  const result = row.origin === "snapshot"
+    ? await sendSnapshotReady({
+        jobId: row.id,
+        to: row.email_to,
+        brand_name: row.brand_name,
+        snapshotUrl: signedReportUrl(env.reportBaseUrl, row.id, env.reportLinkSecret, "snapshot"),
+      })
+    : await sendReport({
+        jobId: row.id,
+        to: row.email_to,
+        brand_name: row.brand_name,
+        reportUrl: reportUrlForJob(row.id),
+      });
 
   if (result.ok) {
     await sql`

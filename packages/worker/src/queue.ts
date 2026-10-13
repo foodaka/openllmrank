@@ -33,7 +33,7 @@ export type JobStatus =
 
 export type EmailStatus = "not_yet" | "pending" | "sent" | "failed";
 export type RefundStatus = "not_required" | "pending" | "completed" | "failed";
-export type JobOrigin = "one_shot" | "scheduled" | "manual";
+export type JobOrigin = "one_shot" | "scheduled" | "manual" | "snapshot";
 
 export type Job = {
   id: string;
