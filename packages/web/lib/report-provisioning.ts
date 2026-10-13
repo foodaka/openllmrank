@@ -135,6 +135,12 @@ export type ProvisionPaidReportInput = {
   amountCents: number;
   /** Surface that took the order: 'web' | 'mcp'. Stored on jobs.source. */
   source: string;
+  /**
+   * jobs.origin. 'snapshot' is the free no-card report: amount 0, never
+   * refunded, and no order-received or account-invite email (the snapshot
+   * page and its own email cover that).
+   */
+  origin?: "one_shot" | "snapshot";
   /** The order being paid. jobs.lead_id is unique: one order, one job. */
   leadId: string;
   stripeCheckoutSessionId?: string | null;
@@ -187,6 +193,7 @@ export async function provisionPaidReport(
       currency: "usd",
       email_to: input.email,
       source: input.source,
+      origin: input.origin ?? "one_shot",
       lead_id: input.leadId,
       stripe_checkout_session_id: input.stripeCheckoutSessionId ?? null,
       stripe_payment_intent_id: input.stripePaymentIntentId ?? null,
@@ -200,6 +207,10 @@ export async function provisionPaidReport(
     // job. The caller works out which, and refunds a second payment.
     if (jobErr?.code === "23505") return { ok: false, duplicate: true };
     return { ok: false, error: "Could not create job", detail: jobErr?.message };
+  }
+
+  if (input.origin === "snapshot") {
+    return { ok: true, jobId: job.id, userId, brandId: brand.id };
   }
 
   // 4. Fire the "order received" email so the customer has confirmation

@@ -77,7 +77,12 @@ export function verifyReportToken(
 }
 
 /** Full URL for a report, with its signed token attached. */
-export function signedReportUrl(baseUrl: string, jobId: string, secret: string): string {
+export function signedReportUrl(
+  baseUrl: string,
+  jobId: string,
+  secret: string,
+  page: "reports" | "snapshot" = "reports",
+): string {
   const base = baseUrl.replace(/\/+$/, "");
-  return `${base}/reports/${jobId}?t=${signReportToken(jobId, secret)}`;
+  return `${base}/${page}/${jobId}?t=${signReportToken(jobId, secret)}`;
 }

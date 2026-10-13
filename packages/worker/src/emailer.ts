@@ -32,7 +32,7 @@ async function sendOrStub(args: {
   subject: string;
   htmlBody: string;
   textBody?: string;
-  tag: "report" | "refund" | "monitor";
+  tag: "report" | "refund" | "monitor" | "snapshot";
   jobId: string;
 }): Promise<EmailResult> {
   if (isPostmarkStub()) {
@@ -101,9 +101,24 @@ function escapeHtml(value: string): string {
 export function renderReportReadyHtml(args: {
   brand_name: string;
   report_url: string;
+  /** Overrides for the free-snapshot variant. Plain text; escaped here. */
+  copy?: { kicker: string; heading: string; body: string; button: string };
 }): string {
   const brand = escapeHtml(args.brand_name);
   const url = escapeHtml(args.report_url);
+  const copy = args.copy
+    ? {
+        kicker: escapeHtml(args.copy.kicker),
+        heading: escapeHtml(args.copy.heading),
+        body: escapeHtml(args.copy.body),
+        button: escapeHtml(args.copy.button),
+      }
+    : {
+        kicker: "Report ready",
+        heading: `Your ${brand} visibility report is ready.`,
+        body: "Open the report in your browser for the clean table layout, highlighted model responses, and provider breakdown.",
+        button: "View report",
+      };
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Your openllmrank report is ready</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&display=swap">
@@ -120,10 +135,10 @@ hr{border:0;border-top:1px solid #e3d8c6;margin:32px 0}
 .sig{font-family:"Fraunces",Georgia,serif;font-style:italic;color:#756c60}
 </style></head>
 <body><div class="wrap">
-<span class="kicker">Report ready</span>
-<h1>Your ${brand} visibility report is ready.</h1>
-<p>Open the report in your browser for the clean table layout, highlighted model responses, and provider breakdown.</p>
-<p><a class="button" href="${url}">View report</a></p>
+<span class="kicker">${copy.kicker}</span>
+<h1>${copy.heading}</h1>
+<p>${copy.body}</p>
+<p><a class="button" href="${url}">${copy.button}</a></p>
 <p class="url">${url}</p>
 <hr>
 <p class="sig">— openllmrank</p>
@@ -160,6 +175,36 @@ export async function sendReport(args: {
       report_url: args.reportUrl,
     }),
     tag: "report",
+    jobId: args.jobId,
+  });
+}
+
+export async function sendSnapshotReady(args: {
+  jobId: string;
+  to: string;
+  brand_name: string;
+  snapshotUrl: string;
+}): Promise<EmailResult> {
+  return await sendOrStub({
+    to: args.to,
+    subject: `Does AI recommend ${args.brand_name}? Your free snapshot is ready`,
+    htmlBody: renderReportReadyHtml({
+      brand_name: args.brand_name,
+      report_url: args.snapshotUrl,
+      copy: {
+        kicker: "Free snapshot ready",
+        heading: `See how often AI recommends ${args.brand_name}.`,
+        body: "We asked ChatGPT, Claude, Gemini, Perplexity and Grok the questions your buyers ask, and counted who they named: you or your competitors.",
+        button: "See my snapshot",
+      },
+    }),
+    textBody: `Your free AI visibility snapshot for ${args.brand_name} is ready.
+
+See who ChatGPT, Claude, Gemini, Perplexity and Grok recommend:
+${args.snapshotUrl}
+
+— openllmrank`,
+    tag: "snapshot",
     jobId: args.jobId,
   });
 }

@@ -19,7 +19,7 @@ export type RunMetric = {
   top_gap_score: number | null;
 };
 
-export type JobOrigin = "one_shot" | "scheduled" | "manual";
+export type JobOrigin = "one_shot" | "scheduled" | "manual" | "snapshot";
 
 export type DashBrand = {
   id: string;

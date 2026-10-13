@@ -31,6 +31,7 @@ type JobRow = {
   user_id: string;
   brand_id: string;
   status: string;
+  origin?: string;
   config_jsonb: unknown;
   cli_run_id: string | null;
   succeeded_at: string | null;
@@ -88,7 +89,7 @@ export async function GET(req: Request, context: RouteContext): Promise<Response
   const supabase = serviceClient();
   const { data: job, error: jobErr } = await supabase
     .from("jobs")
-    .select("id,user_id,brand_id,status,config_jsonb,cli_run_id,succeeded_at,created_at,error_message,succeeded_count,failed_count,report_link_expires_at")
+    .select("id,user_id,brand_id,status,origin,config_jsonb,cli_run_id,succeeded_at,created_at,error_message,succeeded_count,failed_count,report_link_expires_at")
     .eq("id", id)
     .single();
 
@@ -113,6 +114,13 @@ export async function GET(req: Request, context: RouteContext): Promise<Response
       body: "Report links from email work for 90 days. Sign in to your dashboard to read every report you own.",
       link: { href: `/login?next=${encodeURIComponent(`/reports/${id}`)}`, label: "Sign in" },
     }), 401);
+  }
+
+  // A free snapshot only shows part of its run; the full report is what
+  // tracking sells. Send snapshot links to the snapshot page.
+  if ((job as JobRow).origin === "snapshot") {
+    const t = new URL(req.url).searchParams.get("t");
+    return Response.redirect(new URL(`/snapshot/${id}${t ? `?t=${encodeURIComponent(t)}` : ""}`, req.url), 303);
   }
 
   const parsedConfig = HostedConfigSchema.safeParse((job as JobRow).config_jsonb);

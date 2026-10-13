@@ -19,6 +19,7 @@ export default function CheckLayout({ children }: { children: React.ReactNode })
       <nav className="site-nav">
         <Link href="/" className="wordmark"><BrandLogo /></Link>
         <ul className="site-nav-links">
+          <li><Link href="/snapshot">Free snapshot</Link></li>
           <li><Link href="/check">Crawl check</Link></li>
           <li><Link href="/blog">Blog</Link></li>
           <li><Link href="/wizard/brand" className="nav-cta">Get my report</Link></li>

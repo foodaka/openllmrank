@@ -45,6 +45,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...posts,
     { url: `${SITE_URL}/methodology`, lastModified: new Date("2026-09-23T00:00:00Z") },
     {
+      // The free AI visibility snapshot — form page only; result pages are
+      // signed-link private, noindexed and robots-disallowed.
+      url: `${SITE_URL}/snapshot`,
+      lastModified: new Date("2026-10-13T00:00:00Z"),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
       // The free crawlability check — tool page only; tokenized reports are
       // noindexed and robots-disallowed.
       url: `${SITE_URL}/check`,
