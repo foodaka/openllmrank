@@ -14,7 +14,7 @@ import {
 } from "../lib/snapshot";
 import { escapeTelegram, notifyTelegram } from "../lib/telegram";
 import { handleSnapshot, type SnapshotDeps } from "../lib/snapshot-handler";
-import { SuggestionError } from "../lib/website-suggestions";
+import { metaDescriptions, pageText, readWebsiteContent, SuggestionError } from "../lib/website-suggestions";
 
 const DRAFT = {
   name: "Acme Mail",
@@ -303,5 +303,36 @@ describe("handleSnapshot", () => {
       body: JSON.stringify({ website: "acme.com", email: "e@acme.com" }),
     });
     expect((await handleSnapshot(req, deps)).status).toBe(403);
+  });
+});
+
+describe("client-rendered sites (empty <div id=root>)", () => {
+  // Shape of zyf.ai on 2026-10-13: title + meta description, JS-only body.
+  const SPA = `<!doctype html><html><head><title>Zyfai | Get the Best Risk Adjusted Yield</title>
+<meta name="description" content="Zyfai provides self-custodial DeFi yield agents for discovering risk-adjusted opportunities and automating allocation, monitoring, and rebalancing across supported protocols." />
+<meta property="og:description" content="Self-custodial DeFi yield agents for discovering risk-adjusted opportunities and automating allocation, monitoring, and rebalancing." />
+<meta property="og:title" content="Zyfai" /></head><body><div id="root"></div><script src="/assets/index.js"></script></body></html>`;
+
+  test("metaDescriptions reads description tags and dedupes", () => {
+    const d = metaDescriptions(SPA);
+    expect(d).toHaveLength(2);
+    expect(d[0]).toStartWith("Zyfai provides self-custodial DeFi yield agents");
+  });
+
+  test("pageText falls back to the meta description", () => {
+    const { title, text } = pageText(SPA, "too thin");
+    expect(title).toBe("Zyfai | Get the Best Risk Adjusted Yield");
+    expect(text).toContain("DeFi yield agents");
+  });
+
+  test("still rejects a page with neither body text nor a description", () => {
+    expect(() => pageText("<html><head><title>App</title></head><body><div id=root></div></body></html>", "too thin")).toThrow("too thin");
+  });
+
+  test("readWebsiteContent accepts the SPA", async () => {
+    const page = { status: 200, headers: { "content-type": "text/html" }, body: SPA };
+    const fetchPage = (async (url: string) => (url.endsWith("robots.txt") ? { ...page, status: 404, body: "" } : page)) as never;
+    const content = JSON.parse(await readWebsiteContent("https://zyf.ai/", fetchPage));
+    expect(content.text).toContain("DeFi yield agents");
   });
 });

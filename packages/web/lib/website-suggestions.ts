@@ -94,9 +94,8 @@ export async function suggestFromWebsite(
     if (page.status < 200 || page.status >= 300 || !/text\/html|application\/xhtml/i.test(page.headers['content-type'] || '')) {
       throw new SuggestionError("We couldn’t read that page. Try your public homepage, or continue manually.");
     }
-    const extracted = extract(page.body);
-    if (extracted.content.length < 150) throw new SuggestionError("There isn’t enough readable text on that page. Try another page that describes your product.");
-    const parsed = WebsiteSuggestionsSchema.safeParse(await deps.complete(JSON.stringify({ website, title: extracted.title.slice(0, 300), text: extracted.content.slice(0, 8000) })));
+    const { title, text } = pageText(page.body, "There isn’t enough readable text on that page. Try another page that describes your product.");
+    const parsed = WebsiteSuggestionsSchema.safeParse(await deps.complete(JSON.stringify({ website, title: title.slice(0, 300), text: text.slice(0, 8000) })));
     if (!parsed.success) throw new SuggestionError("We couldn’t identify enough about this business. Try a product page, or fill in your details manually.");
     const prompts = [...new Map(parsed.data.prompts.map(p => [p.toLowerCase(), p])).values()];
     if (prompts.length < 3) throw new SuggestionError("We couldn’t draft enough distinct questions. Please try again.");
@@ -125,10 +124,44 @@ export async function readWebsiteContent(website: string, fetchPage: typeof guar
     if (page.status < 200 || page.status >= 300 || !/text\/html|application\/xhtml/i.test(page.headers['content-type'] || '')) {
       throw new SuggestionError("We couldn’t read that page. Try your public homepage.");
     }
-    const extracted = extract(page.body);
-    if (extracted.content.length < 150) throw new SuggestionError("There isn’t enough readable text on that page. Try a page that describes your product.");
-    return JSON.stringify({ website, title: extracted.title.slice(0, 300), text: extracted.content.slice(0, 8000) });
+    const { title, text } = pageText(page.body, "There isn’t enough readable text on that page. Try a page that describes your product.");
+    return JSON.stringify({ website, title: title.slice(0, 300), text: text.slice(0, 8000) });
   } catch (error) {
     throw toSuggestionError(error);
   }
+}
+
+// Client-rendered sites (React/Vite SPAs) ship an empty <div id="root"> and
+// fill it in with JavaScript, which we don't run. Their <title> and meta
+// description usually still say what the product is (zyf.ai, 2026-10-13), so
+// fall back to those when the body text is thin.
+const MIN_BODY_TEXT = 150;
+const MIN_FALLBACK_TEXT = 60;
+
+function decodeEntities(value: string): string {
+  return value
+    .replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+}
+
+/** description, og:description and twitter:description, deduped, in page order. */
+export function metaDescriptions(html: string): string[] {
+  const out: string[] = [];
+  for (const tag of html.slice(0, 200_000).match(/<meta\b[^>]*>/gi) ?? []) {
+    const key = /\b(?:name|property)\s*=\s*["']([^"']+)["']/i.exec(tag)?.[1]?.toLowerCase();
+    if (!key || !["description", "og:description", "twitter:description"].includes(key)) continue;
+    const content = /\bcontent\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(tag);
+    const text = decodeEntities((content?.[1] ?? content?.[2] ?? "").trim());
+    if (text && !out.some((d) => d.toLowerCase() === text.toLowerCase())) out.push(text);
+  }
+  return out;
+}
+
+/** Readable text for the model; throws `tooThin` as a user-facing error when there is too little. */
+export function pageText(html: string, tooThin: string): { title: string; text: string } {
+  const extracted = extract(html);
+  if (extracted.content.length >= MIN_BODY_TEXT) return { title: extracted.title, text: extracted.content };
+  const fallback = [...metaDescriptions(html), extracted.content].filter(Boolean).join("\n");
+  if (fallback.length < MIN_FALLBACK_TEXT) throw new SuggestionError(tooThin);
+  return { title: extracted.title, text: fallback };
 }
