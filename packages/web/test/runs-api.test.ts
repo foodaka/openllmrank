@@ -206,6 +206,12 @@ describePg("POST /api/runs", () => {
     const second = await call(brandId);
     expect(second.status).toBe(201);
     const secondId = ((await second.json()) as { job_id: string }).job_id;
+    // First run kept full depth; a re-run after a completed run uses two samples.
+    const depths = (await sql`
+      select id, (config_jsonb->>'samples_per_prompt')::int as samples from public.jobs where id in (${job_id}, ${secondId})
+    `) as unknown as Array<{ id: string; samples: number }>;
+    expect(depths.find((d) => d.id === job_id)!.samples).toBe(3);
+    expect(depths.find((d) => d.id === secondId)!.samples).toBe(2);
     await sql`update public.jobs set status = 'completed' where id = ${secondId}`;
 
     const third = await call(brandId);
