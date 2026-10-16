@@ -208,6 +208,24 @@ export const posts: BlogPost[] = [
       "ai search teardown",
     ],
   },
+  {
+    slug: "ai-customer-support-agents",
+    title: "Chatbase Rebranded to AI Agents. AI Search Still Calls It a Chatbot.",
+    description:
+      "We asked ChatGPT, Claude, Gemini, Perplexity and Grok which AI customer support platform to use, 75 times. Chatbase was named in 20 of 30 answers about chatbots and 8 of 45 about AI agents, where Intercom Fin led. ChatGPT never named it, and pointed to OpenAI's own tools instead.",
+    date: "2026-10-16",
+    dateModified: "2026-10-16",
+    readingTime: "6 min read",
+    tags: ["Teardown", "Data", "AI Search"],
+    keywords: [
+      "best ai customer support agent",
+      "chatbase alternatives",
+      "intercom fin alternatives",
+      "ai customer service platform",
+      "does chatgpt recommend chatbase",
+      "ai search teardown",
+    ],
+  },
 ];
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
@@ -224,6 +242,11 @@ export function getAllPosts(): BlogPost[] {
 // Curated related links per post. Unknown slugs are filtered out, so it is safe
 // to reference posts before they exist — they simply won't render until added.
 const RELATED: Record<string, string[]> = {
+  "ai-customer-support-agents": [
+    "transactional-email-apis",
+    "which-sources-do-ai-engines-cite",
+    "how-to-get-mentioned-in-chatgpt",
+  ],
   "state-of-ai-search-2026": [
     "which-sources-do-ai-engines-cite",
     "how-to-get-mentioned-in-chatgpt",
