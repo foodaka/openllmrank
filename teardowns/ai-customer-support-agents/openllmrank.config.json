@@ -1,0 +1,97 @@
+{
+  "brand": {
+    "name": "Chatbase",
+    "aliases": [
+      "chatbase.co"
+    ],
+    "website": "https://www.chatbase.co",
+    "category": "AI agents for customer support"
+  },
+  "competitors": [
+    {
+      "name": "Intercom Fin",
+      "aliases": [
+        "Fin AI",
+        "fin.ai",
+        "Intercom"
+      ]
+    },
+    {
+      "name": "Zendesk",
+      "aliases": [
+        "zendesk.com",
+        "Zendesk AI"
+      ]
+    },
+    {
+      "name": "Sierra",
+      "aliases": [
+        "sierra.ai"
+      ]
+    },
+    {
+      "name": "Decagon",
+      "aliases": [
+        "decagon.ai"
+      ]
+    },
+    {
+      "name": "Tidio",
+      "aliases": [
+        "tidio.com",
+        "Lyro"
+      ]
+    },
+    {
+      "name": "Botpress",
+      "aliases": [
+        "botpress.com"
+      ]
+    },
+    {
+      "name": "SiteGPT",
+      "aliases": [
+        "sitegpt.ai"
+      ]
+    },
+    {
+      "name": "CustomGPT.ai",
+      "aliases": [
+        "CustomGPT",
+        "customgpt.ai"
+      ]
+    }
+  ],
+  "prompts": [
+    "best tool to train an AI chatbot on my website and docs",
+    "easiest way to add a ChatGPT-style chatbot to my website for customer support",
+    "best AI agent for customer support that can take actions like refunds and order lookups",
+    "best AI customer service platform that handles chat, email and voice",
+    "best AI support agent for a Shopify store",
+    "alternatives to Intercom Fin for AI customer support"
+  ],
+  "providers": [
+    {
+      "id": "openai",
+      "model": "gpt-5.4-mini"
+    },
+    {
+      "id": "anthropic",
+      "model": "claude-haiku-4-5"
+    },
+    {
+      "id": "google",
+      "model": "gemini-3.5-flash"
+    },
+    {
+      "id": "perplexity",
+      "model": "sonar"
+    },
+    {
+      "id": "xai",
+      "model": "grok-4.3"
+    }
+  ],
+  "samples_per_prompt": 3,
+  "concurrency_per_provider": 4
+}
