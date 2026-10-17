@@ -210,14 +210,15 @@ export const posts: BlogPost[] = [
   },
   {
     slug: "ai-customer-support-agents",
-    title: "Chatbase Rebranded to AI Agents. AI Search Still Calls It a Chatbot.",
+    title: "Which AI Customer Support Tool Do AI Engines Recommend? We Asked 5 Engines 75 Times",
     description:
-      "We asked ChatGPT, Claude, Gemini, Perplexity and Grok which AI customer support platform to use, 75 times. Chatbase was named in 20 of 30 answers about chatbots and 8 of 45 about AI agents, where Intercom Fin led. ChatGPT never named it, and pointed to OpenAI's own tools instead.",
+      "We asked ChatGPT, Claude, Gemini, Perplexity and Grok which AI customer support tool to use, 75 times. Intercom Fin was named in 47 of 75 answers. Chatbot questions and agent questions had different winners, and ChatGPT answered chatbot questions with OpenAI's own tools.",
     date: "2026-10-16",
-    dateModified: "2026-10-16",
-    readingTime: "6 min read",
+    dateModified: "2026-10-17",
+    readingTime: "7 min read",
     tags: ["Teardown", "Data", "AI Search"],
     keywords: [
+      "best ai customer support tool",
       "best ai customer support agent",
       "chatbase alternatives",
       "intercom fin alternatives",
