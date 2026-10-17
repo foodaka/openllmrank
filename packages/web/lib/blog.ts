@@ -226,6 +226,23 @@ export const posts: BlogPost[] = [
       "ai search teardown",
     ],
   },
+  {
+    slug: "best-ai-customer-support-tools",
+    title: "Which AI Customer Support Tool Do AI Engines Recommend? We Asked 5 Engines 75 Times",
+    description:
+      "We asked ChatGPT, Claude, Gemini, Perplexity and Grok which AI customer support tool to use, 75 times. Intercom Fin was named in 47 of 75 answers. Chatbot questions and agent questions had different winners, and ChatGPT answered chatbot questions with OpenAI's own tools.",
+    date: "2026-10-17",
+    readingTime: "7 min read",
+    tags: ["Teardown", "Data", "AI Search"],
+    keywords: [
+      "best ai customer support tools",
+      "best ai customer support agent",
+      "best ai chatbot for website",
+      "intercom fin alternatives",
+      "ai customer service platform",
+      "ai search teardown",
+    ],
+  },
 ];
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
@@ -242,7 +259,13 @@ export function getAllPosts(): BlogPost[] {
 // Curated related links per post. Unknown slugs are filtered out, so it is safe
 // to reference posts before they exist — they simply won't render until added.
 const RELATED: Record<string, string[]> = {
+  "best-ai-customer-support-tools": [
+    "ai-customer-support-agents",
+    "transactional-email-apis",
+    "which-sources-do-ai-engines-cite",
+  ],
   "ai-customer-support-agents": [
+    "best-ai-customer-support-tools",
     "transactional-email-apis",
     "which-sources-do-ai-engines-cite",
     "how-to-get-mentioned-in-chatgpt",
