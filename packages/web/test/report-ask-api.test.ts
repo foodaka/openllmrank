@@ -28,7 +28,7 @@ async function pgReachable(): Promise<boolean> {
 const enabled = Boolean(SERVICE_KEY && (await pgReachable()));
 const describePg = enabled ? describe : describe.skip;
 if (!enabled) {
-  console.warn("[report-ask-api.test] Skipping: local Supabase with migration 0013 is required.");
+  console.warn("[report-ask-api.test] Skipping: local Supabase with migration 0014 is required.");
 }
 const savedEnv = {
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
