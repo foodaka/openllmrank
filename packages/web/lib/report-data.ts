@@ -11,6 +11,7 @@ import {
   type CitationRate,
   type GapRow,
 } from "openllmrank/src/core/gap";
+import type { StoredRunMetrics } from "./agent-report";
 import type { serviceClient } from "./supabase-server";
 
 // Loads one completed job's run out of Postgres and shapes it like the CLI's
@@ -185,5 +186,29 @@ export async function loadReportData(
     citationRows,
     rates,
     gaps,
+  };
+}
+
+/** The latest run_metrics row the worker wrote for a job, or null. */
+export async function loadRunMetrics(
+  supabase: ReturnType<typeof serviceClient>,
+  jobId: string,
+): Promise<StoredRunMetrics | null> {
+  const { data } = await supabase
+    .from("run_metrics")
+    .select("own_citation_rate,share_of_voice,samples_total,per_provider_jsonb,per_competitor_jsonb")
+    .eq("job_id", jobId)
+    .order("computed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  // numeric columns arrive from PostgREST as strings.
+  const row = data as Record<string, unknown>;
+  return {
+    own_citation_rate: Number(row.own_citation_rate),
+    share_of_voice: Number(row.share_of_voice),
+    samples_total: Number(row.samples_total),
+    per_provider_jsonb: (row.per_provider_jsonb ?? {}) as Record<string, number>,
+    per_competitor_jsonb: (row.per_competitor_jsonb ?? []) as { name: string; rate: number }[],
   };
 }

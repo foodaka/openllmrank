@@ -2,23 +2,14 @@ import { NextResponse } from "next/server";
 import { HostedConfigSchema } from "@openllmrank/shared/config";
 import { renderHtmlReport } from "openllmrank/src/core/render-html";
 import { PRODUCT_VERSION } from "openllmrank/src/version";
-import {
-  reportLinkSecret,
-  verifyReportToken,
-} from "@openllmrank/shared/report-token";
 import { loadReportData } from "../../../lib/report-data";
-import { serviceClient, userClient } from "../../../lib/supabase-server";
+import { authorizeReportAccess, REPORT_ID_RE } from "../../../lib/report-access";
+import { questionRefs } from "../../../lib/report-chat";
+import { reportChatEnabled, renderReportChatWidget } from "../../../lib/report-chat-widget";
+import { serviceClient } from "../../../lib/supabase-server";
 
-// Access control (E2, D6/D10). A report resolves through four paths, in order:
-//
-//   1. ?t=<token> valid and unexpired            -> render, no session needed
-//   2. session present and job.user_id = user.id -> render
-//   3. bare UUID and report_link_expires_at > now -> render (legacy grace)
-//   4. otherwise                                  -> 401 "Sign in to view"
-//
-// Tokens are stateless HMACs (packages/shared/src/report-token.ts). The
-// legacy grace exists so report emails already sitting in inboxes keep
-// working for 90 days after deploy; new emails carry a token.
+// Access control lives in lib/report-access.ts (shared with the
+// ask-the-report endpoint, so both admit exactly the same readers).
 
 export const dynamic = "force-dynamic";
 
@@ -42,43 +33,9 @@ type JobRow = {
   report_link_expires_at: string | null;
 };
 
-type ReportAccess =
-  | { ok: true; via: "token" | "session" | "grace" }
-  | { ok: false };
-
-async function authorizeReportAccess(args: {
-  token: string | null;
-  jobId: string;
-  jobUserId: string;
-  expiresAt: string | null;
-}): Promise<ReportAccess> {
-  if (args.token) {
-    const claims = verifyReportToken(args.token, reportLinkSecret());
-    if (claims && claims.jobId === args.jobId) return { ok: true, via: "token" };
-  }
-
-  try {
-    const supabase = await userClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user && user.id === args.jobUserId) return { ok: true, via: "session" };
-  } catch {
-    // No cookie store (e.g. called outside a request scope): fall through.
-  }
-
-  if (args.expiresAt && new Date(args.expiresAt).getTime() > Date.now()) {
-    return { ok: true, via: "grace" };
-  }
-  return { ok: false };
-}
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 export async function GET(req: Request, context: RouteContext): Promise<Response> {
   const { id } = await context.params;
-  if (!UUID_RE.test(id)) {
+  if (!REPORT_ID_RE.test(id)) {
     return htmlResponse(renderStatusPage({
       kicker: "Report not found",
       title: "That report link is not valid.",
@@ -184,7 +141,7 @@ async function renderReportForJob(
     promptRows,
   } = await loadReportData(supabase, job);
 
-  return renderHtmlReport({
+  const html = renderHtmlReport({
     brand_name: brandName,
     competitor_names: competitorNames,
     rates,
@@ -204,6 +161,17 @@ async function renderReportForJob(
     expected_calls: (job.succeeded_count ?? callRows.length) + (job.failed_count ?? 0),
     failed_calls: job.failed_count ?? 0,
   });
+
+  // Ask the report: a chat drawer added here, not in the CLI renderer, so the
+  // CLI report stays standalone. Hidden until the model key is configured.
+  if (!reportChatEnabled()) return html;
+  const widget = renderReportChatWidget({
+    jobId: job.id,
+    brandName,
+    questions: questionRefs(rates),
+  });
+  const at = html.lastIndexOf("</body>");
+  return at < 0 ? `${html}${widget}` : `${html.slice(0, at)}${widget}\n${html.slice(at)}`;
 }
 
 function htmlResponse(html: string, status = 200): Response {
@@ -214,7 +182,7 @@ function htmlResponse(html: string, status = 200): Response {
       "cache-control": "no-store",
       "x-robots-tag": "noindex, nofollow, noarchive",
       "referrer-policy": "no-referrer",
-      "content-security-policy": "default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+      "content-security-policy": "default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; connect-src 'self'; img-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
     },
   });
 }
