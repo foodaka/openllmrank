@@ -13,8 +13,8 @@ import {
   verifyReportToken,
 } from "@openllmrank/shared/report-token";
 import { readCrawlReport, submitCrawlCheck } from "./crawl-check";
-import { buildAgentReport, type AgentReport, type StoredRunMetrics } from "./agent-report";
-import { loadReportData } from "./report-data";
+import { buildAgentReport, type AgentReport } from "./agent-report";
+import { loadReportData, loadRunMetrics } from "./report-data";
 import { provisionPaidReport, reportPriceCents } from "./report-provisioning";
 import {
   chargeSharedPaymentToken,
@@ -530,31 +530,12 @@ export async function getReport(
   }
 
   const data = await loadReportData(deps.supabase, job);
-  const { data: metrics } = await deps.supabase
-    .from("run_metrics")
-    .select("own_citation_rate,share_of_voice,samples_total,per_provider_jsonb,per_competitor_jsonb")
-    .eq("job_id", job.id)
-    .order("computed_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
   return buildAgentReport({
     data,
-    metrics: metrics ? toStoredMetrics(metrics as Record<string, unknown>) : null,
+    metrics: await loadRunMetrics(deps.supabase, job.id),
     failedCalls: job.failed_count ?? 0,
     reportUrl: signedReportUrl(deps.siteOrigin, job.id, reportLinkSecret()),
   });
-}
-
-// numeric columns arrive from PostgREST as strings.
-function toStoredMetrics(row: Record<string, unknown>): StoredRunMetrics {
-  return {
-    own_citation_rate: Number(row.own_citation_rate),
-    share_of_voice: Number(row.share_of_voice),
-    samples_total: Number(row.samples_total),
-    per_provider_jsonb: (row.per_provider_jsonb ?? {}) as Record<string, number>,
-    per_competitor_jsonb: (row.per_competitor_jsonb ?? []) as { name: string; rate: number }[],
-  };
 }
 
 // ── checkAiCrawlability / getCrawlabilityReport ─────────────────────────
