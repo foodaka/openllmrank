@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { HostedConfigSchema } from "@openllmrank/shared/config";
+import {
+  DEFAULT_RERUN_SAMPLES_PER_PROMPT,
+  positiveIntEnv,
+  rerunConfig,
+} from "@openllmrank/shared/cadence";
 // Relative imports: this route is imported by packages/web/test, which is
 // type-checked from the root tsconfig without the "@/" alias.
 import { serviceClient, userClient } from "../../../lib/supabase-server";
@@ -129,6 +134,11 @@ async function requestRerun(brandId: string | null): Promise<Outcome> {
     .select("id", { count: "exact", head: true })
     .eq("brand_id", brandId)
     .in("status", ["paid", "running"]);
+  const { count: completed } = await supabase
+    .from("jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("brand_id", brandId)
+    .eq("status", "completed");
   if (inFlightError) {
     return { ok: false, status: 500, code: "db", message: inFlightError.message };
   }
@@ -154,7 +164,14 @@ async function requestRerun(brandId: string | null): Promise<Outcome> {
       status: "paid",
       origin: "manual",
       subscription_id: subscription.id,
-      config_jsonb: config.data,
+      // A brand's first run keeps full depth; re-runs use fewer samples.
+      config_jsonb:
+        (completed ?? 0) > 0
+          ? rerunConfig(
+              config.data,
+              positiveIntEnv(process.env.SCHEDULER_RERUN_SAMPLES, DEFAULT_RERUN_SAMPLES_PER_PROMPT),
+            )
+          : config.data,
       amount_cents: 0,
       currency: "usd",
       email_to: user.email,

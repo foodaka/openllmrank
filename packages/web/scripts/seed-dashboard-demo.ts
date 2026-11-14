@@ -10,8 +10,8 @@
  *   Cal.com   8 weekly runs, flat with a dip     -> a "down" standfirst
  *   Resend    1 run only                         -> the single-run state
  *
- * Three brands sits at SCHEDULER_WEEKLY_MAX_BRANDS (3), so every brand runs
- * weekly; add a fourth to see the D12 monthly throttle in the UI.
+ * Three brands exceeds SCHEDULER_WEEKLY_MAX_BRANDS (2), so the D12 monthly
+ * throttle is visible in the UI: every brand sits at 'monthly'.
  *
  * Refuses to run against anything but 127.0.0.1 / localhost.
  *
@@ -151,9 +151,9 @@ async function main() {
   if (subErr) throw new Error(`subscription: ${subErr.message}`);
   console.log(`  sub    active, renews ${periodEnd.toISOString().slice(0, 10)}`);
 
-  // D12: past SCHEDULER_WEEKLY_MAX_BRANDS (3) everyone drops to monthly.
+  // D12: past SCHEDULER_WEEKLY_MAX_BRANDS (2) everyone drops to monthly.
   // The dashboard says so out loud rather than hiding it.
-  const cadence = BRANDS.length > 3 ? "monthly" : "weekly";
+  const cadence = BRANDS.length > 2 ? "monthly" : "weekly";
 
   for (const [bIdx, spec] of BRANDS.entries()) {
     const runCount = spec.curve.length;
@@ -314,7 +314,7 @@ async function main() {
   console.log(`  password  ${DEMO_PASSWORD}`);
   if (cadence === "monthly") {
     console.log(
-      `\nNote: ${BRANDS.length} brands exceeds SCHEDULER_WEEKLY_MAX_BRANDS=3,`,
+      `\nNote: ${BRANDS.length} brands exceeds SCHEDULER_WEEKLY_MAX_BRANDS=2,`,
     );
     console.log(`so the D12 throttle put every brand on monthly. The UI says so.`);
   }

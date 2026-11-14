@@ -31,7 +31,7 @@ export default async function BillingPage() {
         </p>
         <p className="sub">
           <strong>$49 a month.</strong> Unlimited brands, weekly tracking on up
-          to three, monthly beyond that, plus two manual re-runs a month.
+          to two, monthly beyond that, plus two manual re-runs a month.
         </p>
         <form action="/api/billing/checkout" method="post">
           <button className="btn-primary" type="submit">
@@ -54,7 +54,7 @@ export default async function BillingPage() {
 
       <p className="sub">
         <strong>$49 per month.</strong> Unlimited brands, weekly tracking on up
-        to three, monthly beyond that. {brands.length} brand
+        to two, monthly beyond that. {brands.length} brand
         {brands.length === 1 ? "" : "s"} tracked.
         {subscription.current_period_end
           ? subscription.cancel_at_period_end

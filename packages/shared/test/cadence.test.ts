@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { effectiveCadence, nextRunAfter, positiveIntEnv } from "../src/cadence";
+import { effectiveCadence, nextRunAfter, positiveIntEnv, rerunConfig } from "../src/cadence";
 
 describe("effectiveCadence", () => {
   test("weekly at or below the threshold, monthly above it", () => {
     expect(effectiveCadence(0)).toBe("weekly");
-    expect(effectiveCadence(3)).toBe("weekly");
-    expect(effectiveCadence(4)).toBe("monthly");
+    expect(effectiveCadence(2)).toBe("weekly");
+    expect(effectiveCadence(3)).toBe("monthly");
     expect(effectiveCadence(3, 5)).toBe("weekly");
     expect(effectiveCadence(6, 5)).toBe("monthly");
   });
@@ -36,5 +36,19 @@ describe("positiveIntEnv", () => {
     expect(positiveIntEnv("-1", 2)).toBe(2);
     expect(positiveIntEnv("abc", 2)).toBe(2);
     expect(positiveIntEnv("5", 2)).toBe(5);
+  });
+});
+
+describe("rerunConfig", () => {
+  test("caps samples for re-runs without raising a lower configured value", () => {
+    expect(rerunConfig({ samples_per_prompt: 3, prompts: ["a"] }).samples_per_prompt).toBe(2);
+    expect(rerunConfig({ samples_per_prompt: 1 }).samples_per_prompt).toBe(1);
+    expect(rerunConfig({ samples_per_prompt: 3 }, 3).samples_per_prompt).toBe(3);
+    expect(rerunConfig({} as { samples_per_prompt?: number }).samples_per_prompt).toBe(2);
+  });
+  test("does not mutate the input", () => {
+    const c = { samples_per_prompt: 3 };
+    rerunConfig(c);
+    expect(c.samples_per_prompt).toBe(3);
   });
 });
