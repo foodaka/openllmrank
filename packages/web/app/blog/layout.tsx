@@ -63,6 +63,7 @@ export default function BlogLayout({
           search visibility &middot; <Link href="/login">Sign in</Link> &middot;{" "}
           <Link href="/blog">Blog</Link> &middot;{" "}
           <Link href="/methodology">Methodology</Link> &middot;{" "}
+          <Link href="/alternatives">Compare tools</Link> &middot;{" "}
           <Link href="/privacy">Privacy</Link> &middot;{" "}
           <Link href="/terms">Terms</Link> &middot;{" "}
           <ContactLink>Contact</ContactLink> &middot;{" "}
