@@ -61,6 +61,48 @@ export default function HomePage() {
         url: SITE_URL,
         publisher: { "@id": `${SITE_URL}/#organization` },
       },
+      {
+        // Prices stated as data so engines that read JSON-LD see the same
+        // numbers as the pricing copy below. Keep in sync with the FAQ.
+        "@type": "SoftwareApplication",
+        "@id": `${SITE_URL}/#software`,
+        name: "openllmrank",
+        url: SITE_URL,
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        description:
+          "Measures how often ChatGPT, Claude, Gemini, Perplexity, and Grok mention and cite your brand versus competitors, using grounded provider APIs.",
+        publisher: { "@id": `${SITE_URL}/#organization` },
+        offers: [
+          {
+            "@type": "Offer",
+            name: "Weekly tracking",
+            price: "49.00",
+            priceCurrency: "USD",
+            priceSpecification: {
+              "@type": "UnitPriceSpecification",
+              price: "49.00",
+              priceCurrency: "USD",
+              unitCode: "MON",
+            },
+            url: `${SITE_URL}/wizard/brand`,
+          },
+          {
+            "@type": "Offer",
+            name: "One-time report",
+            price: "79.00",
+            priceCurrency: "USD",
+            url: `${SITE_URL}/wizard/brand`,
+          },
+          {
+            "@type": "Offer",
+            name: "Free AI visibility snapshot",
+            price: "0",
+            priceCurrency: "USD",
+            url: `${SITE_URL}/snapshot`,
+          },
+        ],
+      },
     ],
   };
 
@@ -388,6 +430,7 @@ export default function HomePage() {
             <Link href="/snapshot">Free AI snapshot</Link> &middot;{" "}
             <Link href="/check">Free crawl check</Link> &middot;{" "}
             <Link href="/blog">Blog</Link> &middot;{" "}
+            <Link href="/alternatives">Compare tools</Link> &middot;{" "}
             <Link href="/privacy">Privacy</Link> &middot;{" "}
             <Link href="/terms">Terms</Link> &middot;{" "}
             <ContactLink>Contact</ContactLink> &middot;{" "}

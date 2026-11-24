@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "../lib/blog";
+import { competitors } from "../lib/compare";
 
 const SITE_URL = "https://openllmrank.io";
 
@@ -43,6 +44,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     ...posts,
+    {
+      // Comparison hub + one page per competitor. lastmod is the day the
+      // vendor pages were last re-read, not the deploy date.
+      url: `${SITE_URL}/alternatives`,
+      lastModified: new Date(`${competitors.map((c) => c.checked).sort().at(-1)}T00:00:00Z`),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    ...competitors.map((c) => ({
+      url: `${SITE_URL}/vs/${c.slug}`,
+      lastModified: new Date(`${c.checked}T00:00:00Z`),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
     { url: `${SITE_URL}/methodology`, lastModified: new Date("2026-09-23T00:00:00Z") },
     {
       // The free AI visibility snapshot — form page only; result pages are
